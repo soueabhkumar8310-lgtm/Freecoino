@@ -1,0 +1,302 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { signUpWithEmail, signInWithOAuth, getCurrentUser } from "@/lib/supabase/auth";
+import { Mail, Lock, ArrowRight, UserPlus } from "lucide-react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import Divider from "@mui/material/Divider";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Typography from "@/components/ui/Typography";
+import Icons from "@/components/icons";
+import colors from "@/theme/colors";
+
+export default function SignupClient() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const ref = searchParams.get("ref");
+  const errorParam = searchParams.get("error");
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(errorParam ? "Authentication failed. Please try again." : null);
+  const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [referralCode, setReferralCode] = useState(ref || "");
+
+  useEffect(() => {
+    // Check if user is already logged in
+    getCurrentUser().then((user) => {
+      if (user) {
+        router.push("/earn");
+      }
+    });
+  }, [router]);
+
+  async function handleSignup(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!acceptedTerms) {
+      setError("You must accept the Terms of Service and Privacy Policy to continue");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signUpWithEmail(email, password, name);
+      // Show success message
+      setError(null);
+      alert("Account created! Please check your email to verify your account.");
+      router.push("/auth/login");
+    } catch (err: any) {
+      setError(err.message || "Failed to create account");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignup() {
+    setOauthLoading('google');
+    setError(null);
+    try {
+      await signInWithOAuth('google');
+    } catch (err: any) {
+      setError(err.message || "Failed to sign up with Google");
+      setOauthLoading(null);
+    }
+  }
+
+  async function handleFacebookSignup() {
+    setOauthLoading('facebook');
+    setError(null);
+    try {
+      await signInWithOAuth('facebook');
+    } catch (err: any) {
+      setError(err.message || "Failed to sign up with Facebook");
+      setOauthLoading(null);
+    }
+  }
+
+  const textFieldSx = {
+    "& .MuiOutlinedInput-root": {
+      backgroundColor: colors.background.ternary,
+      borderRadius: "8px",
+      fontSize: "0.875rem",
+      color: colors.text.primary,
+      "& fieldset": { borderColor: colors.divider },
+      "&:hover fieldset": { borderColor: colors.divider },
+      "&.Mui-focused fieldset": {
+        borderColor: colors.secondary,
+        borderWidth: "1px",
+        boxShadow: `0 0 0 1px ${colors.secondary}50`,
+      },
+      "& input": { py: "12px", "&::placeholder": { color: `${colors.text.secondary}80`, opacity: 1 } },
+    },
+    "& .MuiInputAdornment-root": { color: colors.text.secondary },
+  };
+
+  return (
+    <Box sx={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", bgcolor: colors.background.default, px: 2 }}>
+      <Box sx={{ position: "fixed", inset: 0, pointerEvents: "none" }} className="hero-gradient" />
+      <Box sx={{ position: "relative", width: "100%", maxWidth: 448 }}>
+        <Box sx={{ mb: 4, textAlign: "center" }}>
+          <Icons.Logo href="/" />
+          <Typography variant="h5" isBold sx={{ mt: 3, color: colors.text.primary }}>
+            Create your account
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 1, color: colors.text.secondary }}>
+            Start earning rewards in minutes
+          </Typography>
+        </Box>
+
+        <Box sx={{ borderRadius: "16px", border: `1px solid ${colors.divider}`, bgcolor: colors.primary, p: { xs: 3, sm: 4 } }}>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={handleGoogleSignup}
+            disabled={loading || oauthLoading !== null}
+            startIcon={
+              <svg width={20} height={20} viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.10z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+              </svg>
+            }
+            sx={{
+              bgcolor: colors.background.primary,
+              borderColor: colors.divider,
+              color: colors.text.primary,
+              fontWeight: 700,
+              fontSize: "0.875rem",
+              py: 1.25,
+              borderRadius: "8px",
+              textTransform: "none",
+              "&:hover": { borderColor: `${colors.secondary}66`, bgcolor: colors.background.primary },
+            }}
+          >
+            {oauthLoading === 'google' ? <CircularProgress size={18} sx={{ color: colors.text.primary }} /> : "Continue with Google"}
+          </Button>
+
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={handleFacebookSignup}
+            disabled={loading || oauthLoading !== null}
+            startIcon={
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+            }
+            sx={{
+              mt: 2,
+              bgcolor: "#1877F2",
+              borderColor: "#1877F2",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "0.875rem",
+              py: 1.25,
+              borderRadius: "8px",
+              textTransform: "none",
+              "&:hover": { bgcolor: "#166FE5", borderColor: "#166FE5" },
+              "&.Mui-disabled": { opacity: 0.5 },
+            }}
+          >
+            {oauthLoading === 'facebook' ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Continue with Facebook"}
+          </Button>
+
+          <Box sx={{ my: 3, display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Divider sx={{ flex: 1, borderColor: colors.divider }} />
+            <Typography variant="caption" sx={{ color: colors.text.secondary }}>or</Typography>
+            <Divider sx={{ flex: 1, borderColor: colors.divider }} />
+          </Box>
+
+          <Box component="form" onSubmit={handleSignup} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box>
+              <Typography variant="body2" isBold sx={{ mb: 0.75, color: colors.text.secondary }}>Display Name</Typography>
+              <TextField
+                required
+                fullWidth
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="John Doe"
+                autoComplete="off"
+                slotProps={{ input: { startAdornment: <InputAdornment position="start"><UserPlus size={16} /></InputAdornment> } }}
+                sx={textFieldSx}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="body2" isBold sx={{ mb: 0.75, color: colors.text.secondary }}>Email</Typography>
+              <TextField
+                type="email"
+                required
+                fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="off"
+                slotProps={{ input: { startAdornment: <InputAdornment position="start"><Mail size={16} /></InputAdornment> } }}
+                sx={textFieldSx}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="body2" isBold sx={{ mb: 0.75, color: colors.text.secondary }}>Password</Typography>
+              <TextField
+                type="password"
+                required
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min 6 characters"
+                autoComplete="off"
+                slotProps={{ 
+                  input: { 
+                    startAdornment: <InputAdornment position="start"><Lock size={16} /></InputAdornment>,
+                    inputProps: { minLength: 6 }
+                  } 
+                }}
+                sx={textFieldSx}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="body2" isBold sx={{ mb: 0.75, color: colors.text.secondary }}>Referral Code (Optional)</Typography>
+              <TextField
+                fullWidth
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                placeholder="Enter referral code"
+                autoComplete="off"
+                sx={textFieldSx}
+              />
+            </Box>
+
+            <FormControlLabel
+              control={
+                <Checkbox checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} sx={{ color: colors.text.secondary, "&.Mui-checked": { color: colors.secondary } }} />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: colors.text.secondary, fontSize: "0.8rem" }}>
+                  I agree to the{" "}
+                  <Link href="/terms" target="_blank" style={{ color: colors.secondary, textDecoration: "none" }}>Terms</Link>{" and "}
+                  <Link href="/privacy" target="_blank" style={{ color: colors.secondary, textDecoration: "none" }}>Privacy</Link>
+                </Typography>
+              }
+              sx={{ alignItems: "flex-start", mt: 1 }}
+            />
+
+            {error && (
+              <Alert severity="error" sx={{ bgcolor: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "8px", color: "#f87171", "& .MuiAlert-icon": { color: "#f87171" } }}>
+                {error}
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={loading}
+              endIcon={!loading ? <ArrowRight size={16} /> : undefined}
+              sx={{
+                mt: 2,
+                py: 1.25,
+                borderRadius: "8px",
+                background: colors.background.gradient,
+                fontWeight: 700,
+                fontSize: "0.875rem",
+                textTransform: "none",
+                boxShadow: "none",
+                "&:hover": { background: colors.background.gradient, opacity: 0.9, boxShadow: "none" },
+                "&.Mui-disabled": { opacity: 0.5, color: colors.text.primary },
+              }}
+            >
+              {loading ? <CircularProgress size={18} sx={{ color: colors.text.primary }} /> : "Create Account"}
+            </Button>
+          </Box>
+        </Box>
+
+        <Typography variant="body2" alignCenter sx={{ mt: 3, color: colors.text.secondary }}>
+          Already have an account?{" "}
+          <Link href="/auth/login" style={{ fontWeight: 600, color: colors.secondary, textDecoration: "none" }}>Log in</Link>
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
