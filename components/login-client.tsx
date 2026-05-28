@@ -51,7 +51,8 @@ export default function LoginClient() {
       router.push("/earn");
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "Invalid credentials");
+      console.error('Login error:', err);
+      setError(err.message || "Invalid credentials. Please check your email and password.");
     } finally {
       setLoading(false);
     }
@@ -62,8 +63,10 @@ export default function LoginClient() {
     setError(null);
     try {
       await signInWithOAuth('google');
+      // OAuth will redirect, so we don't need to handle success here
     } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google");
+      console.error('Google OAuth error:', err);
+      setError(err.message || "Failed to sign in with Google. Please try again.");
       setOauthLoading(null);
     }
   }
@@ -73,8 +76,10 @@ export default function LoginClient() {
     setError(null);
     try {
       await signInWithOAuth('facebook');
+      // OAuth will redirect, so we don't need to handle success here
     } catch (err: any) {
-      setError(err.message || "Failed to sign in with Facebook");
+      console.error('Facebook OAuth error:', err);
+      setError(err.message || "Failed to sign in with Facebook. Please try again.");
       setOauthLoading(null);
     }
   }

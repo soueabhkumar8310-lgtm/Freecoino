@@ -61,10 +61,11 @@ export default function SignupClient() {
       await signUpWithEmail(email, password, name);
       // Show success message
       setError(null);
-      alert("Account created! Please check your email to verify your account.");
+      alert("Account created successfully! You can now log in.");
       router.push("/auth/login");
     } catch (err: any) {
-      setError(err.message || "Failed to create account");
+      console.error('Signup error:', err);
+      setError(err.message || "Failed to create account. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -75,8 +76,10 @@ export default function SignupClient() {
     setError(null);
     try {
       await signInWithOAuth('google');
+      // OAuth will redirect, so we don't need to handle success here
     } catch (err: any) {
-      setError(err.message || "Failed to sign up with Google");
+      console.error('Google OAuth error:', err);
+      setError(err.message || "Failed to sign up with Google. Please try again.");
       setOauthLoading(null);
     }
   }
@@ -86,8 +89,10 @@ export default function SignupClient() {
     setError(null);
     try {
       await signInWithOAuth('facebook');
+      // OAuth will redirect, so we don't need to handle success here
     } catch (err: any) {
-      setError(err.message || "Failed to sign up with Facebook");
+      console.error('Facebook OAuth error:', err);
+      setError(err.message || "Failed to sign up with Facebook. Please try again.");
       setOauthLoading(null);
     }
   }
