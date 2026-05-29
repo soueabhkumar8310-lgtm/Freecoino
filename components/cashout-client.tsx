@@ -123,15 +123,19 @@ export default function CashoutClient({
   }
 
   async function fetchPage(newPage: number) {
-    const mockWithdrawals: Withdrawal[] = [
-      { id: "1", requested_at: new Date(Date.now() - 86400000).toISOString(), coins: 5000, amount_usd: 5, status: "paid", tx_hash: "abc123def456" },
-      { id: "2", requested_at: new Date(Date.now() - 172800000).toISOString(), coins: 3000, amount_usd: 3, status: "paid", tx_hash: "def456ghi789" },
-    ];
-    const from = newPage * PAGE_SIZE;
-    const pageData = mockWithdrawals.slice(from, from + PAGE_SIZE);
-    setWithdrawals(pageData);
-    setTotal(mockWithdrawals.length);
-    setPage(newPage);
+    try {
+      const res = await fetch(`/api/withdrawals?page=${newPage}&pageSize=${PAGE_SIZE}`);
+      if (!res.ok) {
+        console.error('Failed to fetch withdrawals');
+        return;
+      }
+      const data = await res.json();
+      setWithdrawals(data.withdrawals || []);
+      setTotal(data.total || 0);
+      setPage(newPage);
+    } catch (error) {
+      console.error('Error fetching withdrawals:', error);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -153,30 +157,38 @@ export default function CashoutClient({
     }
 
     setLoading(true);
-    const res = await fetch("/api/withdraw", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount_coins: amountCoins, address: address.trim() }),
-    });
-    const body = await res.json();
-    if (!res.ok) {
-      if (body.fraud) {
-        // Fraud block detected at cashout time - show banner
-        setShowFraudBanner(true);
-        setError(null);
-      } else {
-        setError(body.error || "Withdrawal failed");
+    try {
+      const res = await fetch("/api/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount_coins: amountCoins, address: address.trim() }),
+      });
+      
+      const body = await res.json();
+      
+      if (!res.ok) {
+        if (body.fraud) {
+          setShowFraudBanner(true);
+          setError(null);
+        } else {
+          setError(body.error || "Withdrawal failed");
+        }
+        setLoading(false);
+        return;
       }
+      
+      setSuccess(`Withdrawal of $${body.amount_usd.toFixed(2)} submitted successfully! It will be processed manually by admin.`);
+      setCoins((prev) => prev - body.coins);
+      setAddress("");
+      setAmountCoins("");
+      await fetchPage(0);
+      router.refresh();
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      setError("Failed to submit withdrawal. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-    setSuccess(`Withdrawal of $${body.amount_usd.toFixed(2)} submitted`);
-    setCoins((prev) => prev - body.coins);
-    setAddress("");
-    setAmountCoins("");
-    setLoading(false);
-    await fetchPage(0);
-    router.refresh();
   }
 
   return (
