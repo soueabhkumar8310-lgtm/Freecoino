@@ -9,12 +9,12 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: withdrawalId } = await params
     const body = await request.json()
     const { status, tx_hash, rejection_reason, admin_notes } = body
-    const withdrawalId = params.id
 
     // TODO: Add admin authentication check here
     // For now, this is a placeholder for future admin panel
