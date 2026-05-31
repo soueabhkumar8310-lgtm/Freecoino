@@ -84,18 +84,7 @@ export default function SignupClient() {
     }
   }
 
-  async function handleFacebookSignup() {
-    setOauthLoading('facebook');
-    setError(null);
-    try {
-      await signInWithOAuth('facebook');
-      // OAuth will redirect, so we don't need to handle success here
-    } catch (err: any) {
-      console.error('Facebook OAuth error:', err);
-      setError(err.message || "Failed to sign up with Facebook. Please try again.");
-      setOauthLoading(null);
-    }
-  }
+
 
   const textFieldSx = {
     "& .MuiOutlinedInput-root": {
@@ -156,33 +145,6 @@ export default function SignupClient() {
             }}
           >
             {oauthLoading === 'google' ? <CircularProgress size={18} sx={{ color: colors.text.primary }} /> : "Continue with Google"}
-          </Button>
-
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={handleFacebookSignup}
-            disabled={loading || oauthLoading !== null}
-            startIcon={
-              <svg width={20} height={20} viewBox="0 0 24 24" fill="currentColor">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-            }
-            sx={{
-              mt: 2,
-              bgcolor: "#1877F2",
-              borderColor: "#1877F2",
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: "0.875rem",
-              py: 1.25,
-              borderRadius: "8px",
-              textTransform: "none",
-              "&:hover": { bgcolor: "#166FE5", borderColor: "#166FE5" },
-              "&.Mui-disabled": { opacity: 0.5 },
-            }}
-          >
-            {oauthLoading === 'facebook' ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Continue with Facebook"}
           </Button>
 
           <Box sx={{ my: 3, display: "flex", alignItems: "center", gap: 1.5 }}>
