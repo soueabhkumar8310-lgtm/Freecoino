@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -11,33 +10,15 @@ const COINS_PER_USD = 1000
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { amount_coins, address } = body
+    const { amount_coins, address, user_id } = body
 
-    // Create Supabase client with cookies
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      console.error('Auth error:', authError)
-      return NextResponse.json({ error: 'Unauthorized - Please login again' }, { status: 401 })
+    // Validate user_id is provided from client
+    if (!user_id) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 })
     }
+
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
     // Validate input
     if (!amount_coins || amount_coins < MIN_COINS) {
@@ -58,7 +39,7 @@ export async function POST(request: NextRequest) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('coins_balance, email_verified')
-      .eq('id', user.id)
+      .eq('id', user_id)
       .single()
 
     if (profileError || !profile) {
@@ -87,7 +68,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ coins_balance: profile.coins_balance - amount_coins })
-      .eq('id', user.id)
+      .eq('id', user_id)
 
     if (updateError) {
       console.error('Error updating balance:', updateError)
@@ -101,7 +82,7 @@ export async function POST(request: NextRequest) {
     const { data: withdrawal, error: withdrawalError } = await supabase
       .from('withdrawals')
       .insert({
-        user_id: user.id,
+        user_id: user_id,
         amount: amount_coins,
         method: 'litecoin', // Changed from 'bitcoin' to 'litecoin'
         wallet_address: address.trim(),
@@ -117,7 +98,7 @@ export async function POST(request: NextRequest) {
       await supabase
         .from('profiles')
         .update({ coins_balance: profile.coins_balance })
-        .eq('id', user.id)
+        .eq('id', user_id)
 
       return NextResponse.json(
         { error: 'Failed to create withdrawal request' },
@@ -127,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // Record transaction
     await supabase.from('transactions').insert({
-      user_id: user.id,
+      user_id: user_id,
       type: 'withdraw',
       amount: -amount_coins,
       description: `Withdrawal request: $${amount_usd.toFixed(2)} to LTC`,

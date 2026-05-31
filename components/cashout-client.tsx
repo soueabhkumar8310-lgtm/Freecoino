@@ -161,7 +161,11 @@ export default function CashoutClient({
       const res = await fetch("/api/withdraw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount_coins: amountCoins, address: address.trim() }),
+        body: JSON.stringify({ 
+          amount_coins: amountCoins, 
+          address: address.trim(),
+          user_id: userId // Pass user ID from props
+        }),
       });
       
       const body = await res.json();

@@ -191,7 +191,7 @@ CREATE TRIGGER on_profile_updated
 
 -- Function: Add coins to user balance
 CREATE OR REPLACE FUNCTION public.add_coins(
-  p_user_id UUID,
+  p_user_id UUID,/
   p_amount INTEGER,
   p_type TEXT,
   p_description TEXT DEFAULT NULL
