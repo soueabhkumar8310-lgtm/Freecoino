@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-// Service role client for admin operations
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 const MIN_COINS = 2000
 const COINS_PER_USD = 1000
@@ -15,20 +13,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { amount_coins, address } = body
 
-    // Get user from session
-    const authHeader = request.headers.get('cookie')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Create client with user's session
-    const supabase = createClient(
+    // Create Supabase client with cookies
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
       supabaseUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseAnonKey,
       {
-        global: {
-          headers: {
-            cookie: authHeader,
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options)
+            })
           },
         },
       }
@@ -37,7 +35,8 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      console.error('Auth error:', authError)
+      return NextResponse.json({ error: 'Unauthorized - Please login again' }, { status: 401 })
     }
 
     // Validate input
