@@ -51,14 +51,17 @@ export default function LoginClient() {
 
     setLoading(true);
     try {
-      // Simple login - just like any other website
-      await signInWithEmail(email, password);
+      console.log('🔐 Attempting login with:', email);
       
-      // Success! Redirect to main page
-      router.push("/earn");
-      router.refresh();
+      // Simple login - just like any other website
+      const result = await signInWithEmail(email, password);
+      
+      console.log('✅ Login successful!', result);
+      
+      // Success! Force redirect
+      window.location.href = "/earn";
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('❌ Login error:', err);
       
       // Show user-friendly error messages
       if (err.message.includes('Invalid login credentials')) {
