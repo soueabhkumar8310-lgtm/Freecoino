@@ -62,7 +62,7 @@ export default function SignupClient() {
 
     setLoading(true);
     try {
-      const { data } = await signUpWithEmail(email, password, name);
+      const data = await signUpWithEmail(email, password, name);
       setError(null);
       
       // Check if email confirmation is disabled (user gets session immediately)
