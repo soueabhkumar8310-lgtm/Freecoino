@@ -62,11 +62,19 @@ export default function SignupClient() {
 
     setLoading(true);
     try {
-      await signUpWithEmail(email, password, name);
-      // Show success message
+      const { data } = await signUpWithEmail(email, password, name);
       setError(null);
-      alert("Account created successfully! You can now log in.");
-      router.push("/auth/login");
+      
+      // Check if email confirmation is disabled (user gets session immediately)
+      if (data?.session) {
+        // User is automatically logged in
+        router.push("/earn");
+        router.refresh();
+      } else {
+        // Email confirmation required OR signup only (no auto-login)
+        alert("Account created successfully! You can now log in.");
+        router.push("/auth/login");
+      }
     } catch (err: any) {
       console.error('Signup error:', err);
       setError(err.message || "Failed to create account. Please try again.");
