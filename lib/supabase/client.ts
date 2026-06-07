@@ -18,5 +18,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'freecoino.auth.token', // Changed from 'supabase.auth.token' to force re-authentication
+    flowType: 'pkce', // More secure authentication flow
   },
 })

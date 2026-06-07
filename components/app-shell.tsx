@@ -125,8 +125,23 @@ export default function AppShell({ children, coins, userName = "User", userAvata
   const { logout } = useAuth();
 
   async function handleLogout() {
-    logout();
-    window.location.href = "/";
+    try {
+      await logout();
+      // Clear browser storage
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+      window.location.href = "/auth/login?logout=true";
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if logout fails
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+      window.location.href = "/auth/login?logout=true";
+    }
   }
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

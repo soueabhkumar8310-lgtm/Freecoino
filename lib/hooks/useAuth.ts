@@ -28,9 +28,27 @@ export function useAuth() {
   }, [])
 
   const logout = async () => {
-    await signOut()
-    setUser(null)
-    router.push('/auth/login')
+    try {
+      await signOut()
+      setUser(null)
+      // Clear all browser storage
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+      router.push('/auth/login?logout=true')
+      router.refresh()
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Force logout even if API fails
+      setUser(null)
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+      router.push('/auth/login?logout=true')
+      router.refresh()
+    }
   }
 
   return { user, isLoading, logout }

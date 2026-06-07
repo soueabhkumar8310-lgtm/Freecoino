@@ -25,16 +25,20 @@ export default function LoginClient() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(errorParam ? "Authentication failed. Please try again." : null);
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<'google' | null>(null);
 
   useEffect(() => {
     // Check if user is already logged in
-    getCurrentUser().then((user) => {
-      if (user) {
-        router.push("/earn");
-      }
-    });
-  }, [router]);
+    // Only redirect if not coming from a logout action
+    const isLogout = searchParams.get("logout");
+    if (!isLogout) {
+      getCurrentUser().then((user) => {
+        if (user) {
+          router.push("/earn");
+        }
+      });
+    }
+  }, [router, searchParams]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();

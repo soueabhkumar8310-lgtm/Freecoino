@@ -12,8 +12,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { amount_coins, address, user_id } = body
 
+    console.log('Withdraw request received:', { amount_coins, address, user_id })
+
     // Validate user_id is provided from client
     if (!user_id) {
+      console.error('User ID missing in request')
       return NextResponse.json({ error: 'User ID required' }, { status: 400 })
     }
 
