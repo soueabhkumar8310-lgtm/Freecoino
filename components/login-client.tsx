@@ -51,12 +51,25 @@ export default function LoginClient() {
 
     setLoading(true);
     try {
+      // Simple login - just like any other website
       await signInWithEmail(email, password);
+      
+      // Success! Redirect to main page
       router.push("/earn");
       router.refresh();
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || "Invalid credentials. Please check your email and password.");
+      
+      // Show user-friendly error messages
+      if (err.message.includes('Invalid login credentials')) {
+        setError("❌ Wrong email or password. Please try again.");
+      } else if (err.message.includes('Email not confirmed')) {
+        setError("❌ Please verify your email first. Check your inbox.");
+      } else if (err.message.includes('rate limit')) {
+        setError("❌ Too many attempts. Please wait a few minutes.");
+      } else {
+        setError(err.message || "❌ Login failed. Please check your credentials.");
+      }
     } finally {
       setLoading(false);
     }
