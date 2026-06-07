@@ -9,10 +9,10 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: withdrawalId } = await params
+    const { id: withdrawalId } = await context.params
     const body = await request.json()
     const { status, tx_hash, rejection_reason, admin_notes } = body
 
