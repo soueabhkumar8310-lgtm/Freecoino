@@ -27,18 +27,8 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | null>(null);
 
-  useEffect(() => {
-    // Check if user is already logged in
-    // Only redirect if not coming from a logout action
-    const isLogout = searchParams.get("logout");
-    if (!isLogout) {
-      getCurrentUser().then((user) => {
-        if (user) {
-          router.push("/earn");
-        }
-      });
-    }
-  }, [router, searchParams]);
+  // Removed automatic redirect on mount
+  // Users should only be redirected after explicit login action
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();

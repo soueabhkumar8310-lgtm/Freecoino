@@ -11,7 +11,7 @@ export default function ClearSessionPage() {
   useEffect(() => {
     // Clear all authentication data
     if (typeof window !== 'undefined') {
-      // Clear all Supabase auth keys
+      // Clear all Supabase auth keys from localStorage
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -24,11 +24,18 @@ export default function ClearSessionPage() {
       // Also clear session storage
       sessionStorage.clear();
       
-      console.log('✅ All sessions cleared. Redirecting to login...');
+      // Clear all cookies by setting them to expire
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+      });
       
-      // Redirect to login after 2 seconds
+      console.log('✅ All sessions cleared (localStorage, sessionStorage, cookies). Redirecting to login...');
+      
+      // Redirect to login after 2 seconds with a force reload
       setTimeout(() => {
-        router.push('/auth/login');
+        window.location.href = '/auth/login';
       }, 2000);
     }
   }, [router]);

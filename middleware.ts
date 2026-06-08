@@ -28,9 +28,12 @@ export async function middleware(request: NextRequest) {
   // Check if current route is auth route
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
 
-  // Get session from cookies
-  const authCookie = request.cookies.get('freecoino.auth.token')
-  const hasSession = !!authCookie
+  // Get session from cookies - Supabase uses multiple cookie keys
+  // Look for any cookie that contains auth token data
+  const authCookies = request.cookies.getAll().filter(cookie => 
+    cookie.name.includes('auth') && cookie.name.includes('token')
+  )
+  const hasSession = authCookies.length > 0 && authCookies.some(c => c.value && c.value.length > 50)
 
   // If user is not logged in and trying to access protected route
   if (isProtectedRoute && !hasSession) {
