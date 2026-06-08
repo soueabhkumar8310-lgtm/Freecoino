@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Production build optimization
+  output: 'standalone',
+  
+  // Disable Turbopack experimental features for stability
+  experimental: {
+    turbo: undefined,
+  },
+  
   allowedDevOrigins: ['100.81.125.88'],
+  
   async headers() {
     return [
       {
