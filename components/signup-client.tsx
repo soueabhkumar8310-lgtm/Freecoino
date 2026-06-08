@@ -33,18 +33,8 @@ export default function SignupClient() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [referralCode, setReferralCode] = useState(ref || "");
 
-  useEffect(() => {
-    // Check if user is already logged in
-    // Only redirect if not coming from a logout action
-    const isLogout = searchParams.get("logout");
-    if (!isLogout) {
-      getCurrentUser().then((user) => {
-        if (user) {
-          router.push("/earn");
-        }
-      });
-    }
-  }, [router, searchParams]);
+  // Removed automatic redirect on mount
+  // Users should only be redirected after explicit signup/login action
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
