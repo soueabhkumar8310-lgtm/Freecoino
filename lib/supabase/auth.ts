@@ -38,10 +38,15 @@ export async function signInWithEmail(email: string, password: string) {
 
 // Sign in with OAuth (Google)
 export async function signInWithOAuth(provider: Provider) {
+  // Get the correct origin (works for both local and production)
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://freecoino.vercel.app'
+  
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback`,
+      // Skip email confirmation for OAuth
+      skipBrowserRedirect: false,
     },
   })
 

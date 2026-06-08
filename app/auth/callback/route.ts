@@ -5,13 +5,33 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/earn'
+  const error = searchParams.get('error')
+  const error_description = searchParams.get('error_description')
+
+  // If there's already an error from OAuth provider, redirect to login with error
+  if (error) {
+    console.error('OAuth provider error:', error, error_description)
+    return NextResponse.redirect(
+      `${origin}/auth/login?error=${error}&error_description=${error_description || 'Authentication failed'}`
+    )
+  }
 
   if (code) {
     try {
       const supabase = await createClient()
-      const { error } = await supabase.auth.exchangeCodeForSession(code)
       
-      if (!error) {
+      // Exchange code for session
+      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (exchangeError) {
+        console.error('Code exchange error:', exchangeError)
+        return NextResponse.redirect(
+          `${origin}/auth/login?error=auth_callback_error&error_description=${encodeURIComponent(exchangeError.message)}`
+        )
+      }
+
+      if (data.session) {
+        // Success! Redirect to destination
         const forwardedHost = request.headers.get('x-forwarded-host')
         const isLocalEnv = process.env.NODE_ENV === 'development'
         
@@ -23,13 +43,14 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${origin}${next}`)
         }
       }
-      
-      console.error('OAuth callback error:', error)
-    } catch (err) {
+    } catch (err: any) {
       console.error('OAuth callback exception:', err)
+      return NextResponse.redirect(
+        `${origin}/auth/login?error=auth_callback_error&error_description=${encodeURIComponent(err.message || 'Unknown error')}`
+      )
     }
   }
 
-  // Return to error page if something went wrong
-  return NextResponse.redirect(`${origin}/auth/login?error=auth_callback_error`)
+  // No code provided - redirect to login
+  return NextResponse.redirect(`${origin}/auth/login?error=auth_callback_error&error_description=No authorization code provided`)
 }
