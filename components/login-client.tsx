@@ -190,9 +190,6 @@ export default function LoginClient() {
             <Box>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
                 <Typography variant="body2" isBold sx={{ color: colors.text.secondary }}>Password</Typography>
-                <Link href="/auth/forgot-password" style={{ fontSize: "0.75rem", fontWeight: 600, color: colors.secondary, textDecoration: "none" }}>
-                  Forgot password?
-                </Link>
               </Box>
               <TextField
                 type="password"
