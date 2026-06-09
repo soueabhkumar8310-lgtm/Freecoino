@@ -41,17 +41,40 @@ export default function LoginClient() {
 
     setLoading(true);
     try {
-      console.log('🔐 Attempting login with:', email);
+      console.log('🔐 Login attempt:', { 
+        email, 
+        timestamp: new Date().toISOString(),
+        storageKey: `sb-fiagdlauajqzotxizmpc-auth-token`
+      });
       
       // Simple login - just like any other website
       const result = await signInWithEmail(email, password);
       
-      console.log('✅ Login successful!', result);
+      console.log('✅ Login API success:', {
+        hasUser: !!result.user,
+        hasSession: !!result.session,
+        userId: result.user?.id,
+        sessionExpiry: result.session?.expires_at
+      });
+
+      // Check if session was stored
+      const storedSession = localStorage.getItem('sb-fiagdlauajqzotxizmpc-auth-token');
+      console.log('📦 Session stored in localStorage:', !!storedSession);
       
+      if (!result.session) {
+        throw new Error('Login successful but no session created');
+      }
+
       // Success! Force redirect
+      console.log('🚀 Redirecting to /earn');
       window.location.href = "/earn";
     } catch (err: any) {
-      console.error('❌ Login error:', err);
+      console.error('❌ Login error:', {
+        message: err.message,
+        status: err.status,
+        name: err.name,
+        stack: err.stack?.split('\n')[0]
+      });
       
       // Show user-friendly error messages
       if (err.message.includes('Invalid login credentials')) {

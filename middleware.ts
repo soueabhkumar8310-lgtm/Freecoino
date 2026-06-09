@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 // Pages that require authentication
 const protectedRoutes = [
@@ -28,29 +29,49 @@ export async function middleware(request: NextRequest) {
   // Check if current route is auth route
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
 
-  // Get session from cookies - Supabase uses multiple cookie keys
-  // Look for any cookie that contains auth token data
-  const authCookies = request.cookies.getAll().filter(cookie => 
-    cookie.name.includes('auth') && cookie.name.includes('token')
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
   )
-  const hasSession = authCookies.length > 0 && authCookies.some(c => c.value && c.value.length > 50)
+
+  // Get session
+  const { data: { session } } = await supabase.auth.getSession()
 
   // If user is not logged in and trying to access protected route
-  if (isProtectedRoute && !hasSession) {
+  if (isProtectedRoute && !session) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/auth/login'
     redirectUrl.searchParams.set('redirectedFrom', pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // If user is logged in and trying to access auth routes
-  if (isAuthRoute && hasSession) {
+  // If user is logged in and trying to access auth routes (only for GET requests)
+  // Allow POST/PUT requests to pass through for logout/signup actions
+  if (isAuthRoute && session && request.method === 'GET') {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/earn'
     return NextResponse.redirect(redirectUrl)
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
