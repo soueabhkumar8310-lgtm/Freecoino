@@ -31,17 +31,10 @@ export async function GET(request: Request) {
       }
 
       if (data.session) {
-        // Success! Redirect to destination
-        const forwardedHost = request.headers.get('x-forwarded-host')
-        const isLocalEnv = process.env.NODE_ENV === 'development'
-        
-        if (isLocalEnv) {
-          return NextResponse.redirect(`${origin}${next}`)
-        } else if (forwardedHost) {
-          return NextResponse.redirect(`https://${forwardedHost}${next}`)
-        } else {
-          return NextResponse.redirect(`${origin}${next}`)
-        }
+        // Success! Redirect to destination immediately
+        return NextResponse.redirect(`${origin}${next}`, {
+          status: 302, // Temporary redirect
+        })
       }
     } catch (err: any) {
       console.error('OAuth callback exception:', err)
