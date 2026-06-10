@@ -10,19 +10,48 @@ export function useAuth() {
   const router = useRouter()
 
   useEffect(() => {
+    let mounted = true
+    
+    // Set timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.warn('⚠️ Auth timeout - forcing loading to false')
+        setIsLoading(false)
+        setUser(null)
+      }
+    }, 3000)
+
     // Get initial user
-    getCurrentUser().then((currentUser) => {
-      setUser(currentUser)
-      setIsLoading(false)
-    })
+    getCurrentUser()
+      .then((currentUser) => {
+        if (mounted) {
+          console.log('✅ Auth check complete:', currentUser ? 'User found' : 'No user')
+          setUser(currentUser)
+          setIsLoading(false)
+          clearTimeout(timeout)
+        }
+      })
+      .catch((error) => {
+        console.error('❌ Auth check failed:', error)
+        if (mounted) {
+          setUser(null)
+          setIsLoading(false)
+          clearTimeout(timeout)
+        }
+      })
 
     // Listen for auth changes
     const { data: { subscription } } = onAuthStateChange((authUser) => {
-      setUser(authUser)
-      setIsLoading(false)
+      if (mounted) {
+        console.log('🔄 Auth state changed:', authUser ? 'User logged in' : 'User logged out')
+        setUser(authUser)
+        setIsLoading(false)
+      }
     })
 
     return () => {
+      mounted = false
+      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [])
