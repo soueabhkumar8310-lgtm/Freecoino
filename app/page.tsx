@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   Box,
   Container,
-  Grid,
   Button,
   Paper,
   Divider,
@@ -12,6 +11,7 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from "@mui/material";
+import Grid from '@mui/material/Grid2'; // Fixed: Use Grid v2
 import {
   Shield,
   Zap,
