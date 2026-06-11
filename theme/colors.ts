@@ -1,7 +1,7 @@
 const colors = {
   // Luminous Prism - Glassmorphic Design System
   primary: "#6366F1", // Indigo
-  secondary: "#EC4899", // Pink
+  secondary: "#01D676", // Green (changed from pink)
   tertiary: "#14B8A6", // Teal
   divider: "rgba(148, 163, 184, 0.2)",
   
@@ -28,7 +28,7 @@ const colors = {
     ternary: "#2b3544", // Surface container high
     drawer: "#16202e",
     hover: "rgba(99, 102, 241, 0.08)",
-    gradient: "linear-gradient(135deg, #6366F1 0%, #EC4899 100%)",
+    gradient: "linear-gradient(135deg, #01D676 0%, #00B894 100%)", // Green gradient instead of purple
     // Glassmorphic surfaces
     glass: "rgba(43, 53, 68, 0.6)", // surface-container-high at 60% opacity
     glassHover: "rgba(43, 53, 68, 0.75)",
