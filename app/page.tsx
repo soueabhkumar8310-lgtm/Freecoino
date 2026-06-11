@@ -203,7 +203,7 @@ export default function Home() {
         <Container maxWidth="lg" sx={{ position: "relative" }}>
           <Grid container spacing={6} sx={{ alignItems: "center" }}>
             {/* Left side — headline */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Typography
                 variant="h1"
                 isBold
@@ -275,7 +275,7 @@ export default function Home() {
             </Grid>
 
             {/* Right side — signup/login form */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 sx={{
                   borderRadius: "16px",
@@ -395,7 +395,7 @@ export default function Home() {
           </Box>
 
           <Grid container spacing={3} sx={{ mt: 7 }}>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <StepCard
                 step={1}
                 icon={<ClipboardList size={28} color={colors.green} />}
@@ -403,7 +403,7 @@ export default function Home() {
                 description="Sign up in seconds with email or Google. Completely free to join."
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <StepCard
                 step={2}
                 icon={<CheckCircle size={28} color={colors.green} />}
@@ -411,7 +411,7 @@ export default function Home() {
                 description="Play games, fill surveys, try apps and earn coins for every task."
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <StepCard
                 step={3}
                 icon={<Wallet size={28} color={colors.green} />}
@@ -437,7 +437,7 @@ export default function Home() {
               { value: "Instant", label: "Crypto Payouts" },
               { value: "$2", label: "Minimum Cashout" },
             ].map((stat) => (
-              <Grid item key={stat.label} xs={6} sm={3}>
+              <Grid size={{ xs: 6, sm: 3 }} key={stat.label}>
                 <Box sx={{ textAlign: "center" }}>
                   <Typography
                     isBold
@@ -505,7 +505,7 @@ export default function Home() {
                 description: "Invite friends and earn bonus coins",
               },
             ].map((feature) => (
-              <Grid item key={feature.title} xs={12} sm={6} lg={3}>
+              <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={feature.title}>
                 <FeatureCard
                   icon={feature.icon}
                   title={feature.title}
@@ -550,7 +550,7 @@ export default function Home() {
               { name: "USDT", sub: "BEP-20" },
               { name: "SOL", sub: "Solana" },
             ].map((p) => (
-              <Grid item key={p.sub} xs={1} sm={1}>
+              <Grid size={{ xs: 1, sm: 1 }} key={p.sub}>
                 <Paper
                   elevation={0}
                   sx={{
