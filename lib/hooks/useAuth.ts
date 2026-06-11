@@ -11,34 +11,46 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true
+    let retryCount = 0
+    const MAX_RETRIES = 2
     
-    // Set timeout to prevent infinite loading
+    async function checkAuth() {
+      try {
+        const currentUser = await getCurrentUser()
+        if (mounted) {
+          console.log('✅ Auth check complete:', currentUser ? 'User found' : 'No user')
+          setUser(currentUser)
+          setIsLoading(false)
+          return true
+        }
+      } catch (error) {
+        console.error('❌ Auth check failed:', error)
+        if (mounted && retryCount < MAX_RETRIES) {
+          retryCount++
+          console.log(`🔄 Retrying auth check (${retryCount}/${MAX_RETRIES})...`)
+          // Wait a bit before retry
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          return checkAuth()
+        }
+        if (mounted) {
+          setUser(null)
+          setIsLoading(false)
+        }
+      }
+      return false
+    }
+    
+    // Set timeout to prevent infinite loading (increased to 5 seconds)
     const timeout = setTimeout(() => {
       if (mounted && isLoading) {
         console.warn('⚠️ Auth timeout - forcing loading to false')
         setIsLoading(false)
         setUser(null)
       }
-    }, 3000)
+    }, 5000)
 
-    // Get initial user
-    getCurrentUser()
-      .then((currentUser) => {
-        if (mounted) {
-          console.log('✅ Auth check complete:', currentUser ? 'User found' : 'No user')
-          setUser(currentUser)
-          setIsLoading(false)
-          clearTimeout(timeout)
-        }
-      })
-      .catch((error) => {
-        console.error('❌ Auth check failed:', error)
-        if (mounted) {
-          setUser(null)
-          setIsLoading(false)
-          clearTimeout(timeout)
-        }
-      })
+    // Get initial user with retry logic
+    checkAuth()
 
     // Listen for auth changes
     const { data: { subscription } } = onAuthStateChange((authUser) => {
@@ -46,6 +58,7 @@ export function useAuth() {
         console.log('🔄 Auth state changed:', authUser ? 'User logged in' : 'User logged out')
         setUser(authUser)
         setIsLoading(false)
+        clearTimeout(timeout)
       }
     })
 

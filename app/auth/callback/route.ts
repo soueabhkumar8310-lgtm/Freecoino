@@ -31,7 +31,9 @@ export async function GET(request: Request) {
       }
 
       if (data.session) {
-        // Success! Redirect to destination immediately
+        console.log('✅ OAuth session created successfully')
+        
+        // Success! Redirect to destination
         return NextResponse.redirect(`${origin}${next}`, {
           status: 302, // Temporary redirect
         })
