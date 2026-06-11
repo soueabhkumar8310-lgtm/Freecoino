@@ -3,6 +3,19 @@
   "framework": "nextjs",
   "installCommand": "npm install --legacy-peer-deps",
   "regions": ["iad1"],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "freecoino.vercel.app"
+        }
+      ],
+      "destination": "https://freecoino.com/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
