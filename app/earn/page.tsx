@@ -27,7 +27,11 @@ export default function EarnPage() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push("/auth/login");
+      // Add a small delay before redirect to ensure auth state is settled
+      const timer = setTimeout(() => {
+        router.push("/auth/login");
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [user, isLoading, router]);
 

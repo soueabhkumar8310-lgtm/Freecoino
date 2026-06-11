@@ -56,18 +56,26 @@ export default function LoginClient() {
         userId: result.user?.id,
         sessionExpiry: result.session?.expires_at
       });
-
-      // Check if session was stored
-      const storedSession = localStorage.getItem('sb-fiagdlauajqzotxizmpc-auth-token');
-      console.log('📦 Session stored in localStorage:', !!storedSession);
       
       if (!result.session) {
         throw new Error('Login successful but no session created');
       }
 
-      // Success! Force redirect
+      // Wait a moment for session to be stored properly
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Verify session is accessible
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Session created but user not accessible');
+      }
+      
+      console.log('✅ Session verified, user accessible:', currentUser.email);
+
+      // Success! Use Next.js router for smooth navigation
       console.log('🚀 Redirecting to /earn');
-      window.location.href = "/earn";
+      router.push("/earn");
+      router.refresh();
     } catch (err: any) {
       console.error('❌ Login error:', {
         message: err.message,
