@@ -15,11 +15,13 @@ export const metadata: Metadata = {
     "Earn real rewards by completing surveys, tasks, and offers. Join Freecoino and start earning today.",
   icons: {
     icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
       { url: "/logo-256.png", sizes: "256x256", type: "image/png" },
     ],
     apple: "/apple-touch-icon.png",
+    shortcut: "/icon.svg",
   },
   manifest: "/site.webmanifest",
   metadataBase: new URL("https://freecoino.com"),

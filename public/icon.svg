@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#iconGradient)"/>
+  <circle cx="32" cy="32" r="30" stroke="#01D676" stroke-width="2"/>
+  
+  <!-- Letter F -->
+  <path d="M24 18H40V23H29V28H38V33H29V46H24V18Z" fill="white"/>
+  
+  <!-- Coin shine effect -->
+  <circle cx="20" cy="20" r="4" fill="white" opacity="0.3"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="iconGradient" x1="32" y1="2" x2="32" y2="62" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#01D676"/>
+      <stop offset="1" stop-color="#007e45"/>
+    </linearGradient>
+  </defs>
+</svg>
