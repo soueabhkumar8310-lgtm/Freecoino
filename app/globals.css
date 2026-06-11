@@ -75,3 +75,22 @@ body {
 * {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
+
+/* Hero gradient background for auth pages */
+.hero-gradient {
+  background: radial-gradient(
+    ellipse 80% 50% at 50% -20%,
+    rgba(1, 214, 118, 0.15),
+    transparent
+  );
+}
+
+@media (max-width: 640px) {
+  .hero-gradient {
+    background: radial-gradient(
+      ellipse 150% 80% at 50% -20%,
+      rgba(1, 214, 118, 0.12),
+      transparent
+    );
+  }
+}
