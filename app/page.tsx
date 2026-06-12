@@ -86,6 +86,7 @@ const sxBadge = {
 export default function Home() {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: colors.bgPage, color: colors.textPrimary }}>
+      {/* mylead-verification: 06ee014a7eeebe13668d1ab6ff036b37 */}
       {/* ===================== NAVBAR ===================== */}
       <Box
         component="nav"

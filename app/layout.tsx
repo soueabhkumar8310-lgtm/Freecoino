@@ -73,6 +73,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* MyLead Verification */}
+        <meta name="mylead-verification" content="06ee014a7eeebe13668d1ab6ff036b37" />
         <script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
           async
