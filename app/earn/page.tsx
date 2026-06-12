@@ -28,10 +28,13 @@ export default function EarnPage() {
   useEffect(() => {
     if (!isLoading && !user) {
       // Add a small delay before redirect to ensure auth state is settled
+      console.log('🔄 No user found, redirecting to login...');
       const timer = setTimeout(() => {
         router.push("/auth/login");
       }, 100);
       return () => clearTimeout(timer);
+    } else if (!isLoading && user) {
+      console.log('✅ User authenticated:', user.email);
     }
   }, [user, isLoading, router]);
 
@@ -52,7 +55,7 @@ export default function EarnPage() {
       >
         <CircularProgress size={40} sx={{ color: colors.secondary }} />
         <Typography sx={{ color: colors.text.secondary, fontSize: "0.875rem" }}>
-          {loadingTimeout ? "Taking longer than expected..." : "Loading..."}
+          {loadingTimeout ? "Taking longer than expected... Please wait or click below to login again." : "Checking authentication..."}
         </Typography>
         
         {loadingTimeout && (
