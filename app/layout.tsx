@@ -10,9 +10,23 @@ import "./globals.css";
 // import { MockAuthProvider } from "@/lib/mock-auth"; // Removed - using Supabase auth now
 
 export const metadata: Metadata = {
-  title: "Freecoino — Get Paid to Complete Surveys & Tasks",
+  title: "Freecoino — Earn Money Online | Complete Surveys, Tasks & Offers for Real Rewards",
   description:
-    "Earn real rewards by completing surveys, tasks, and offers. Join Freecoino and start earning today.",
+    "Join Freecoino and earn real money by completing surveys, tasks, and offers. Get paid in crypto (USDT). Free to join, instant payouts, available worldwide. Start earning today!",
+  keywords: [
+    "earn money online",
+    "make money online",
+    "complete surveys for money",
+    "earn crypto",
+    "USDT rewards",
+    "online tasks",
+    "get paid online",
+    "free money",
+    "survey sites",
+    "reward apps",
+    "freecoino",
+    "earn from home",
+  ],
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
@@ -40,22 +54,31 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Freecoino — Get Paid to Complete Surveys & Tasks",
+    title: "Freecoino — Earn Money Online by Completing Tasks & Surveys",
     description:
-      "Earn real rewards by completing surveys, tasks, and offers. Join Freecoino and start earning today.",
+      "Join thousands earning real crypto rewards. Complete surveys, tasks, and offers. Get paid in USDT. Free to join, instant payouts. Start earning today!",
     url: "https://freecoino.com",
     siteName: "Freecoino",
-    images: [{ url: "/logo.png", width: 512, height: 512, alt: "Freecoino Logo" }],
+    images: [{ 
+      url: "/logo.png", 
+      width: 512, 
+      height: 512, 
+      alt: "Freecoino - Earn Money Online" 
+    }],
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Freecoino — Get Paid to Complete Surveys & Tasks",
+    title: "Freecoino — Earn Money Online | Complete Tasks for Real Rewards",
     description:
-      "Earn real rewards by completing surveys, tasks, and offers. Join Freecoino and start earning today.",
+      "Join Freecoino and earn real crypto rewards. Complete surveys, tasks, and offers. Free to join, instant USDT payouts. Start earning today!",
     images: ["/logo.png"],
   },
+  authors: [{ name: "Freecoino" }],
+  creator: "Freecoino",
+  publisher: "Freecoino",
+  category: "Finance",
 };
 
 export const viewport: Viewport = {
