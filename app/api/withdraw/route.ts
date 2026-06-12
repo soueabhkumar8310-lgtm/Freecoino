@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id,
         amount: amount_coins,
-        crypto_address: address,
-        crypto_type: 'LTC',
+        wallet_address: address,
+        method: 'litecoin',
         status: 'pending',
       })
       .select()
