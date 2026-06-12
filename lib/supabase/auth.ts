@@ -56,17 +56,27 @@ export async function signInWithOAuth(provider: Provider) {
 
 // Sign out
 export async function signOut() {
+  clearAuthCache(); // Clear cache before logout
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }
 
+// In-memory cache to prevent multiple simultaneous calls
+let authCache: { user: AuthUser | null; timestamp: number } | null = null;
+const CACHE_DURATION = 5000; // 5 seconds
+
 // Get current user
 export async function getCurrentUser(): Promise<AuthUser | null> {
+  // Return cached value if still fresh
+  if (authCache && (Date.now() - authCache.timestamp) < CACHE_DURATION) {
+    return authCache.user;
+  }
+
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
-      console.log('❌ No authenticated user')
+      authCache = { user: null, timestamp: Date.now() };
       return null
     }
 
@@ -78,20 +88,30 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       .single()
 
     if (profileError) {
-      console.warn('⚠️ Profile not found, but user is authenticated. Creating basic user object.')
+      console.warn('⚠️ Profile fetch failed:', profileError.message)
     }
 
-    return {
+    const authUser: AuthUser = {
       id: user.id,
       email: user.email!,
       name: user.user_metadata?.display_name || user.email!.split('@')[0],
       avatar: user.user_metadata?.avatar_url,
       coins_balance: profile?.coins_balance || 0,
-    }
+    };
+
+    // Cache the result
+    authCache = { user: authUser, timestamp: Date.now() };
+    return authUser;
   } catch (error) {
     console.error('❌ Error getting current user:', error)
+    authCache = { user: null, timestamp: Date.now() };
     return null
   }
+}
+
+// Clear auth cache (call after login/logout)
+export function clearAuthCache() {
+  authCache = null;
 }
 
 // Listen to auth state changes
