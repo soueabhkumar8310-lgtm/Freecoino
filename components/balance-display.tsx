@@ -1,7 +1,7 @@
 "use client";
 
 import { Box } from "@mui/material";
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import Typography from "@/components/ui/Typography";
 
 interface BalanceDisplayProps {

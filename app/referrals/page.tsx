@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import AppShell from "@/components/app-shell";
 import ReferralsClient from "@/components/referrals-client";
 import { useRouter } from "next/navigation";

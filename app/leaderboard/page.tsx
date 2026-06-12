@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import AppShell from "@/components/app-shell";
 import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { Clock, Trophy, Medal, Coins } from "lucide-react";

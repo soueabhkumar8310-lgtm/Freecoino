@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import AppShell from "@/components/app-shell";
 import DailyBonusClient from "@/components/daily-bonus-client";
 import { useRouter } from "next/navigation";

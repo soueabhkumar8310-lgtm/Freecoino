@@ -7,6 +7,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
+import { AuthProvider } from "@/lib/contexts/AuthContext";
 // import { MockAuthProvider } from "@/lib/mock-auth"; // Removed - using Supabase auth now
 
 export const metadata: Metadata = {
@@ -108,16 +109,18 @@ export default function RootLayout({
         <AppRouterCacheProvider options={{ enableCssLayer: true }}>
           <ThemeProvider theme={theme}>
             <CssBaseline />
-            <NextTopLoader color="#01D676" showSpinner={false} />
-            {children}
-            <ToastContainer
-              autoClose={3000}
-              position="top-right"
-              theme="dark"
-              pauseOnHover
-              newestOnTop
-              hideProgressBar
-            />
+            <AuthProvider>
+              <NextTopLoader color="#01D676" showSpinner={false} />
+              {children}
+              <ToastContainer
+                autoClose={3000}
+                position="top-right"
+                theme="dark"
+                pauseOnHover
+                newestOnTop
+                hideProgressBar
+              />
+            </AuthProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

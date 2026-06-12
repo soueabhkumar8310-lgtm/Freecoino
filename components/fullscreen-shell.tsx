@@ -37,7 +37,7 @@ import {
   Mail,
   ShoppingBag,
 } from "lucide-react";
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import Icons from "@/components/icons";
 import Typography from "@/components/ui/Typography";
 import NotificationBell from "@/components/notification-bell";

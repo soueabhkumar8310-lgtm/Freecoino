@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import AppShell from "@/components/app-shell";
 import CashoutClient from "@/components/cashout-client";
 import { useRouter } from "next/navigation";

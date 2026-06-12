@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/lib/hooks/useAuth";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import FullscreenShell from "@/components/fullscreen-shell";
 import EarnContent from "@/components/earn-content";
 import { useRouter } from "next/navigation";
