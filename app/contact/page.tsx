@@ -49,11 +49,11 @@ export default function ContactPage() {
       `Name: ${name}\nEmail: ${email}\n\n${message}`
     );
     window.open(
-      `mailto:sourabhkumar8310@gmail.com?subject=${mailtoSubject}&body=${mailtoBody}`,
+      `mailto:support@freecoino.com?subject=${mailtoSubject}&body=${mailtoBody}`,
       "_self"
     );
 
-    setFeedback({ type: "success", text: "Your email client should open shortly. If not, email us directly at sourabhkumar8310@gmail.com" });
+    setFeedback({ type: "success", text: "Your email client should open shortly. If not, email us directly at support@freecoino.com" });
     setSending(false);
   }
 
@@ -122,10 +122,10 @@ export default function ContactPage() {
             <Typography sx={{ fontWeight: 600, fontSize: "0.95rem" }}>Email</Typography>
             <Box
               component="a"
-              href="mailto:sourabhkumar8310@gmail.com"
+              href="mailto:support@freecoino.com"
               sx={{ fontSize: "0.85rem", color: colors.green, textDecoration: "none" }}
             >
-              sourabhkumar8310@gmail.com
+              support@freecoino.com
             </Box>
           </Paper>
 

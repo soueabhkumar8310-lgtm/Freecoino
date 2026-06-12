@@ -101,10 +101,10 @@ export default function PrivacyPage() {
           portable format. To exercise these rights, contact us at{" "}
           <Box
             component="a"
-            href="mailto:sourabhkumar8310@gmail.com"
+            href="mailto:support@freecoino.com"
             sx={{ color: colors.green, textDecoration: "none" }}
           >
-            sourabhkumar8310@gmail.com
+            support@freecoino.com
           </Box>
           .
         </Section>
@@ -132,10 +132,10 @@ export default function PrivacyPage() {
           For privacy-related questions or data requests, contact us at{" "}
           <Box
             component="a"
-            href="mailto:sourabhkumar8310@gmail.com"
+            href="mailto:support@freecoino.com"
             sx={{ color: colors.green, textDecoration: "none" }}
           >
-            sourabhkumar8310@gmail.com
+            support@freecoino.com
           </Box>
           .
         </Section>

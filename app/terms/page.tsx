@@ -107,10 +107,10 @@ export default function TermsPage() {
           For questions about these Terms, contact us at{" "}
           <Box
             component="a"
-            href="mailto:sourabhkumar8310@gmail.com"
+            href="mailto:support@freecoino.com"
             sx={{ color: colors.green, textDecoration: "none" }}
           >
-            sourabhkumar8310@gmail.com
+            support@freecoino.com
           </Box>
           .
         </Section>

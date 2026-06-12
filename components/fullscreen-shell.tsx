@@ -96,7 +96,7 @@ const footerInfoList: { title: string; links: { text: string; url: string; isEma
   {
     title: "Contact",
     links: [
-      { text: "sourabhkumar8310@gmail.com", url: "mailto:sourabhkumar8310@gmail.com", isEmail: true },
+      { text: "support@freecoino.com", url: "mailto:support@freecoino.com", isEmail: true },
     ],
   },
 ];
