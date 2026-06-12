@@ -1,9 +1,9 @@
--- Freecoino Database Schema
--- Run this in Supabase SQL Editor
+-- ==========================================
+-- FREECOINO DATABASE SCHEMA
+-- Copy this entire file and run in Supabase SQL Editor
+-- ==========================================
 
--- ==========================================
 -- 1. PROFILES TABLE (User data)
--- ==========================================
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL UNIQUE,
@@ -22,9 +22,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ==========================================
 -- 2. WITHDRAWALS TABLE
--- ==========================================
 CREATE TABLE IF NOT EXISTS public.withdrawals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -39,9 +37,7 @@ CREATE TABLE IF NOT EXISTS public.withdrawals (
   processed_by UUID REFERENCES public.profiles(id)
 );
 
--- ==========================================
 -- 3. OFFER COMPLETIONS TABLE
--- ==========================================
 CREATE TABLE IF NOT EXISTS public.offer_completions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -54,9 +50,7 @@ CREATE TABLE IF NOT EXISTS public.offer_completions (
   completed_at TIMESTAMP WITH TIME ZONE
 );
 
--- ==========================================
--- 4. TRANSACTIONS TABLE (Coins history)
--- ==========================================
+-- 4. TRANSACTIONS TABLE
 CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -67,9 +61,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ==========================================
 -- 5. DAILY BONUSES TABLE
--- ==========================================
 CREATE TABLE IF NOT EXISTS public.daily_bonuses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -78,9 +70,7 @@ CREATE TABLE IF NOT EXISTS public.daily_bonuses (
   claimed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ==========================================
 -- 6. REFERRALS TABLE
--- ==========================================
 CREATE TABLE IF NOT EXISTS public.referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   referrer_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -90,9 +80,7 @@ CREATE TABLE IF NOT EXISTS public.referrals (
   UNIQUE(referrer_id, referred_id)
 );
 
--- ==========================================
 -- 7. NOTIFICATIONS TABLE
--- ==========================================
 CREATE TABLE IF NOT EXISTS public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -103,9 +91,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ==========================================
--- INDEXES for better performance
--- ==========================================
+-- INDEXES
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
 CREATE INDEX IF NOT EXISTS idx_profiles_referral_code ON public.profiles(referral_code);
 CREATE INDEX IF NOT EXISTS idx_withdrawals_user_id ON public.withdrawals(user_id);
@@ -115,11 +101,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON public.transactions(user_
 CREATE INDEX IF NOT EXISTS idx_daily_bonuses_user_id ON public.daily_bonuses(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
 
--- ==========================================
--- ROW LEVEL SECURITY (RLS)
--- ==========================================
-
--- Enable RLS
+-- ROW LEVEL SECURITY
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.withdrawals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.offer_completions ENABLE ROW LEVEL SECURITY;
@@ -128,46 +110,19 @@ ALTER TABLE public.daily_bonuses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
--- Profiles: Users can read their own profile
-CREATE POLICY "Users can view own profile" ON public.profiles
-  FOR SELECT USING (auth.uid() = id);
+-- RLS POLICIES
+CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can view own withdrawals" ON public.withdrawals FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create withdrawals" ON public.withdrawals FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view own completions" ON public.offer_completions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own transactions" ON public.transactions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own bonuses" ON public.daily_bonuses FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own referrals" ON public.referrals FOR SELECT USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
+CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can update own profile" ON public.profiles
-  FOR UPDATE USING (auth.uid() = id);
-
--- Withdrawals: Users can view and create their own withdrawals
-CREATE POLICY "Users can view own withdrawals" ON public.withdrawals
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can create withdrawals" ON public.withdrawals
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Offer Completions: Users can view their own completions
-CREATE POLICY "Users can view own completions" ON public.offer_completions
-  FOR SELECT USING (auth.uid() = user_id);
-
--- Transactions: Users can view their own transactions
-CREATE POLICY "Users can view own transactions" ON public.transactions
-  FOR SELECT USING (auth.uid() = user_id);
-
--- Daily Bonuses: Users can view their own bonuses
-CREATE POLICY "Users can view own bonuses" ON public.daily_bonuses
-  FOR SELECT USING (auth.uid() = user_id);
-
--- Referrals: Users can view referrals they made or received
-CREATE POLICY "Users can view own referrals" ON public.referrals
-  FOR SELECT USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
-
--- Notifications: Users can view and update their own notifications
-CREATE POLICY "Users can view own notifications" ON public.notifications
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own notifications" ON public.notifications
-  FOR UPDATE USING (auth.uid() = user_id);
-
--- ==========================================
--- TRIGGER: Auto-create profile on signup
--- ==========================================
+-- AUTO-CREATE PROFILE ON SIGNUP
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -186,9 +141,7 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- ==========================================
--- TRIGGER: Update updated_at timestamp
--- ==========================================
+-- UPDATE TIMESTAMP
 CREATE OR REPLACE FUNCTION public.update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -201,9 +154,7 @@ CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
--- ==========================================
--- FUNCTION: Generate unique referral code
--- ==========================================
+-- GENERATE REFERRAL CODE
 CREATE OR REPLACE FUNCTION public.generate_referral_code()
 RETURNS TEXT AS $$
 DECLARE
