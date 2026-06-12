@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/contexts/AuthContext";
 import {
   Box,
   Button,
@@ -80,6 +81,7 @@ export default function CashoutClient({
   savedCryptoAddress = "",
 }: CashoutClientProps) {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [coins, setCoins] = useState(initialCoins);
   const [address, setAddress] = useState(savedCryptoAddress);
   const [amountCoins, setAmountCoins] = useState<number | "">(initialCoins >= MIN_COINS ? initialCoins : "");
@@ -92,6 +94,17 @@ export default function CashoutClient({
   const [showFraudBanner, setShowFraudBanner] = useState(!!fraudNotification);
   const [fraudNotifId] = useState(fraudNotification?.id || null);
   const isFraudBlocked = fraudStatus === "cashout_blocked" || fraudStatus === "suspended";
+
+  // Clear success message when component mounts
+  useEffect(() => {
+    setSuccess(null);
+    setError(null);
+  }, []);
+
+  // Update local coins state when initialCoins prop changes
+  useEffect(() => {
+    setCoins(initialCoins);
+  }, [initialCoins]);
 
   useEffect(() => {
     // Fire-and-forget page-view fraud check; this should never interrupt UX.
@@ -186,6 +199,10 @@ export default function CashoutClient({
       setAddress("");
       setAmountCoins("");
       await fetchPage(0);
+      
+      // Refresh user data in AuthContext to update balance in navbar
+      await refreshUser();
+      
       router.refresh();
     } catch (error) {
       console.error('Withdrawal error:', error);
