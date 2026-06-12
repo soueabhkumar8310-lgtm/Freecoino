@@ -14,13 +14,13 @@ export default function EarnPage() {
   const router = useRouter();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-  // Timeout after 5 seconds if still loading
+  // Timeout after 3 seconds if still loading
   useEffect(() => {
     const timer = setTimeout(() => {
       if (isLoading) {
         setLoadingTimeout(true);
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [isLoading]);

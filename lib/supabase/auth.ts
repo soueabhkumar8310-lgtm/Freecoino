@@ -62,23 +62,35 @@ export async function signOut() {
 
 // Get current user
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) return null
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      console.log('❌ No authenticated user')
+      return null
+    }
 
-  // Fetch profile data including coins_balance
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('coins_balance')
-    .eq('id', user.id)
-    .single()
+    // Try to fetch profile data including coins_balance
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('coins_balance')
+      .eq('id', user.id)
+      .single()
 
-  return {
-    id: user.id,
-    email: user.email!,
-    name: user.user_metadata?.display_name || user.email!.split('@')[0],
-    avatar: user.user_metadata?.avatar_url,
-    coins_balance: profile?.coins_balance || 0,
+    if (profileError) {
+      console.warn('⚠️ Profile not found, but user is authenticated. Creating basic user object.')
+    }
+
+    return {
+      id: user.id,
+      email: user.email!,
+      name: user.user_metadata?.display_name || user.email!.split('@')[0],
+      avatar: user.user_metadata?.avatar_url,
+      coins_balance: profile?.coins_balance || 0,
+    }
+  } catch (error) {
+    console.error('❌ Error getting current user:', error)
+    return null
   }
 }
 
@@ -86,21 +98,37 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 export function onAuthStateChange(callback: (user: AuthUser | null) => void) {
   return supabase.auth.onAuthStateChange(async (event, session) => {
     if (session?.user) {
-      // Fetch profile data including coins_balance
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('coins_balance')
-        .eq('id', session.user.id)
-        .single()
+      try {
+        // Try to fetch profile data including coins_balance
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('coins_balance')
+          .eq('id', session.user.id)
+          .single()
 
-      const authUser: AuthUser = {
-        id: session.user.id,
-        email: session.user.email!,
-        name: session.user.user_metadata?.display_name || session.user.email!.split('@')[0],
-        avatar: session.user.user_metadata?.avatar_url,
-        coins_balance: profile?.coins_balance || 0,
+        if (profileError) {
+          console.warn('⚠️ Profile fetch error:', profileError.message)
+        }
+
+        const authUser: AuthUser = {
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.display_name || session.user.email!.split('@')[0],
+          avatar: session.user.user_metadata?.avatar_url,
+          coins_balance: profile?.coins_balance || 0,
+        }
+        callback(authUser)
+      } catch (error) {
+        console.error('❌ Error in auth state change:', error)
+        // Still callback with basic user info
+        callback({
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.display_name || session.user.email!.split('@')[0],
+          avatar: session.user.user_metadata?.avatar_url,
+          coins_balance: 0,
+        })
       }
-      callback(authUser)
     } else {
       callback(null)
     }

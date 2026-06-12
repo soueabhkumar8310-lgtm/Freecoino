@@ -77,7 +77,7 @@ export default function AdminPage() {
             <br />
             Logged in as: <strong>{user?.email}</strong>
           </Typography>
-          <Typography
+          <Box
             component="a"
             href="/"
             sx={{
@@ -87,7 +87,7 @@ export default function AdminPage() {
             }}
           >
             Go back to homepage
-          </Typography>
+          </Box>
         </Box>
       </Box>
     );
@@ -95,8 +95,14 @@ export default function AdminPage() {
 
   // Admin panel
   return (
-    <AdminShell userId={user.id} userName={user.name} userAvatar={user.avatar}>
-      <AdminDashboardClient />
+    <AdminShell>
+      <AdminDashboardClient
+        totalUsers={0}
+        totalCoins={0}
+        pendingWithdrawals={0}
+        totalCompletions={0}
+        bannedUsers={0}
+      />
     </AdminShell>
   );
 }

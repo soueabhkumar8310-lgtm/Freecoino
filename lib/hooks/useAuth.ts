@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getCurrentUser, onAuthStateChange, signOut, type AuthUser } from '@/lib/supabase/auth'
 import { useRouter } from 'next/navigation'
 
@@ -8,57 +8,63 @@ export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const authCheckInProgress = useRef(false)
+  const initialCheckDone = useRef(false)
 
   useEffect(() => {
+    // Prevent multiple simultaneous auth checks
+    if (authCheckInProgress.current) {
+      console.log('⏸️ Auth check already in progress, skipping...')
+      return
+    }
+
     let mounted = true
-    let retryCount = 0
-    const MAX_RETRIES = 2
+    authCheckInProgress.current = true
     
-    async function checkAuth() {
+    async function initAuth() {
       try {
-        const currentUser = await getCurrentUser()
-        if (mounted) {
-          console.log('✅ Auth check complete:', currentUser ? 'User found' : 'No user')
-          setUser(currentUser)
-          setIsLoading(false)
-          return true
+        // Only do initial check once
+        if (!initialCheckDone.current) {
+          console.log('🔍 Initial auth check...')
+          const currentUser = await getCurrentUser()
+          
+          if (mounted) {
+            console.log('✅ Auth check complete:', currentUser ? currentUser.email : 'No user')
+            setUser(currentUser)
+            setIsLoading(false)
+            initialCheckDone.current = true
+          }
         }
       } catch (error) {
         console.error('❌ Auth check failed:', error)
-        if (mounted && retryCount < MAX_RETRIES) {
-          retryCount++
-          console.log(`🔄 Retrying auth check (${retryCount}/${MAX_RETRIES})...`)
-          // Wait a bit before retry
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          return checkAuth()
-        }
         if (mounted) {
           setUser(null)
           setIsLoading(false)
         }
+      } finally {
+        authCheckInProgress.current = false
       }
-      return false
     }
     
-    // Set timeout to prevent infinite loading (increased to 5 seconds)
+    // Safety timeout - force loading to false after 3 seconds
     const timeout = setTimeout(() => {
       if (mounted && isLoading) {
         console.warn('⚠️ Auth timeout - forcing loading to false')
         setIsLoading(false)
-        setUser(null)
+        authCheckInProgress.current = false
       }
-    }, 5000)
+    }, 3000)
 
-    // Get initial user with retry logic
-    checkAuth()
+    // Initial auth check
+    initAuth()
 
-    // Listen for auth changes
+    // Listen for auth changes (login/logout events ONLY)
     const { data: { subscription } } = onAuthStateChange((authUser) => {
-      if (mounted) {
-        console.log('🔄 Auth state changed:', authUser ? 'User logged in' : 'User logged out')
+      if (mounted && initialCheckDone.current) {
+        // Only update if there's an actual change
+        console.log('🔄 Auth state changed:', authUser ? authUser.email : 'Logged out')
         setUser(authUser)
-        setIsLoading(false)
-        clearTimeout(timeout)
+        if (isLoading) setIsLoading(false)
       }
     })
 
@@ -66,8 +72,9 @@ export function useAuth() {
       mounted = false
       clearTimeout(timeout)
       subscription.unsubscribe()
+      authCheckInProgress.current = false
     }
-  }, [])
+  }, []) // Empty dependency - runs only once
 
   const logout = async () => {
     try {
