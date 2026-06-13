@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import Icons from "@/components/icons";
 import Typography from "@/components/ui/Typography";
+import ReviewsSection from "@/components/reviews-section";
 
 const colors = {
   bgPage: "#141523",
@@ -639,6 +640,9 @@ export default function Home() {
           </Box>
         </Container>
       </Box>
+
+      {/* ===================== USER REVIEWS ===================== */}
+      <ReviewsSection />
 
       {/* ===================== FINAL CTA ===================== */}
       <Divider sx={{ borderColor: colors.divider }} />
