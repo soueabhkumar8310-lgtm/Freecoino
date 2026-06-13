@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendWithdrawalRejectedEmail } from '@/lib/email';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -10,7 +11,7 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { withdrawalId } = body;
+    const { withdrawalId, reason } = body;
 
     if (!withdrawalId) {
       return NextResponse.json(
@@ -19,10 +20,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get withdrawal details
+    const rejectionReason = reason?.trim() || 'No reason provided';
+
+    // Get withdrawal details with user info
     const { data: withdrawal, error: fetchError } = await supabaseAdmin
       .from('withdrawals')
-      .select('*')
+      .select(`
+        *,
+        profiles!inner(email, display_name, coins_balance)
+      `)
       .eq('id', withdrawalId)
       .single();
 
@@ -40,25 +46,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's current balance
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('coins_balance')
-      .eq('id', withdrawal.user_id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      );
-    }
-
     // Refund coins to user
     const { error: refundError } = await supabaseAdmin
       .from('profiles')
       .update({
-        coins_balance: profile.coins_balance + withdrawal.amount,
+        coins_balance: withdrawal.profiles.coins_balance + withdrawal.amount,
       })
       .eq('id', withdrawal.user_id);
 
@@ -75,7 +67,7 @@ export async function POST(request: NextRequest) {
       .from('withdrawals')
       .update({
         status: 'failed',
-        rejection_reason: 'Rejected by admin',
+        rejection_reason: rejectionReason,
         processed_at: new Date().toISOString(),
       })
       .eq('id', withdrawalId)
@@ -88,7 +80,7 @@ export async function POST(request: NextRequest) {
       await supabaseAdmin
         .from('profiles')
         .update({
-          coins_balance: profile.coins_balance,
+          coins_balance: withdrawal.profiles.coins_balance,
         })
         .eq('id', withdrawal.user_id);
       
@@ -97,6 +89,16 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Send email notification
+    const amountUsd = withdrawal.amount / 1000;
+    await sendWithdrawalRejectedEmail(
+      withdrawal.profiles.email,
+      withdrawal.profiles.display_name,
+      withdrawal.amount,
+      amountUsd,
+      rejectionReason
+    );
 
     return NextResponse.json({
       success: true,

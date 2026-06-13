@@ -63,7 +63,9 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [approveDialog, setApproveDialog] = useState<string | null>(null);
+  const [rejectDialog, setRejectDialog] = useState<string | null>(null);
   const [txHash, setTxHash] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
@@ -121,22 +123,29 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
     setActionLoading(null);
   }
 
-  async function handleReject(id: string) {
-    setActionLoading(id);
+  async function handleReject() {
+    if (!rejectDialog) return;
+    
+    setActionLoading(rejectDialog);
     const res = await fetch("/api/admin/withdrawals/reject", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ withdrawalId: id }),
+      body: JSON.stringify({ 
+        withdrawalId: rejectDialog,
+        reason: rejectionReason.trim() || 'No reason provided'
+      }),
     });
     if (res.ok) {
       setWithdrawals((prev) =>
-        prev.map((w) => (w.id === id ? { ...w, status: "failed" } : w))
+        prev.map((w) => (w.id === rejectDialog ? { ...w, status: "failed" } : w))
       );
       setToast({ open: true, message: "Withdrawal rejected and coins refunded.", severity: "success" });
     } else {
       const data = await res.json();
       setToast({ open: true, message: data.error || "Failed to reject withdrawal.", severity: "error" });
     }
+    setRejectDialog(null);
+    setRejectionReason("");
     setActionLoading(null);
   }
 
@@ -214,7 +223,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
                     sx={{ textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#01D676", bgcolor: "rgba(1,214,118,0.1)", borderRadius: 2, flex: 1 }}>
                     Approve
                   </Button>
-                  <Button size="small" onClick={() => handleReject(w.id)} disabled={actionLoading === w.id}
+                  <Button size="small" onClick={() => { setRejectDialog(w.id); setRejectionReason(""); }} disabled={actionLoading === w.id}
                     startIcon={<XCircle size={14} />}
                     sx={{ textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#f87171", bgcolor: "rgba(239,68,68,0.1)", borderRadius: 2, flex: 1 }}>
                     Reject
@@ -287,7 +296,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
                           sx={{ minWidth: 0, textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#01D676", bgcolor: "rgba(1,214,118,0.1)", borderRadius: 2, px: 1.5 }}>
                           {actionLoading === w.id ? <CircularProgress size={14} color="inherit" /> : "Approve"}
                         </Button>
-                        <Button size="small" onClick={() => handleReject(w.id)} disabled={actionLoading === w.id}
+                        <Button size="small" onClick={() => { setRejectDialog(w.id); setRejectionReason(""); }} disabled={actionLoading === w.id}
                           sx={{ minWidth: 0, textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#f87171", bgcolor: "rgba(239,68,68,0.1)", borderRadius: 2, px: 1.5 }}>
                           Reject
                         </Button>
@@ -356,6 +365,55 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
             sx={{ textTransform: "none", fontWeight: 600, background: colors.background.gradient, color: "#fff", borderRadius: 2, px: 3 }}
           >
             {actionLoading ? <CircularProgress size={16} color="inherit" /> : "Confirm Approval"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog
+        open={!!rejectDialog}
+        onClose={() => setRejectDialog(null)}
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: colors.background.default,
+              border: `1px solid ${colors.divider}`,
+              borderRadius: 4,
+              minWidth: 400,
+            },
+          },
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: `1px solid ${colors.divider}`, py: 1.5 }}>
+          <Typography variant="subtitle1" isBold>Reject Withdrawal</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: "16px !important" }}>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Please provide a reason for rejecting this withdrawal. The user will receive this in their email notification.
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            placeholder="e.g., Invalid wallet address, Suspicious activity, etc."
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            size="small"
+          />
+          <Typography variant="caption" sx={{ mt: 1, display: "block", color: colors.text.secondary }}>
+            Note: Coins will be automatically refunded to the user's account.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setRejectDialog(null)} sx={{ textTransform: "none", color: colors.text.secondary }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleReject}
+            disabled={actionLoading !== null}
+            sx={{ textTransform: "none", fontWeight: 600, bgcolor: "rgba(239,68,68,0.15)", color: "#f87171", borderRadius: 2, px: 3, "&:hover": { bgcolor: "rgba(239,68,68,0.25)" } }}
+          >
+            {actionLoading ? <CircularProgress size={16} color="inherit" /> : "Confirm Rejection"}
           </Button>
         </DialogActions>
       </Dialog>

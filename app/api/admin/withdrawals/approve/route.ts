@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendWithdrawalApprovedEmail } from '@/lib/email';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -19,10 +20,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get withdrawal details
+    // Get withdrawal details with user info
     const { data: withdrawal, error: fetchError } = await supabaseAdmin
       .from('withdrawals')
-      .select('*')
+      .select(`
+        *,
+        profiles!inner(email, display_name)
+      `)
       .eq('id', withdrawalId)
       .single();
 
@@ -59,6 +63,16 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Send email notification
+    const amountUsd = withdrawal.amount / 1000;
+    await sendWithdrawalApprovedEmail(
+      withdrawal.profiles.email,
+      withdrawal.profiles.display_name,
+      withdrawal.amount,
+      amountUsd,
+      txHash.trim()
+    );
 
     return NextResponse.json({
       success: true,
