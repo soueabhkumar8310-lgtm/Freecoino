@@ -13,7 +13,7 @@ import { AuthProvider } from "@/lib/contexts/AuthContext";
 export const metadata: Metadata = {
   title: "Freecoino — Earn Money Online | Complete Surveys, Tasks & Offers for Real Rewards",
   description:
-    "Join Freecoino and earn real money by completing surveys, tasks, and offers. Get paid in crypto (USDT). Free to join, instant payouts, available worldwide. Start earning today!",
+    "Join Freecoino and earn real money by completing surveys, tasks, and offers. Get paid in crypto (LTC). Free to join, instant payouts, available worldwide. Start earning today!",
   keywords: [
     "earn money online",
     "make money online",
@@ -30,13 +30,13 @@ export const metadata: Metadata = {
   ],
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/logo-256.png", sizes: "256x256", type: "image/png" },
     ],
     apple: "/apple-touch-icon.png",
-    shortcut: "/icon.svg",
+    shortcut: "/favicon-32x32.png",
   },
   manifest: "/site.webmanifest",
   metadataBase: new URL("https://freecoino.com"),
