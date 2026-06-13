@@ -26,6 +26,7 @@ import {
   X,
   ArrowLeft,
   Settings,
+  Star,
 } from "lucide-react";
 
 import Icons from "@/components/icons";
@@ -38,6 +39,7 @@ const ADMIN_NAV_ITEMS = [
   { label: "Dashboard", href: "/admin", Icon: LayoutDashboard },
   { label: "Users", href: "/admin/users", Icon: Users },
   { label: "Withdrawals", href: "/admin/withdrawals", Icon: Wallet },
+  { label: "Reviews", href: "/admin/reviews", Icon: Star },
   { label: "Notifications", href: "/admin/notifications", Icon: Bell },
   { label: "Settings", href: "/admin/settings", Icon: Settings },
 ];
