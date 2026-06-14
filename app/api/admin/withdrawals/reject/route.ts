@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { sendWithdrawalRejectedEmail } from '@/lib/email';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -13,7 +12,7 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: NextRequest) {
   try {
-    // Bug #2 Fix: Verify caller is admin via session cookies
+    // Verify caller is admin via session cookies
     const cookieStore = await cookies();
     const supabase = createServerClient(
       supabaseUrl,
@@ -50,10 +49,10 @@ export async function POST(request: NextRequest) {
 
     const rejectionReason = reason?.trim() || 'No reason provided';
 
-    // Get withdrawal details
+    // Get withdrawal details (without profiles join)
     const { data: withdrawal, error: fetchError } = await supabaseAdmin
       .from('withdrawals')
-      .select('*, profiles!inner(display_name)')
+      .select('*')
       .eq('id', withdrawalId)
       .single();
 
@@ -71,21 +70,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Bug #8 Fix: Use atomic add_coins RPC instead of cached balance
-    // This prevents overwriting coins earned between request & refund
-    const { error: refundError } = await supabaseAdmin.rpc('add_coins', {
-      p_user_id: withdrawal.user_id,
-      p_amount: withdrawal.amount,
-      p_type: 'bonus',
-      p_description: `Refund: withdrawal ${withdrawalId} rejected`,
-    });
+    // Refund coins to user's balance directly
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('coins_balance')
+      .eq('id', withdrawal.user_id)
+      .single();
 
-    if (refundError) {
-      console.error('Error refunding coins:', refundError);
-      return NextResponse.json(
-        { error: 'Failed to refund coins' },
-        { status: 500 }
-      );
+    if (profile) {
+      const newBalance = (profile.coins_balance || 0) + withdrawal.amount;
+      const { error: refundError } = await supabaseAdmin
+        .from('profiles')
+        .update({ coins_balance: newBalance })
+        .eq('id', withdrawal.user_id);
+
+      if (refundError) {
+        console.error('Error refunding coins:', refundError);
+        return NextResponse.json(
+          { error: 'Failed to refund coins' },
+          { status: 500 }
+        );
+      }
     }
 
     // Update withdrawal to rejected status
@@ -102,45 +107,15 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       console.error('Error rejecting withdrawal:', updateError);
-      // Rollback: deduct the refunded coins back
-      await supabaseAdmin.rpc('add_coins', {
-        p_user_id: withdrawal.user_id,
-        p_amount: -withdrawal.amount,
-        p_type: 'withdraw',
-        p_description: `Rollback: refund failed for withdrawal ${withdrawalId}`,
-      });
-
       return NextResponse.json(
         { error: 'Failed to reject withdrawal' },
         { status: 500 }
       );
     }
 
-    // Bug #5 Fix: Fetch user email from auth.users via Admin SDK
-    const { data: authUser, error: userFetchError } = await supabaseAdmin.auth.admin.getUserById(
-      withdrawal.user_id
-    );
-
-    if (!userFetchError && authUser?.user?.email) {
-      const amountUsd = withdrawal.amount / 1000;
-      try {
-        await sendWithdrawalRejectedEmail(
-          authUser.user.email,
-          withdrawal.profiles.display_name,
-          withdrawal.amount,
-          amountUsd,
-          rejectionReason
-        );
-      } catch (emailErr) {
-        // Email failure should not block the rejection response
-        console.error('Failed to send rejection email:', emailErr);
-      }
-    }
-
     return NextResponse.json({
       success: true,
       withdrawal: updated,
-      refunded_coins: withdrawal.amount,
     });
   } catch (error) {
     console.error('Admin withdrawal rejection error:', error);

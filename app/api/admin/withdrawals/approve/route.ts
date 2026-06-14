@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { sendWithdrawalApprovedEmail } from '@/lib/email';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -13,7 +12,7 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: NextRequest) {
   try {
-    // Bug #2 Fix: Verify caller is admin via session cookies
+    // Verify caller is admin via session cookies
     const cookieStore = await cookies();
     const supabase = createServerClient(
       supabaseUrl,
@@ -48,10 +47,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get withdrawal details
+    // Get withdrawal details (without profiles join)
     const { data: withdrawal, error: fetchError } = await supabaseAdmin
       .from('withdrawals')
-      .select('*, profiles!inner(display_name)')
+      .select('*')
       .eq('id', withdrawalId)
       .single();
 
@@ -69,12 +68,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update withdrawal to completed status with transaction hash
+    // Update withdrawal to completed status
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('withdrawals')
       .update({
         status: 'completed',
-        tx_hash: txHash.trim(),
         processed_at: new Date().toISOString(),
       })
       .eq('id', withdrawalId)
@@ -87,27 +85,6 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to approve withdrawal' },
         { status: 500 }
       );
-    }
-
-    // Bug #5 Fix: Fetch user email from auth.users via Admin SDK
-    const { data: authUser, error: userFetchError } = await supabaseAdmin.auth.admin.getUserById(
-      withdrawal.user_id
-    );
-
-    if (!userFetchError && authUser?.user?.email) {
-      const amountUsd = withdrawal.amount / 1000;
-      try {
-        await sendWithdrawalApprovedEmail(
-          authUser.user.email,
-          withdrawal.profiles.display_name,
-          withdrawal.amount,
-          amountUsd,
-          txHash.trim()
-        );
-      } catch (emailErr) {
-        // Email failure should not block the approval response
-        console.error('Failed to send approval email:', emailErr);
-      }
     }
 
     return NextResponse.json({
