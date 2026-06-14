@@ -25,8 +25,7 @@ export async function GET(request: NextRequest) {
         method,
         wallet_address,
         status,
-        created_at,
-        profiles!inner(display_name)
+        created_at
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -46,17 +45,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Fetch auth users to get emails
+    const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
+    const usersList = authData?.users || [];
+
     // Transform data to match expected format
-    const withdrawals = data?.map((w: any) => ({
-      id: w.id,
-      user_id: w.user_id,
-      coins: w.amount,
-      amount_usd: w.amount / 1000, // 1000 coins = $1
-      crypto_address: w.wallet_address,
-      status: w.status,
-      tx_hash: w.tx_hash,
-      user_email: w.profiles?.display_name || 'Unknown User',
-    })) || [];
+    const withdrawals = data?.map((w: any) => {
+      const user = usersList.find(u => u.id === w.user_id);
+      return {
+        id: w.id,
+        user_id: w.user_id,
+        coins: w.amount,
+        amount_usd: w.amount / 1000, // 1000 coins = $1
+        crypto_address: w.wallet_address,
+        status: w.status,
+        requested_at: w.created_at,
+        user_email: user?.email || 'Unknown User',
+      };
+    }) || [];
 
     return NextResponse.json({
       withdrawals,
