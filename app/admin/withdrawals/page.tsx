@@ -63,6 +63,7 @@ export default async function AdminWithdrawalsPage() {
       amount_usd: w.amount / 1000, // 1000 coins = $1
       crypto_address: w.wallet_address,
       status: w.status,
+      tx_hash: null,
       requested_at: w.created_at,
       user_email: authUser?.email || 'Unknown User',
     };
