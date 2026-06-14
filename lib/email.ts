@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_pass_build_00000000');
 
 export async function sendWithdrawalApprovedEmail(
   userEmail: string,
