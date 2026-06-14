@@ -37,6 +37,7 @@ import {
   ChevronDown,
   ShoppingBag,
   Target,
+  Star,
 } from "lucide-react";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import Icons from "@/components/icons";
@@ -63,6 +64,7 @@ const ALL_NAV_ITEMS = [
   { label: "Leaderboard", href: "/leaderboard", Icon: Trophy },
   { label: "Referrals", href: "/referrals", Icon: Users },
   { label: "History", href: "/history", Icon: History },
+  { label: "Feedback", href: "/submit-review", Icon: Star },
 ];
 
 const DROPDOWN_ITEMS = [
