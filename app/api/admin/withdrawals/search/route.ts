@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
         method,
         wallet_address,
         status,
-        tx_hash,
         created_at,
         profiles!inner(display_name)
       `, { count: 'exact' })
