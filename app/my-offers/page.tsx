@@ -1,34 +1,38 @@
-"use client";
-
-import { useAuth } from "@/lib/contexts/AuthContext";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import MyOffersClient from "@/components/my-offers-client";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { mockUser } from "@/lib/mock-data";
 
-export default function MyOffersPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
+export default async function MyOffersPage() {
+  const supabase = await createClient();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/auth/login");
-    }
-  }, [user, isLoading, router]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (isLoading || !user) {
-    return null;
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  // Fetch user profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("coins_balance, display_name, avatar_url")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) {
+    redirect("/");
   }
 
   return (
     <AppShell
-      coins={mockUser.coins_balance}
-      userId={mockUser.id}
-      userName={mockUser.display_name}
-      userAvatar={undefined}
+      coins={profile.coins_balance}
+      userId={user.id}
+      userName={profile.display_name}
+      userAvatar={profile.avatar_url}
     >
-      <MyOffersClient userId={mockUser.id} />
+      <MyOffersClient userId={user.id} />
     </AppShell>
   );
 }
