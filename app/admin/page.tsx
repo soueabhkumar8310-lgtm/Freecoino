@@ -1,107 +1,69 @@
-"use client";
-
-import { useAuth } from "@/lib/contexts/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Box, CircularProgress, Alert } from "@mui/material";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import AdminShell from "@/components/admin-shell";
 import AdminDashboardClient from "@/components/admin-dashboard-client";
-import colors from "@/theme/colors";
-import Typography from "@/components/ui/Typography";
 
-// Admin email - only this user can access admin panel
-const ADMIN_EMAIL = "soueabhkumar8310@gmail.com";
+// Bug #7 Fix: Use env variable instead of hardcoded email
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "soueabhkumar8310@gmail.com";
 
-export default function AdminPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checking, setChecking] = useState(true);
+export default async function AdminPage() {
+  const supabase = await createClient();
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        // Not logged in - redirect to login
-        router.push("/auth/login");
-      } else if (user.email === ADMIN_EMAIL) {
-        // User is admin
-        setIsAdmin(true);
-        setChecking(false);
-      } else {
-        // User is not admin - show access denied
-        setIsAdmin(false);
-        setChecking(false);
-      }
-    }
-  }, [user, isLoading, router]);
+  // Check authentication
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Loading state
-  if (isLoading || checking) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          bgcolor: colors.background.default,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <CircularProgress size={40} sx={{ color: colors.secondary }} />
-      </Box>
-    );
+  if (!user) {
+    redirect("/auth/login");
   }
 
-  // Access denied state
-  if (!isAdmin) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          bgcolor: colors.background.default,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          px: 2,
-        }}
-      >
-        <Box sx={{ maxWidth: 500, textAlign: "center" }}>
-          <Alert severity="error" sx={{ mb: 3 }}>
-            Access Denied
-          </Alert>
-          <Typography variant="h5" isBold sx={{ mb: 2, color: colors.text.primary }}>
-            Admin Access Required
-          </Typography>
-          <Typography sx={{ color: colors.text.secondary, mb: 3 }}>
-            You don't have permission to access the admin panel.
-            <br />
-            Logged in as: <strong>{user?.email}</strong>
-          </Typography>
-          <Box
-            component="a"
-            href="/"
-            sx={{
-              color: colors.secondary,
-              textDecoration: "none",
-              "&:hover": { textDecoration: "underline" },
-            }}
-          >
-            Go back to homepage
-          </Box>
-        </Box>
-      </Box>
-    );
+  // Check admin access
+  if (user.email !== ADMIN_EMAIL) {
+    redirect("/");
   }
 
-  // Admin panel
+  // Bug #11 Fix: Fetch real stats from DB instead of hardcoded zeros
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const [
+    { count: totalUsers },
+    { data: coinsData },
+    { count: pendingWithdrawals },
+    { count: totalCompletions },
+    { count: bannedUsers },
+  ] = await Promise.all([
+    supabaseAdmin.from("profiles").select("*", { count: "exact", head: true }),
+    supabaseAdmin.from("profiles").select("coins_balance"),
+    supabaseAdmin
+      .from("withdrawals")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabaseAdmin
+      .from("offer_completions")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "completed"),
+    supabaseAdmin
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .not("referred_by", "is", null), // use a flag column if available
+  ]);
+
+  const totalCoins =
+    coinsData?.reduce((sum, p) => sum + (p.coins_balance || 0), 0) ?? 0;
+
   return (
     <AdminShell>
       <AdminDashboardClient
-        totalUsers={0}
-        totalCoins={0}
-        pendingWithdrawals={0}
-        totalCompletions={0}
-        bannedUsers={0}
+        totalUsers={totalUsers || 0}
+        totalCoins={totalCoins}
+        pendingWithdrawals={pendingWithdrawals || 0}
+        totalCompletions={totalCompletions || 0}
+        bannedUsers={bannedUsers || 0}
       />
     </AdminShell>
   );

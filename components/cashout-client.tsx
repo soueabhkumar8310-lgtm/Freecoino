@@ -39,13 +39,13 @@ import colors from "@/theme/colors";
 const MIN_COINS = 2000;
 const COINS_PER_USD = 1000;
 const PAGE_SIZE = 5;
-const EXPLORER_URLS = "https://litecoin.info/tx/";
+const EXPLORER_URL = "https://litecoin.info/tx/";
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; border: string }> = {
   pending: { bg: "rgba(245,158,11,0.1)", color: "#fbbf24", border: "rgba(245,158,11,0.2)" },
   processing: { bg: "rgba(56,189,248,0.1)", color: "#38bdf8", border: "rgba(56,189,248,0.2)" },
-  paid: { bg: "rgba(34,197,94,0.1)", color: "#22c55e", border: "rgba(34,197,94,0.2)" },
-  failed: { bg: "rgba(239,68,68,0.1)", color: "#f87171", border: "rgba(239,68,68,0.2)" },
+  completed: { bg: "rgba(34,197,94,0.1)", color: "#22c55e", border: "rgba(34,197,94,0.2)" },
+  rejected: { bg: "rgba(239,68,68,0.1)", color: "#f87171", border: "rgba(239,68,68,0.2)" },
 };
 
 interface Withdrawal {
@@ -620,7 +620,7 @@ export default function CashoutClient({
                         <Typography sx={{ fontSize: "0.75rem", color: colors.text.secondary }}>${w.amount_usd.toFixed(2)} via LTC</Typography>
                       </Box>
                       {w.tx_hash && (
-                        <Box component="a" href={`${EXPLORER_URLS}${w.tx_hash}`} target="_blank" rel="noopener noreferrer"
+                        <Box component="a" href={`${EXPLORER_URL}${w.tx_hash}`} target="_blank" rel="noopener noreferrer"
                           sx={{ display: "flex", alignItems: "center", gap: 0.5, fontSize: "0.75rem", color: colors.primary, textDecoration: "none", "&:hover": { opacity: 0.8 } }}>
                           Tx <ExternalLink size={12} />
                         </Box>

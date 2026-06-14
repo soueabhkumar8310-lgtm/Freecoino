@@ -68,11 +68,12 @@ CREATE TABLE IF NOT EXISTS public.withdrawals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) NOT NULL,
   amount INTEGER NOT NULL CHECK (amount > 0),
-  method TEXT NOT NULL CHECK (method IN ('paypal', 'bitcoin', 'ethereum', 'bank_transfer')),
+  method TEXT NOT NULL CHECK (method IN ('paypal', 'bitcoin', 'ethereum', 'litecoin', 'bank_transfer')),
   wallet_address TEXT NOT NULL,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'rejected')),
   rejection_reason TEXT,
   admin_notes TEXT,
+  tx_hash TEXT,                                          -- Bug #3 Fix: Added tx_hash column
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   processed_at TIMESTAMP WITH TIME ZONE,
   processed_by UUID REFERENCES auth.users(id)
@@ -191,7 +192,7 @@ CREATE TRIGGER on_profile_updated
 
 -- Function: Add coins to user balance
 CREATE OR REPLACE FUNCTION public.add_coins(
-  p_user_id UUID,/
+  p_user_id UUID,
   p_amount INTEGER,
   p_type TEXT,
   p_description TEXT DEFAULT NULL

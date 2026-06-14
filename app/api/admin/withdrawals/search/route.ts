@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         status,
         tx_hash,
         created_at,
-        profiles!inner(email)
+        profiles!inner(display_name)
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -56,8 +56,7 @@ export async function GET(request: NextRequest) {
       crypto_address: w.wallet_address,
       status: w.status,
       tx_hash: w.tx_hash,
-      requested_at: w.created_at,
-      user_email: w.profiles?.email || 'Unknown',
+      user_email: w.profiles?.display_name || 'Unknown User',
     })) || [];
 
     return NextResponse.json({

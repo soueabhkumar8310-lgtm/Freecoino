@@ -39,7 +39,7 @@ export async function signInWithEmail(email: string, password: string) {
 // Sign in with OAuth (Google)
 export async function signInWithOAuth(provider: Provider) {
   // Get the correct origin (works for both local and production)
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://freecoino.vercel.app'
+  const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || 'https://freecoino.vercel.app')
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
@@ -63,7 +63,7 @@ export async function signOut() {
 
 // In-memory cache to prevent multiple simultaneous calls
 let authCache: { user: AuthUser | null; timestamp: number } | null = null;
-const CACHE_DURATION = 5000; // 5 seconds
+const CACHE_DURATION = 2000; // 2 seconds
 
 // Get current user
 export async function getCurrentUser(): Promise<AuthUser | null> {

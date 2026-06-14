@@ -15,8 +15,8 @@ export default async function AdminReviewsPage() {
     redirect("/auth/login");
   }
 
-  // Check admin access (only allow specific email)
-  const ADMIN_EMAIL = "soueabhkumar8310@gmail.com";
+  // Check admin access — Bug #7 Fix: env variable use karo
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'soueabhkumar8310@gmail.com';
   if (user.email !== ADMIN_EMAIL) {
     redirect("/");
   }

@@ -49,11 +49,11 @@ const PAGE_SIZE = 20;
 const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   pending: { color: "#facc15", bg: "rgba(250,204,21,0.15)" },
   processing: { color: "#60a5fa", bg: "rgba(96,165,250,0.15)" },
-  paid: { color: "#01D676", bg: "rgba(1,214,118,0.15)" },
-  failed: { color: "#f87171", bg: "rgba(239,68,68,0.15)" },
+  completed: { color: "#01D676", bg: "rgba(1,214,118,0.15)" },
+  rejected: { color: "#f87171", bg: "rgba(239,68,68,0.15)" },
 };
 
-const TABS = ["all", "pending", "paid", "failed"] as const;
+const TABS = ["all", "pending", "completed", "rejected"] as const;
 
 export default function AdminWithdrawalsClient({ initialWithdrawals, initialTotal }: AdminWithdrawalsClientProps) {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>(initialWithdrawals);
@@ -111,7 +111,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
     });
     if (res.ok) {
       setWithdrawals((prev) =>
-        prev.map((w) => (w.id === approveDialog ? { ...w, status: "paid", tx_hash: txHash } : w))
+        prev.map((w) => (w.id === approveDialog ? { ...w, status: "completed", tx_hash: txHash } : w))
       );
       setToast({ open: true, message: "Withdrawal approved successfully.", severity: "success" });
     } else {
@@ -137,7 +137,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
     });
     if (res.ok) {
       setWithdrawals((prev) =>
-        prev.map((w) => (w.id === rejectDialog ? { ...w, status: "failed" } : w))
+        prev.map((w) => (w.id === rejectDialog ? { ...w, status: "rejected" } : w))
       );
       setToast({ open: true, message: "Withdrawal rejected and coins refunded.", severity: "success" });
     } else {

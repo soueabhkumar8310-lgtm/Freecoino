@@ -17,8 +17,8 @@ export default async function AdminWithdrawalsPage() {
     redirect("/auth/login");
   }
 
-  // Check admin access (only allow specific email)
-  const ADMIN_EMAIL = "soueabhkumar8310@gmail.com";
+  // Check admin access — Bug #7 Fix: env variable use karo
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'soueabhkumar8310@gmail.com';
   if (user.email !== ADMIN_EMAIL) {
     redirect("/");
   }
@@ -35,7 +35,7 @@ export default async function AdminWithdrawalsPage() {
       status,
       tx_hash,
       created_at,
-      profiles!inner(email)
+      profiles!inner(display_name)
     `, { count: 'exact' })
     .order("created_at", { ascending: false })
     .range(0, PAGE_SIZE - 1);
@@ -54,7 +54,7 @@ export default async function AdminWithdrawalsPage() {
     status: w.status,
     tx_hash: w.tx_hash,
     requested_at: w.created_at,
-    user_email: w.profiles?.email || 'Unknown',
+    user_email: w.profiles?.display_name || 'Unknown User',
   })) || [];
 
   return (

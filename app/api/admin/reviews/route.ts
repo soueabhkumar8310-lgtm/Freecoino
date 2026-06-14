@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         comment,
         status,
         created_at,
-        profiles!inner(display_name, email, avatar_url)
+        profiles!inner(display_name, avatar_url)
       `)
       .order('created_at', { ascending: false });
 
