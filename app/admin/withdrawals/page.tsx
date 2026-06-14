@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import AdminShell from "@/components/admin-shell";
 import AdminWithdrawalsClient from "@/components/admin-withdrawals-client";
