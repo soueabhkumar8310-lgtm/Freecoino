@@ -4,6 +4,7 @@ import { Box, Paper, Grid } from "@mui/material";
 import { Users, Coins, Wallet, CheckCircle, ShieldOff } from "lucide-react";
 import Typography from "@/components/ui/Typography";
 import colors from "@/theme/colors";
+import { useRouter } from "next/navigation";
 
 interface AdminDashboardClientProps {
   totalUsers: number;
@@ -29,12 +30,14 @@ export default function AdminDashboardClient({
   totalCompletions,
   bannedUsers,
 }: AdminDashboardClientProps) {
+  const router = useRouter();
+
   const stats = [
-    { icon: <Users size={22} />, label: "Total Users", value: totalUsers.toLocaleString(), color: "#01D676" },
-    { icon: <Coins size={22} />, label: "Coins in Circulation", value: totalCoins.toLocaleString(), color: "#01D676" },
-    { icon: <Wallet size={22} />, label: "Pending Withdrawals", value: String(pendingWithdrawals), color: pendingWithdrawals > 0 ? "#facc15" : "#01D676" },
-    { icon: <CheckCircle size={22} />, label: "Total Completions", value: totalCompletions.toLocaleString(), color: "#01D676" },
-    { icon: <ShieldOff size={22} />, label: "Banned Users", value: String(bannedUsers), color: bannedUsers > 0 ? "#f87171" : "#01D676" },
+    { icon: <Users size={22} />, label: "Total Users", value: totalUsers.toLocaleString(), color: "#01D676", route: "/admin/users" },
+    { icon: <Coins size={22} />, label: "Coins in Circulation", value: totalCoins.toLocaleString(), color: "#01D676", route: null },
+    { icon: <Wallet size={22} />, label: "Pending Withdrawals", value: String(pendingWithdrawals), color: pendingWithdrawals > 0 ? "#facc15" : "#01D676", route: "/admin/withdrawals" },
+    { icon: <CheckCircle size={22} />, label: "Total Completions", value: totalCompletions.toLocaleString(), color: "#01D676", route: "/admin/withdrawals?tab=completed" },
+    { icon: <ShieldOff size={22} />, label: "Banned Users", value: String(bannedUsers), color: bannedUsers > 0 ? "#f87171" : "#01D676", route: null },
   ];
 
   return (
@@ -51,7 +54,17 @@ export default function AdminDashboardClient({
       <Grid container spacing={2}>
         {stats.map((s) => (
           <Grid size={{ xs: 6, sm: 4, lg: 2.4 }} key={s.label}>
-            <Paper sx={STAT_CARD_STYLE}>
+            <Paper 
+              onClick={() => s.route && router.push(s.route)}
+              sx={{
+                ...STAT_CARD_STYLE,
+                cursor: s.route ? "pointer" : "default",
+                "&:hover": {
+                  borderColor: s.route ? "rgba(1,214,118,0.4)" : `1px solid ${colors.divider}`,
+                  transform: s.route ? "translateY(-2px)" : "none",
+                }
+              }}
+            >
               <Box
                 sx={{
                   display: "flex",

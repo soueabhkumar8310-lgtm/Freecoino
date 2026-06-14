@@ -1,11 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import AdminShell from "@/components/admin-shell";
-import { Box } from "@mui/material";
-import Typography from "@/components/ui/Typography";
-import { Users } from "lucide-react";
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'soueabhkumar8310@gmail.com';
+import AdminUsersClient from "@/components/admin-users-client";
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -18,23 +15,50 @@ export default async function AdminUsersPage() {
     redirect("/auth/login");
   }
 
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'soueabhkumar8310@gmail.com';
   if (user.email !== ADMIN_EMAIL) {
     redirect("/");
   }
 
+  // Create admin client to fetch all auth users
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // Fetch all profiles
+  const { data: profiles, error: profilesError } = await supabaseAdmin
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (profilesError) {
+    console.error("Error fetching profiles:", profilesError);
+  }
+
+  // Fetch all auth users to get emails
+  const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+  
+  if (authError) {
+    console.error("Error fetching auth users:", authError);
+  }
+
+  // Merge profile data with auth email
+  const mergedUsers = (profiles || []).map((profile) => {
+    const authUser = authUsers?.users?.find((u) => u.id === profile.id);
+    return {
+      id: profile.id,
+      email: authUser?.email || "Unknown Email",
+      displayName: profile.display_name || "Unknown User",
+      coinsBalance: profile.coins_balance || 0,
+      referralCode: profile.referral_code || "N/A",
+      createdAt: profile.created_at,
+    };
+  });
+
   return (
     <AdminShell>
-      <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" isBold sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Users size={28} color="#60a5fa" />
-            User Management
-          </Typography>
-          <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-            This feature is coming soon.
-          </Typography>
-        </Box>
-      </Box>
+      <AdminUsersClient users={mergedUsers} />
     </AdminShell>
   );
 }
