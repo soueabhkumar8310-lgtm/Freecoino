@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Revtoo Integration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0b14;
+            color: #fff;
+        }
+        h1 {
+            color: #01D676;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #01D676;
+            background: rgba(1, 214, 118, 0.1);
+        }
+        .error {
+            border-left-color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+        button {
+            background: #01D676;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #00c068;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #12131c;
+            border-radius: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .offer-card {
+            background: #1a1b2e;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .offer-card img {
+            max-width: 100px;
+            border-radius: 4px;
+        }
+        .offer-payout {
+            color: #01D676;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        pre {
+            background: #0a0b14;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Revtoo Integration Test</h1>
+    
+    <div class="status">
+        <strong>Test User ID:</strong> <code id="userId">338939c3-a7ba-45ce-ad02-6af8126b78fd</code>
+        <br>
+        <strong>API Endpoint:</strong> <code>/api/revtoo-offers?user_id={userId}</code>
+    </div>
+
+    <button onclick="testRevtooAPI()">Test Revtoo API</button>
+    <button onclick="clearResults()">Clear Results</button>
+
+    <div id="results"></div>
+
+    <script>
+        const userId = '338939c3-a7ba-45ce-ad02-6af8126b78fd';
+
+        async function testRevtooAPI() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>🔄 Loading Revtoo offers...</p>';
+
+            try {
+                const response = await fetch(`/api/revtoo-offers?user_id=${userId}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    resultsDiv.innerHTML = `
+                        <div class="status error">
+                            <strong>❌ API Error</strong><br>
+                            Status: ${response.status}<br>
+                            Message: ${data.error || 'Unknown error'}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    return;
+                }
+
+                if (!data.success) {
+                    resultsDiv.innerHTML = `
+                        <div class="status error">
+                            <strong>❌ Request Failed</strong><br>
+                            Error: ${data.error || 'Unknown error'}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    return;
+                }
+
+                const offers = data.offers || [];
+
+                if (offers.length === 0) {
+                    resultsDiv.innerHTML = `
+                        <div class="status error">
+                            <strong>⚠️ No Offers Found</strong><br>
+                            The API returned successfully but no offers are available.<br>
+                            Possible reasons:<br>
+                            - No offers available for your region<br>
+                            - Revtoo API is not returning offers<br>
+                            - API key might be invalid
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <div class="status">
+                        <strong>✅ Success!</strong><br>
+                        Loaded ${offers.length} offers from Revtoo
+                    </div>
+                `;
+
+                offers.slice(0, 10).forEach(offer => {
+                    html += `
+                        <div class="offer-card">
+                            <img src="${offer.image_url}" alt="${offer.name}">
+                            <h3>${offer.name}</h3>
+                            <div class="offer-payout">$${offer.payout}</div>
+                            <p>${offer.description1 || 'No description'}</p>
+                            <small><strong>Provider:</strong> ${offer.provider}</small><br>
+                            <small><strong>Type:</strong> ${offer.trackingType}</small><br>
+                            <small><strong>Offer ID:</strong> ${offer.offer_id}</small>
+                        </div>
+                    `;
+                });
+
+                if (offers.length > 10) {
+                    html += `<p>... and ${offers.length - 10} more offers</p>`;
+                }
+
+                html += `<h3>Raw API Response:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+                resultsDiv.innerHTML = html;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="status error">
+                        <strong>❌ Network Error</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+                console.error('Test error:', error);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            console.log('🧪 Test page loaded');
+            console.log('User ID:', userId);
+        });
+    </script>
+</body>
+</html>

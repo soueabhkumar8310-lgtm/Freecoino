@@ -61,10 +61,11 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   type TEXT NOT NULL,
   amount INTEGER NOT NULL,
-  balance_after INTEGER NOT NULL,
   description TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'completed',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  CONSTRAINT transactions_type_check CHECK (type IN ('earn', 'withdraw', 'bonus', 'referral'))
+  CONSTRAINT transactions_type_check CHECK (type IN ('earn', 'withdraw', 'bonus', 'referral')),
+  CONSTRAINT transactions_status_check CHECK (status IN ('pending', 'completed', 'failed'))
 );
 
 -- 5. DAILY BONUSES TABLE
