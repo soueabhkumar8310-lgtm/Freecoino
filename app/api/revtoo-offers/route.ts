@@ -25,17 +25,50 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ API Key loaded, first 10 chars:', apiKey.substring(0, 10));
 
-    // Revtoo API endpoint
-    const revtooUrl = `https://api.revtoo.com/offers?api_key=${apiKey}&user_id=${userId}&format=json`;
+    // Revtoo API endpoint (updated based on actual API structure)
+    // Try multiple possible endpoints
+    const possibleEndpoints = [
+      `https://api.revtoo.com/v1/offers?apiKey=${apiKey}&userId=${userId}`,
+      `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}`,
+      `https://wall.revtoo.com/api/offers?apiKey=${apiKey}&userId=${userId}`,
+    ];
 
-    console.log('🔄 Fetching Revtoo offers...');
+    console.log('🔄 Trying Revtoo API endpoints...');
     
-    const response = await fetch(revtooUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
+    let response;
+    let lastError;
+    
+    for (const endpoint of possibleEndpoints) {
+      try {
+        console.log(`Trying: ${endpoint.substring(0, 50)}...`);
+        response = await fetch(endpoint, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Freecoino/1.0',
+          },
+        });
+        
+        if (response.ok) {
+          console.log(`✅ Success with endpoint: ${endpoint.substring(0, 50)}...`);
+          break;
+        }
+      } catch (error) {
+        lastError = error;
+        console.log(`❌ Failed: ${endpoint.substring(0, 50)}...`);
+      }
+    }
+
+    if (!response || !response.ok) {
+      console.error(`❌ All Revtoo API endpoints failed`);
+      // Return empty offers instead of error - offerwall might be iframe-only
+      return NextResponse.json({
+        success: true,
+        offers: [],
+        message: 'Revtoo is iframe-based. Use embedded offerwall instead.',
+        iframeUrl: `https://wall.revtoo.com/?apiKey=${apiKey}&userId=${userId}`,
+      });
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
