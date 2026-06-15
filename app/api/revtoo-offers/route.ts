@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    console.log('✅ API Key loaded, first 10 chars:', apiKey.substring(0, 10));
+
     // Revtoo API endpoint
     const revtooUrl = `https://api.revtoo.com/offers?api_key=${apiKey}&user_id=${userId}&format=json`;
 
@@ -36,10 +38,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      console.error(`❌ Revtoo API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`❌ Revtoo API error: ${response.status} - ${errorText}`);
       return NextResponse.json({
         success: false,
-        error: `Revtoo API returned ${response.status}`,
+        error: `Revtoo API returned ${response.status}: ${errorText.substring(0, 200)}`,
         offers: [],
       });
     }
