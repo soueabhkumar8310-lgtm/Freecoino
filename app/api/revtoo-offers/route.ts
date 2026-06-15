@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_REVTOO_API_KEY;
+    const apiKey = process.env.REVTOO_API_KEY;
 
     if (!apiKey) {
       console.error('❌ RevToo API key not configured');
