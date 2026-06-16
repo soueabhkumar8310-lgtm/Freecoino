@@ -1507,10 +1507,11 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return `https://vortexwall.com/ow/${placementId}/${userId}`;
     }
     if (activeWall === "Notik") {
-      const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "PYMTzu6owFJ8roFouth5bEYxoJRmg7q9";
-      const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "mIJkTN";
-      const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "dOTR7kmvMw";
-      return `https://notik.me/coins?api_key=${apiKey}&pub_id=${pubId}&app_id=${appId}&user_id=${userId}`;
+      // Notik iframe integration (API blocked by Cloudflare - iframe only)
+      const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "WI24gd7OaJ";
+      const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "uuGH0N";
+      // Notik iframe URL format: https://notik.me/offerwall/{app_id}/{user_id}
+      return `https://notik.me/offerwall/${appId}/${userId}`;
     }
     if (activeWall === "GemiAd") {
       const placementId = process.env.NEXT_PUBLIC_GEMIAD_PLACEMENT_ID || "your_placement_id_here";
