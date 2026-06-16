@@ -789,16 +789,16 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         });
       
       // If no gaming offers found, show all offers (fallback)
-      const finalOffers = gamingOffers.length > 0 ? gamingOffers : combinedOffers;
+      const filteredOffers = gamingOffers.length > 0 ? gamingOffers : combinedOffers;
       
       console.log(`Filtered gaming offers: ${gamingOffers.length}`);
-      console.log(`Using offers (after fallback): ${finalOffers.length}`);
+      console.log(`Using offers (after fallback): ${filteredOffers.length}`);
       
       // Separate offers by tracking type for priority sorting
-      const cpeOffers = finalOffers.filter(o => o.trackingType?.toUpperCase() === 'CPE');
-      const cpiOffers = finalOffers.filter(o => o.trackingType?.toUpperCase() === 'CPI');
-      const cpaOffers = finalOffers.filter(o => o.trackingType?.toUpperCase() === 'CPA');
-      const otherOffers = finalOffers.filter(o => {
+      const cpeOffers = filteredOffers.filter(o => o.trackingType?.toUpperCase() === 'CPE');
+      const cpiOffers = filteredOffers.filter(o => o.trackingType?.toUpperCase() === 'CPI');
+      const cpaOffers = filteredOffers.filter(o => o.trackingType?.toUpperCase() === 'CPA');
+      const otherOffers = filteredOffers.filter(o => {
         const type = o.trackingType?.toUpperCase();
         return type !== 'CPE' && type !== 'CPI' && type !== 'CPA';
       });
