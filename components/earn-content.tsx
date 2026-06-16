@@ -758,41 +758,12 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       
       console.log(`Total combined offers: ${combinedOffers.length}`);
       
-      // Filter for gaming offers (relaxed filter - show all if no gaming offers found)
-      const gamingOffers = combinedOffers
-        .filter((offer: NotikOffer) => {
-          const name = offer.name?.toLowerCase() || '';
-          const desc1 = offer.description1?.toLowerCase() || '';
-          const desc2 = offer.description2?.toLowerCase() || '';
-          const desc3 = offer.description3?.toLowerCase() || '';
-          const categoriesStr = typeof offer.categories === 'string' 
-            ? offer.categories.toLowerCase() 
-            : JSON.stringify(offer.categories).toLowerCase();
-          
-          // Include offers that contain gaming keywords OR app-related keywords
-          return (name.includes('game') || 
-                 desc1.includes('game') || 
-                 desc2.includes('game') ||
-                 desc3.includes('game') ||
-                 categoriesStr.includes('game') ||
-                 name.includes('play') ||
-                 desc1.includes('play') ||
-                 name.includes('casino') ||
-                 name.includes('slot') ||
-                 name.includes('app') ||
-                 name.includes('download') ||
-                 name.includes('install') ||
-                 categoriesStr.includes('gaming') ||
-                 categoriesStr.includes('mobile') ||
-                 categoriesStr.includes('android') ||
-                 categoriesStr.includes('ios'));
-        });
-      
-      // If no gaming offers found, show all offers (fallback)
-      const filteredOffers = gamingOffers.length > 0 ? gamingOffers : combinedOffers;
+      // Show all offers (gaming filter disabled temporarily for testing)
+      const filteredOffers = combinedOffers;
+      const gamingOffers = combinedOffers; // Keep for logging
       
       console.log(`Filtered gaming offers: ${gamingOffers.length}`);
-      console.log(`Using offers (after fallback): ${filteredOffers.length}`);
+      console.log(`Using offers (showing all): ${filteredOffers.length}`);
       
       // Separate offers by tracking type for priority sorting
       const cpeOffers = filteredOffers.filter(o => o.trackingType?.toUpperCase() === 'CPE');
