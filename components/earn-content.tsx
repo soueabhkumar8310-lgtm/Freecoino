@@ -758,7 +758,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       
       console.log(`Total combined offers: ${combinedOffers.length}`);
       
-      // Filter for non-gaming offers
+      // Filter for gaming offers only
       const gamingOffers = combinedOffers
         .filter((offer: NotikOffer) => {
           const name = offer.name?.toLowerCase() || '';
@@ -768,12 +768,16 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
             ? offer.categories.toLowerCase() 
             : JSON.stringify(offer.categories).toLowerCase();
           
-          return !(name.includes('game') || 
+          // Include offers that contain gaming keywords
+          return (name.includes('game') || 
                  desc1.includes('game') || 
                  desc2.includes('game') ||
                  categoriesStr.includes('game') ||
                  name.includes('play') ||
-                 desc1.includes('play'));
+                 desc1.includes('play') ||
+                 name.includes('casino') ||
+                 name.includes('slot') ||
+                 categoriesStr.includes('gaming'));
         });
       
       console.log(`Filtered gaming offers: ${gamingOffers.length}`);
