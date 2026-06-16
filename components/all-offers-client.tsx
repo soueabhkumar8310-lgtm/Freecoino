@@ -812,17 +812,18 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       
       const primaryOS = selectedPlatforms.length > 0 ? selectedPlatforms[0] : 'android';
       
-      // Fetch from Gemiad, Notik, Vortex, and Revtoo APIs in parallel (Priority order)
-      const [gemiadResponse, notikResponse, vortexResponse, revtooResponse] = await Promise.all([
+      // Fetch from Gemiad, Notik, and Revtoo APIs in parallel (Priority order)
+      // Vortex disabled - awaiting approval
+      const [gemiadResponse, notikResponse, /* vortexResponse, */ revtooResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}`),
         fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}`),
-        fetch(`/api/vortex-offers?user_id=${userId}`),
+        // fetch(`/api/vortex-offers?user_id=${userId}`), // TODO: Uncomment after Vortex approval
         fetch(`/api/revtoo-offers?user_id=${userId}`)
       ]);
       
       let gemiadOffers: any[] = [];
       let notikOffers: any[] = [];
-      let vortexOffers: any[] = [];
+      // let vortexOffers: any[] = []; // TODO: Uncomment after Vortex approval
       let revtooOffers: any[] = [];
       
       // Process Gemiad offers (Priority 1)
@@ -843,7 +844,8 @@ export default function AllOffersClient({ userId }: { userId: string }) {
         }
       }
       
-      // Process Vortex offers (Priority 3)
+      // Process Vortex offers (Priority 3) - DISABLED: Awaiting approval
+      /*
       if (vortexResponse.ok) {
         const vortexData = await vortexResponse.json();
         if (vortexData.success && vortexData.offers && Array.isArray(vortexData.offers)) {
@@ -851,6 +853,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
           console.log(`All Offers - Vortex: ${vortexOffers.length}`);
         }
       }
+      */
       
       // Process Revtoo offers (Priority 4)
       if (revtooResponse.ok) {
@@ -861,15 +864,16 @@ export default function AllOffersClient({ userId }: { userId: string }) {
         }
       }
       
-      // Combine offers with priority: Gemiad > Notik > Vortex > Revtoo
+      // Combine offers with priority: Gemiad > Notik > Revtoo
+      // Vortex disabled - awaiting approval
       // Mix them in a round-robin fashion for better distribution
       const allOffersData: any[] = [];
-      const maxLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, revtooOffers.length);
+      const maxLength = Math.max(gemiadOffers.length, notikOffers.length, /* vortexOffers.length, */ revtooOffers.length);
       
       for (let i = 0; i < maxLength; i++) {
         if (i < gemiadOffers.length) allOffersData.push(gemiadOffers[i]);
         if (i < notikOffers.length) allOffersData.push(notikOffers[i]);
-        if (i < vortexOffers.length) allOffersData.push(vortexOffers[i]);
+        // if (i < vortexOffers.length) allOffersData.push(vortexOffers[i]); // TODO: Uncomment after approval
         if (i < revtooOffers.length) allOffersData.push(revtooOffers[i]);
       }
       
