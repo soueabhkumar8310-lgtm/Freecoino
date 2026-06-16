@@ -689,18 +689,17 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       setLoading(true);
       const primaryOS = deviceOS.length > 0 ? deviceOS[0] : 'android';
       
-      // Fetch from Gemiad, Notik, and Revtoo APIs in parallel
-      // Vortex commented out - awaiting approval
-      const [gemiadResponse, notikResponse, /* vortexResponse, */ revtooResponse] = await Promise.all([
+      // Fetch from Gemiad, Notik, Vortex, and Revtoo APIs in parallel
+      const [gemiadResponse, notikResponse, vortexResponse, revtooResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}`),
         fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}`),
-        // fetch(`/api/vortex-offers?user_id=${userId}`), // TODO: Uncomment after Vortex approval
+        fetch(`/api/vortex-offers?user_id=${userId}`),
         fetch(`/api/revtoo-offers?user_id=${userId}`)
       ]);
       
       let gemiadOffers: NotikOffer[] = [];
       let notikOffers: NotikOffer[] = [];
-      // let vortexOffers: NotikOffer[] = []; // TODO: Uncomment after Vortex approval
+      let vortexOffers: NotikOffer[] = [];
       let revtooOffers: NotikOffer[] = [];
       
       // Process Gemiad offers (Priority 1)
@@ -727,8 +726,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         }
       }
       
-      // Process Vortex offers (Priority 3) - DISABLED: Awaiting approval
-      /* 
+      // Process Vortex offers (Priority 3)
       if (vortexResponse.ok) {
         const vortexData = await vortexResponse.json();
         if (vortexData.success && vortexData.offers && Array.isArray(vortexData.offers)) {
@@ -736,7 +734,6 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
           console.log(`Vortex offers loaded: ${vortexOffers.length}`);
         }
       }
-      */
       
       // Process Revtoo offers (Priority 4)
       if (revtooResponse.ok) {
@@ -747,16 +744,15 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         }
       }
       
-      // Combine offers with priority: Gemiad > Notik > Revtoo
-      // Vortex disabled - awaiting approval
+      // Combine offers with priority: Gemiad > Notik > Vortex > Revtoo
       // Mix them in a round-robin fashion for better distribution
       const combinedOffers: NotikOffer[] = [];
-      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, /* vortexOffers.length, */ revtooOffers.length);
+      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, revtooOffers.length);
       
       for (let i = 0; i < maxProviderLength; i++) {
         if (i < gemiadOffers.length) combinedOffers.push(gemiadOffers[i]);
         if (i < notikOffers.length) combinedOffers.push(notikOffers[i]);
-        // if (i < vortexOffers.length) combinedOffers.push(vortexOffers[i]); // TODO: Uncomment after approval
+        if (i < vortexOffers.length) combinedOffers.push(vortexOffers[i]);
         if (i < revtooOffers.length) combinedOffers.push(revtooOffers[i]);
       }
       
