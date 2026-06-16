@@ -1562,9 +1562,9 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return `https://revtoo.com/offerwall/${apiKey}/${userId}`;
     }
     if (activeWall === "Taskwall") {
-      // Timewall integration - using Placement ID
-      const placementId = "ba72f7d1fde24922"; // Freecoino Main Offerwall
-      return `https://wall.timewall.io/${placementId}?userId=${userId}`;
+      // Timewall integration - using correct iframe URL from dashboard
+      const placementId = "ba72f7d1dde24922"; // Freecoino Main Offerwall
+      return `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
     }
     return "";
   };
