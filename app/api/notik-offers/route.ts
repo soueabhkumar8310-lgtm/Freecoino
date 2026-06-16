@@ -27,37 +27,66 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Notik API Key loaded, first 10 chars:', apiKey.substring(0, 10));
 
-    // Notik API endpoint - Try multiple possible endpoints
+    // Notik API endpoint - Try multiple possible endpoints with different parameter formats
+    const appId = 'WI24gd7OaJ';
+    const publisherId = 'uuGH0N';
+    
     const possibleEndpoints = [
-      `https://api.notik.me/api/v1/offers?api_key=${apiKey}&user_id=${userId}&device=${deviceOs}`,
-      `https://notik.me/api/offers?apiKey=${apiKey}&userId=${userId}&platform=${deviceOs}`,
-      `https://offers.notik.me/v1/offers?key=${apiKey}&uid=${userId}&device_type=${deviceType}`,
+      // Format 1: Standard API with app_id
+      `https://api.notik.me/api/v1/offers?app_id=${appId}&api_key=${apiKey}&user_id=${userId}&device=${deviceOs}`,
+      // Format 2: Publisher dashboard API
+      `https://publisher.notik.me/api/offers?app_id=${appId}&api_key=${apiKey}&user_id=${userId}`,
+      // Format 3: Using publisher ID
+      `https://api.notik.me/offers?pub_id=${publisherId}&app_id=${appId}&api_key=${apiKey}&uid=${userId}`,
+      // Format 4: Offers endpoint with key
+      `https://offers.notik.me/v1/offers?app=${appId}&key=${apiKey}&user=${userId}&device_type=${deviceType}`,
+      // Format 5: Direct publisher API
+      `https://publisher.notik.me/api/v1/apps/${appId}/offers?api_key=${apiKey}&user_id=${userId}`,
     ];
 
     console.log('🔄 Trying Notik API endpoints...');
+    console.log('App ID:', appId);
+    console.log('Publisher ID:', publisherId);
     
     let response;
     let lastError;
     
     for (const endpoint of possibleEndpoints) {
       try {
-        console.log(`Trying: ${endpoint.substring(0, 60)}...`);
+        console.log(`Trying: ${endpoint.substring(0, 80)}...`);
         response = await fetch(endpoint, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
             'User-Agent': 'Freecoino/1.0',
             'Authorization': `Bearer ${apiKey}`,
+            'X-API-Key': apiKey,
           },
         });
         
+        console.log(`Response status: ${response.status}`);
+        
         if (response.ok) {
-          console.log(`✅ Success with endpoint: ${endpoint.substring(0, 60)}...`);
-          break;
+          const responseText = await response.text();
+          console.log(`✅ Success! Response preview: ${responseText.substring(0, 200)}...`);
+          
+          // Try to parse as JSON
+          try {
+            const data = JSON.parse(responseText);
+            response = new Response(responseText, { status: 200, headers: { 'Content-Type': 'application/json' } });
+            console.log(`✅ Success with endpoint: ${endpoint.substring(0, 80)}...`);
+            break;
+          } catch (parseError) {
+            console.log(`❌ Response not valid JSON`);
+            continue;
+          }
+        } else {
+          const errorText = await response.text();
+          console.log(`❌ Failed with status ${response.status}: ${errorText.substring(0, 100)}`);
         }
       } catch (error) {
         lastError = error;
-        console.log(`❌ Failed: ${endpoint.substring(0, 60)}...`);
+        console.log(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
