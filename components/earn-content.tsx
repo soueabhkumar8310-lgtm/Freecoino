@@ -1519,14 +1519,6 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       const placementId = "69dfafd0a982f180b5caa54c";
       return `https://vortexwall.com/ow/${placementId}/${userId}`;
     }
-    if (activeWall === "Taskwall") {
-      const appId = process.env.NEXT_PUBLIC_TASKWALL_APP_ID || "";
-      if (!appId) {
-        console.error("Taskwall app_id not configured");
-        return "";
-      }
-      return `https://rewardtask.com/wall?app_id=${appId}&userid=${userId}`;
-    }
     if (activeWall === "Notik") {
       const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "PYMTzu6owFJ8roFouth5bEYxoJRmg7q9";
       const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "mIJkTN";
