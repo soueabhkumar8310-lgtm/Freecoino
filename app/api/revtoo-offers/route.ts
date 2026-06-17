@@ -4,6 +4,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
+    const deviceOs = searchParams.get('device_os') || 'android';
+    const country = searchParams.get('country') || '';
 
     if (!userId) {
       return NextResponse.json(
@@ -27,10 +29,14 @@ export async function GET(request: NextRequest) {
 
     // Revtoo API endpoint (updated based on actual API structure)
     // Try multiple possible endpoints
+    const deviceParam = `&device=${deviceOs}`;
+    const countryParam = country ? `&country=${country}` : '';
+    const baseParams = `apiKey=${apiKey}&userId=${userId}${deviceParam}${countryParam}`;
+
     const possibleEndpoints = [
-      `https://api.revtoo.com/v1/offers?apiKey=${apiKey}&userId=${userId}`,
-      `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}`,
-      `https://wall.revtoo.com/api/offers?apiKey=${apiKey}&userId=${userId}`,
+      `https://api.revtoo.com/v1/offers?${baseParams}`,
+      `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}${deviceParam}${countryParam}`,
+      `https://wall.revtoo.com/api/offers?${baseParams}`,
     ];
 
     console.log('🔄 Trying Revtoo API endpoints...');

@@ -818,7 +818,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
         fetch(`/api/gemiad-offers?user_id=${userId}`),
         fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}`),
         fetch(`/api/vortex-offers?user_id=${userId}`),
-        fetch(`/api/revtoo-offers?user_id=${userId}`)
+        fetch(`/api/revtoo-offers?user_id=${userId}&device_os=${primaryOS}`)
       ]);
       
       let gemiadOffers: any[] = [];
