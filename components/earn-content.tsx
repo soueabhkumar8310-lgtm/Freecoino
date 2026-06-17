@@ -1485,15 +1485,6 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return;
     }
 
-    // Revtoo blocks iframe embedding, open in new window
-    if (wall === "Revtoo") {
-      const apiKey = process.env.NEXT_PUBLIC_REVTOO_API_KEY || "";
-      if (apiKey) {
-        window.open(`https://revtoo.com/offerwall/${apiKey}/${userId}`, '_blank', 'noopener,noreferrer');
-      }
-      return;
-    }
-
     setActiveWall(wall);
     setIframeLoading(true);
     setIframeError(false);
