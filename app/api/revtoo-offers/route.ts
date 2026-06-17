@@ -25,11 +25,16 @@ export async function GET(request: NextRequest) {
     // Try endpoints from simplest to most complex
     const endpoints = [
       `https://revtoo.com/api/offers/?api_key=${apiKey}`,
+      `https://revtoo.com/api/offers?api_key=${apiKey}`,
       `https://revtoo.com/api/offers/?api_key=${apiKey}&user_id=${userId}`,
+      `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}`,
+      `https://api.revtoo.com/v1/offers?apiKey=${apiKey}&userId=${userId}`,
+      `https://wall.revtoo.com/api/offers?apiKey=${apiKey}&userId=${userId}`,
       `https://revtoo.com/api/offers/?api_key=${apiKey}&user_id=${userId}&device=android`,
     ];
 
     for (const endpoint of endpoints) {
+      console.log("Revtoo trying:", endpoint.substring(0, 60));
       const response = await fetch(endpoint, {
         headers: {
           Accept: "application/json",
@@ -38,16 +43,28 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      if (!response.ok) continue;
+      if (!response.ok) {
+        console.log("Revtoo HTTP error:", response.status);
+        continue;
+      }
 
       let data: any;
       try {
         data = await response.json();
       } catch {
+        console.log("Revtoo invalid JSON");
         continue;
       }
 
-      if (data.success === false || !data.offers) continue;
+      if (!data || data.success === false) {
+        console.log("Revtoo API error:", data?.message || "unknown");
+        continue;
+      }
+
+      if (!Array.isArray(data.offers)) {
+        console.log("Revtoo no offers array");
+        continue;
+      }
 
       const offers = data.offers
         .map((offer: any) => {
