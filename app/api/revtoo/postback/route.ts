@@ -14,8 +14,20 @@ export async function GET(req: Request) {
       return new NextResponse("Missing required parameters", { status: 400 });
     }
 
-    const amount = parseInt(amountStr, 10);
-    if (isNaN(amount) || amount <= 0) {
+    // Revtoo sends amount in cents (e.g., 40 = $0.40). Convert to coins (1000 coins = $1)
+    const amountFloat = parseFloat(amountStr);
+    if (isNaN(amountFloat) || amountFloat <= 0) {
+      return new NextResponse("Invalid amount", { status: 400 });
+    }
+
+    // Determine if amount is in dollars or cents:
+    // - If decimal (< 1 or contains '.'), treat as dollars → multiply by 1000
+    // - Otherwise treat as cents → multiply by 10
+    const coinsToAward = amountStr.includes('.') || amountFloat < 1
+      ? Math.round(amountFloat * 1000)
+      : Math.round(amountFloat * 10);
+
+    if (isNaN(coinsToAward) || coinsToAward <= 0) {
       return new NextResponse("Invalid amount", { status: 400 });
     }
 
@@ -45,7 +57,7 @@ export async function GET(req: Request) {
         offer_id: transactionId,
         offer_name: "Revtoo Offer",
         offer_provider: "revtoo",
-        amount_earned: amount,
+        amount_earned: coinsToAward,
         status: "completed"
       });
 
@@ -54,10 +66,10 @@ export async function GET(req: Request) {
       return new NextResponse("Internal Server Error", { status: 500 });
     }
 
-    // Add coins to user balance
+    // Add coins to user balance (1000 coins = $1)
     const { error: rpcError } = await supabaseAdmin.rpc("add_coins", {
       p_user_id: userId,
-      p_amount: amount,
+      p_amount: coinsToAward,
       p_type: "earn",
       p_description: `Revtoo Offer: ${transactionId}`
     });

@@ -83,20 +83,36 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     
     // Transform Revtoo offers to our standard format
-    const offers = (data.offers || []).map((offer: any) => ({
-      offer_id: offer.id || offer.offer_id,
-      name: offer.name || offer.title,
-      description1: offer.description || offer.instructions,
-      description2: offer.requirements || '',
-      description3: offer.terms || '',
-      image_url: offer.image || offer.icon || 'https://via.placeholder.com/150',
-      payout: parseFloat(offer.payout || offer.reward || 0),
-      click_url: offer.link || offer.tracking_link,
-      categories: offer.categories || [],
-      events: offer.conversions || [],
-      provider: 'Revtoo',
-      trackingType: offer.conversion_type || offer.type || 'CPA',
-    }));
+    const offers = (data.offers || []).map((offer: any) => {
+      const payout = parseFloat(offer.payout || offer.reward || 0);
+      let events = offer.conversions || offer.events || [];
+
+      // Generate synthetic milestone events for offers without events
+      if (!events.length && payout > 0) {
+        events = [
+          { id: 'install', name: 'Install the App & Register', payout: +(payout * 0.10).toFixed(2) },
+          { id: 'level_3', name: 'Reach Level 3', payout: +(payout * 0.20).toFixed(2) },
+          { id: 'level_5', name: 'Reach Level 5', payout: +(payout * 0.25).toFixed(2) },
+          { id: 'level_10', name: 'Reach Level 10', payout: +(payout * 0.20).toFixed(2) },
+          { id: 'level_20', name: 'Reach Level 20', payout: +(payout * 0.25).toFixed(2) },
+        ].filter(e => e.payout > 0);
+      }
+
+      return {
+        offer_id: offer.id || offer.offer_id,
+        name: offer.name || offer.title,
+        description1: offer.description || offer.instructions,
+        description2: offer.requirements || '',
+        description3: offer.terms || '',
+        image_url: offer.image || offer.icon || 'https://via.placeholder.com/150',
+        payout,
+        click_url: offer.link || offer.tracking_link,
+        categories: offer.categories || [],
+        events,
+        provider: 'Revtoo',
+        trackingType: offer.conversion_type || offer.type || 'CPA',
+      };
+    });
 
     console.log(`✅ Revtoo offers loaded: ${offers.length}`);
 
