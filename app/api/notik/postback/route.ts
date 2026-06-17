@@ -75,20 +75,13 @@ async function handlePostback(request: NextRequest) {
     // Verify hash signature (IMPORTANT for security!)
     const secretKey = process.env.NOTIK_API_SECRET;
     if (hash && secretKey) {
-      // Build URL without hash parameter
-      const protocol = request.headers.get('x-forwarded-proto') || 'https';
-      const host = request.headers.get('host');
-      const pathname = new URL(request.url).pathname;
-      
-      // Get all params except hash
-      const paramsWithoutHash = new URLSearchParams();
-      searchParams.forEach((value, key) => {
-        if (key !== 'hash') {
-          paramsWithoutHash.append(key, value);
-        }
-      });
-      
-      const urlWithoutHash = `${protocol}://${host}${pathname}?${paramsWithoutHash.toString()}`;
+      // Use the exact request URL approach (matching PHP example):
+      // PHP: $url = "$protocol://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+      // PHP: $urlWithoutHash = substr($url, 0, -strlen("&hash=$hash"));
+      const fullUrl = request.url;
+      const hashStr = `&hash=${hash}`;
+      const idx = fullUrl.lastIndexOf(hashStr);
+      const urlWithoutHash = idx >= 0 ? fullUrl.substring(0, idx) : fullUrl;
       
       // Generate HMAC SHA1 hash
       const expectedHash = crypto
