@@ -28,7 +28,13 @@ export async function GET(request: NextRequest) {
     const countryParam = country ? `&country=${country}` : "";
     const endpoint = `https://revtoo.com/api/offers/?api_key=${apiKey}&user_id=${userId}${deviceParam}${countryParam}`;
     const response = await fetch(endpoint, {
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "User-Agent":
+          deviceOs === "ios"
+            ? "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15"
+            : "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36",
+      },
     });
 
     if (!response.ok) {
