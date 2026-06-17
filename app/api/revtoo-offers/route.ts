@@ -3,11 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
+    const userId = searchParams.get("user_id");
+    const deviceOs = searchParams.get("device_os") || "android";
+    const country = searchParams.get("country") || "";
 
     if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'user_id is required' },
+        { success: false, error: "user_id is required" },
         { status: 400 }
       );
     }
@@ -17,12 +19,14 @@ export async function GET(request: NextRequest) {
     if (!apiKey) {
       return NextResponse.json({
         success: false,
-        error: 'RevToo API key not configured',
+        error: "RevToo API key not configured",
         offers: [],
       });
     }
 
-    const endpoint = `https://revtoo.com/api/offers/?api_key=${apiKey}&user_id=${userId}`;
+    const deviceParam = `&device=${deviceOs}`;
+    const countryParam = country ? `&country=${country}` : "";
+    const endpoint = `https://revtoo.com/api/offers/?api_key=${apiKey}&user_id=${userId}${deviceParam}${countryParam}`;
     const response = await fetch(endpoint, {
       headers: { Accept: "application/json" },
     });
@@ -31,7 +35,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         offers: [],
-        message: "Revtoo API not available. Use offerwall button instead.",
         iframeUrl: `https://revtoo.com/offerwall/${apiKey}/${userId}`,
       });
     }
