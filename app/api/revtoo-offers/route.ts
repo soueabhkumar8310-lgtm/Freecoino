@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
     const baseParams = `apiKey=${apiKey}&userId=${userId}${deviceParam}${countryParam}`;
 
     const possibleEndpoints = [
+      `https://revtoo.com/api/offers/?api_key=${apiKey}&user_id=${userId}${deviceParam}${countryParam}`,
       `https://api.revtoo.com/v1/offers?${baseParams}`,
       `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}${deviceParam}${countryParam}`,
       `https://wall.revtoo.com/api/offers?${baseParams}`,

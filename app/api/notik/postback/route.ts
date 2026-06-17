@@ -12,10 +12,6 @@ export async function GET(request: NextRequest) {
   return handlePostback(request);
 }
 
-export async function POST(request: NextRequest) {
-  return handlePostback(request);
-}
-
 async function handlePostback(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
