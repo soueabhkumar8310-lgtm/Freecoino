@@ -875,18 +875,54 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       
       console.log(`All Offers - Total combined: ${allOffersData.length}`);
       
-      if (allOffersData.length > 0) {
+      // Remove duplicates based on offer_id and name (same offer from multiple providers)
+      const uniqueOffersMap = new Map<string, any>();
+      allOffersData.forEach(offer => {
+        const key = `${offer.offer_id}-${offer.name}`;
+        // Keep the first occurrence (highest priority provider)
+        if (!uniqueOffersMap.has(key)) {
+          uniqueOffersMap.set(key, offer);
+        }
+      });
+      
+      const uniqueOffers = Array.from(uniqueOffersMap.values());
+      console.log(`All Offers - After deduplication: ${uniqueOffers.length} (removed ${allOffersData.length - uniqueOffers.length} duplicates)`);
+      
+      // Personalize offer order based on user_id (simple hash-based shuffle)
+      // This ensures each user sees a different order but consistent on refresh
+      const hashCode = (str: string) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          const char = str.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash);
+      };
+      
+      const userSeed = hashCode(userId);
+      const personalizedOffers = [...uniqueOffers].sort((a, b) => {
+        const aKey = `${a.offer_id}-${a.name}`;
+        const bKey = `${b.offer_id}-${b.name}`;
+        const aHash = hashCode(aKey + userSeed);
+        const bHash = hashCode(bKey + userSeed);
+        return aHash - bHash;
+      });
+      
+      console.log(`All Offers - Personalized for user: ${userId.substring(0, 8)}...`);
+      
+      if (personalizedOffers.length > 0) {
         // Store all offers
-        setAllOffers(allOffersData);
+        setAllOffers(personalizedOffers);
         
         // Display first 20 offers immediately
-        const initialBatch = allOffersData.slice(0, 20);
+        const initialBatch = personalizedOffers.slice(0, 20);
         setDisplayedOffers(initialBatch);
         currentIndex.current = initialBatch.length;
         setLoading(false);
         
         // Check if there are more offers
-        if (initialBatch.length >= allOffersData.length) {
+        if (initialBatch.length >= personalizedOffers.length) {
           setHasMore(false);
         }
       } else {
