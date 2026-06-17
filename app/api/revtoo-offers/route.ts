@@ -69,31 +69,32 @@ export async function GET(request: NextRequest) {
     const offers = rawOffers
       .map((offer: any) => {
         const payout = parseFloat(offer.payout || offer.reward || 0);
-        if (!payout || !offer.name) return null;
+        const name = offer.name || offer.title;
+        if (!payout || !name) return null;
 
         const events = (offer.conversions || offer.events || [])
           .map((e: any) => ({
-            id: e.id || e.name || `event_${Math.random().toString(36).slice(2, 8)}`,
-            name: e.name || e.title || "Complete Task",
-            payout: parseFloat(e.payout || e.reward || 0),
+            id: e.event_id || e.id || e.name || `event_${Math.random().toString(36).slice(2, 8)}`,
+            name: e.event_title || e.name || e.title || "Complete Task",
+            payout: parseFloat(e.event_payout || e.payout || e.reward || 0),
           }))
           .filter((e: any) => e.payout > 0);
 
         return {
           offer_id: offer.id || offer.offer_id,
-          name: offer.name || offer.title,
+          name,
           description1: offer.description || offer.instructions || "",
           image_url:
             offer.image ||
             offer.icon ||
             "https://via.placeholder.com/150",
           payout,
-          click_url: offer.link || offer.tracking_link,
+          click_url: offer.url || offer.link || offer.tracking_link,
           events: events.length
             ? events
             : [{ id: "install", name: "Complete Offer", payout }],
           provider: "Revtoo",
-          trackingType: offer.conversion_type || offer.type || "CPA",
+          trackingType: offer.category || offer.conversion_type || offer.type || "CPA",
         };
       })
       .filter(Boolean);
