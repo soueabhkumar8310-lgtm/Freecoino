@@ -22,98 +22,83 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Try endpoints from simplest to most complex
     const endpoints = [
-      `https://revtoo.com/api/offers/?api_key=${apiKey}`,
-      `https://revtoo.com/api/offers?api_key=${apiKey}`,
-      `https://revtoo.com/api/offers/?api_key=${apiKey}&user_id=${userId}`,
-      `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}`,
       `https://api.revtoo.com/v1/offers?apiKey=${apiKey}&userId=${userId}`,
+      `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}`,
       `https://wall.revtoo.com/api/offers?apiKey=${apiKey}&userId=${userId}`,
-      `https://revtoo.com/api/offers/?api_key=${apiKey}&user_id=${userId}&device=android`,
     ];
 
+    let response;
+    let lastError;
+
     for (const endpoint of endpoints) {
-      console.log("Revtoo trying:", endpoint.substring(0, 60));
-      const response = await fetch(endpoint, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent":
-            "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36",
-        },
-      });
-
-      if (!response.ok) {
-        console.log("Revtoo HTTP error:", response.status);
-        continue;
-      }
-
-      let data: any;
       try {
-        data = await response.json();
-      } catch {
-        console.log("Revtoo invalid JSON");
-        continue;
-      }
+        response = await fetch(endpoint, {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "Freecoino/1.0",
+          },
+        });
 
-      if (!data || data.success === false) {
-        console.log("Revtoo API error:", data?.message || "unknown");
-        continue;
-      }
-
-      if (!Array.isArray(data.offers)) {
-        console.log("Revtoo no offers array");
-        continue;
-      }
-
-      const offers = data.offers
-        .map((offer: any) => {
-          const payout = parseFloat(offer.payout || offer.reward || 0);
-          if (!payout || !offer.name) return null;
-
-          const events = (offer.conversions || offer.events || [])
-            .map((e: any) => ({
-              id: e.id || e.name || `event_${Math.random().toString(36).slice(2, 8)}`,
-              name: e.name || e.title || "Complete Task",
-              payout: parseFloat(e.payout || e.reward || 0),
-            }))
-            .filter((e: any) => e.payout > 0);
-
-          return {
-            offer_id: offer.id || offer.offer_id,
-            name: offer.name || offer.title,
-            description1: offer.description || offer.instructions || "",
-            image_url:
-              offer.image ||
-              offer.icon ||
-              "https://via.placeholder.com/150",
-            payout,
-            click_url:
-              offer.link ||
-              offer.tracking_link ||
-              offer.offer_link ||
-              offer.url ||
-              `https://revtoo.com/offerwall/${apiKey}/${userId}`,
-            events: events.length
-              ? events
-              : [{ id: "install", name: "Complete Offer", payout }],
-            provider: "Revtoo",
-            trackingType: offer.conversion_type || offer.type || "CPA",
-          };
-        })
-        .filter(Boolean);
-
-      if (offers.length) {
-        return NextResponse.json({ success: true, offers });
+        if (response.ok) break;
+      } catch (error) {
+        lastError = error;
       }
     }
 
-    // All endpoints failed
-    return NextResponse.json({
-      success: true,
-      offers: [],
-      iframeUrl: `https://revtoo.com/offerwall/${apiKey}/${userId}`,
-    });
+    if (!response || !response.ok) {
+      return NextResponse.json({
+        success: true,
+        offers: [],
+        iframeUrl: `https://revtoo.com/offerwall/${apiKey}/${userId}`,
+      });
+    }
+
+    let data: any;
+    try {
+      data = await response.json();
+    } catch {
+      return NextResponse.json({
+        success: true,
+        offers: [],
+        iframeUrl: `https://revtoo.com/offerwall/${apiKey}/${userId}`,
+      });
+    }
+
+    const rawOffers = data.offers || [];
+    const offers = rawOffers
+      .map((offer: any) => {
+        const payout = parseFloat(offer.payout || offer.reward || 0);
+        if (!payout || !offer.name) return null;
+
+        const events = (offer.conversions || offer.events || [])
+          .map((e: any) => ({
+            id: e.id || e.name || `event_${Math.random().toString(36).slice(2, 8)}`,
+            name: e.name || e.title || "Complete Task",
+            payout: parseFloat(e.payout || e.reward || 0),
+          }))
+          .filter((e: any) => e.payout > 0);
+
+        return {
+          offer_id: offer.id || offer.offer_id,
+          name: offer.name || offer.title,
+          description1: offer.description || offer.instructions || "",
+          image_url:
+            offer.image ||
+            offer.icon ||
+            "https://via.placeholder.com/150",
+          payout,
+          click_url: offer.link || offer.tracking_link,
+          events: events.length
+            ? events
+            : [{ id: "install", name: "Complete Offer", payout }],
+          provider: "Revtoo",
+          trackingType: offer.conversion_type || offer.type || "CPA",
+        };
+      })
+      .filter(Boolean);
+
+    return NextResponse.json({ success: true, offers });
   } catch (error) {
     console.error("Revtoo API error:", error);
     return NextResponse.json(
