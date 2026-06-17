@@ -1508,10 +1508,12 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
     }
     if (activeWall === "Notik") {
       // Notik iframe integration (API blocked by Cloudflare - iframe only)
+      // Correct URL format from Notik documentation
       const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "WI24gd7OaJ";
       const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "uuGH0N";
-      // Notik iframe URL format: https://notik.me/offerwall/{app_id}/{user_id}
-      return `https://notik.me/offerwall/${appId}/${userId}`;
+      
+      // Notik requires all parameters in query string
+      return `https://notik.me/coins?app_id=${appId}&pub_id=${pubId}&user_id=${userId}`;
     }
     if (activeWall === "GemiAd") {
       const placementId = process.env.NEXT_PUBLIC_GEMIAD_PLACEMENT_ID || "your_placement_id_here";

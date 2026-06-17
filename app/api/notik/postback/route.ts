@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+// Notik postback whitelisted IPs
+const NOTIK_IPS = ['192.53.121.112', '158.69.116.45'];
 
 export async function GET(request: NextRequest) {
   return handlePostback(request);
@@ -16,45 +20,99 @@ async function handlePostback(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
-    // Notik postback parameters (check Notik documentation for exact parameter names)
-    const userId = searchParams.get('user_id') || searchParams.get('userId') || searchParams.get('external_user_id');
-    const transactionId = searchParams.get('transaction_id') || searchParams.get('transactionId') || searchParams.get('tx_id');
-    const amount = searchParams.get('amount') || searchParams.get('payout') || searchParams.get('reward');
-    const offerName = searchParams.get('offer_name') || searchParams.get('offerName') || searchParams.get('offer_title');
-    const status = searchParams.get('status') || 'completed';
-    const signature = searchParams.get('signature') || searchParams.get('hash');
+    // Verify IP address (Notik only sends from specific IPs)
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+    const clientIp = forwardedFor?.split(',')[0] || realIp || 'unknown';
+    
+    console.log('📥 Notik Postback from IP:', clientIp);
+    
+    // Note: IP verification disabled for localhost testing
+    // In production, uncomment this:
+    // if (!NOTIK_IPS.includes(clientIp)) {
+    //   console.error('❌ Unauthorized IP:', clientIp);
+    //   return NextResponse.json({ success: false, error: 'Unauthorized IP' }, { status: 403 });
+    // }
+    
+    // Extract Notik postback parameters (per documentation)
+    const pub_id = searchParams.get('pub_id');
+    const app_id = searchParams.get('app_id');
+    const user_id = searchParams.get('user_id');
+    const s1 = searchParams.get('s1'); // Optional subID
+    const amount = searchParams.get('amount'); // Virtual currency amount
+    const payout = searchParams.get('payout'); // USD payout
+    const offer_id = searchParams.get('offer_id');
+    const offer_name = searchParams.get('offer_name');
+    const currency_name = searchParams.get('currency_name');
+    const timestamp = searchParams.get('timestamp');
+    const hash = searchParams.get('hash'); // Security hash
+    const txn_id = searchParams.get('txn_id'); // Unique transaction ID
+    const conversion_ip = searchParams.get('conversion_ip');
+    const rewarded_txn_id = searchParams.get('rewarded_txn_id'); // For chargebacks
+    const event_id = searchParams.get('event_id'); // Event ID (if event-based)
+    const event_name = searchParams.get('event_name'); // Event name (if event-based)
 
     // Log all parameters for debugging
-    console.log('📥 Notik Postback Received:', {
-      userId,
-      transactionId,
-      amount,
-      offerName,
-      status,
-      signature,
+    console.log('📥 Notik Postback Parameters:', {
+      pub_id, app_id, user_id, amount, payout, offer_id, offer_name,
+      event_id, event_name, txn_id, timestamp, hash_present: !!hash,
       allParams: Object.fromEntries(searchParams.entries())
     });
 
     // Validate required parameters
-    if (!userId || !transactionId || !amount) {
+    if (!user_id || !txn_id || !amount) {
       console.error('❌ Missing required parameters');
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Missing required parameters: user_id, transaction_id, amount',
-          received: Object.fromEntries(searchParams.entries())
+          error: 'Missing required parameters: user_id, txn_id, amount',
+          received: { user_id, txn_id, amount }
         },
         { status: 400 }
       );
     }
 
-    // Verify signature if provided (check Notik docs for signature verification)
-    const apiSecret = process.env.NOTIK_API_SECRET;
-    if (signature && apiSecret) {
-      // TODO: Implement signature verification based on Notik documentation
-      // Example: const expectedSignature = crypto.createHmac('sha256', apiSecret).update(userId + transactionId + amount).digest('hex');
-      // if (signature !== expectedSignature) { return error }
-      console.log('🔐 Signature verification: TODO (implement based on Notik docs)');
+    // Verify hash signature (IMPORTANT for security!)
+    const secretKey = process.env.NOTIK_API_SECRET;
+    if (hash && secretKey) {
+      // Build URL without hash parameter
+      const protocol = request.headers.get('x-forwarded-proto') || 'https';
+      const host = request.headers.get('host');
+      const pathname = new URL(request.url).pathname;
+      
+      // Get all params except hash
+      const paramsWithoutHash = new URLSearchParams();
+      searchParams.forEach((value, key) => {
+        if (key !== 'hash') {
+          paramsWithoutHash.append(key, value);
+        }
+      });
+      
+      const urlWithoutHash = `${protocol}://${host}${pathname}?${paramsWithoutHash.toString()}`;
+      
+      // Generate HMAC SHA1 hash
+      const expectedHash = crypto
+        .createHmac('sha1', secretKey)
+        .update(urlWithoutHash)
+        .digest('hex');
+      
+      console.log('🔐 Hash Verification:', {
+        received: hash,
+        expected: expectedHash,
+        match: hash === expectedHash
+      });
+      
+      if (hash !== expectedHash) {
+        console.error('❌ Invalid hash signature!');
+        return NextResponse.json(
+          { success: false, error: 'Invalid signature' },
+          { status: 403 }
+        );
+      }
+      
+      console.log('✅ Hash verification passed');
+    } else {
+      console.warn('⚠️ Hash verification skipped (no secret key or hash)');
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -63,12 +121,13 @@ async function handlePostback(request: NextRequest) {
     const { data: existingTransaction } = await supabase
       .from('offerwall_transactions')
       .select('id')
-      .eq('transaction_id', transactionId)
+      .eq('transaction_id', txn_id)
       .eq('offerwall', 'Notik')
       .single();
 
     if (existingTransaction) {
-      console.log('⚠️ Duplicate transaction detected:', transactionId);
+      console.log('⚠️ Duplicate transaction detected:', txn_id);
+      // Return 200 (success) to Notik even for duplicates
       return NextResponse.json(
         { success: true, message: 'Transaction already processed' },
         { status: 200 }
@@ -77,7 +136,7 @@ async function handlePostback(request: NextRequest) {
 
     // Parse amount (convert to number)
     const coinAmount = parseFloat(amount);
-    if (isNaN(coinAmount) || coinAmount <= 0) {
+    if (isNaN(coinAmount)) {
       console.error('❌ Invalid amount:', amount);
       return NextResponse.json(
         { success: false, error: 'Invalid amount' },
@@ -85,15 +144,21 @@ async function handlePostback(request: NextRequest) {
       );
     }
 
+    // Check for chargeback (negative amount)
+    const isChargeback = coinAmount < 0;
+    if (isChargeback) {
+      console.warn('⚠️ Chargeback detected:', { txn_id, amount: coinAmount, rewarded_txn_id });
+    }
+
     // Get user's current balance
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('balance')
-      .eq('id', userId)
+      .eq('id', user_id)
       .single();
 
     if (userError || !userData) {
-      console.error('❌ User not found:', userId, userError);
+      console.error('❌ User not found:', user_id, userError);
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
@@ -101,11 +166,11 @@ async function handlePostback(request: NextRequest) {
     }
 
     const currentBalance = parseFloat(userData.balance) || 0;
-    const newBalance = currentBalance + coinAmount;
+    const newBalance = Math.max(0, currentBalance + coinAmount); // Don't allow negative balance
 
     // Update user balance via RPC (atomic operation)
     const { error: rpcError } = await supabase.rpc('add_coins', {
-      p_user_id: userId,
+      p_user_id: user_id,
       p_amount: coinAmount,
     });
 
@@ -116,7 +181,7 @@ async function handlePostback(request: NextRequest) {
       const { error: updateError } = await supabase
         .from('users')
         .update({ balance: newBalance })
-        .eq('id', userId);
+        .eq('id', user_id);
 
       if (updateError) {
         console.error('❌ Failed to update balance (fallback):', updateError);
@@ -131,13 +196,18 @@ async function handlePostback(request: NextRequest) {
     const { error: transactionError } = await supabase
       .from('offerwall_transactions')
       .insert({
-        user_id: userId,
+        user_id: user_id,
         offerwall: 'Notik',
-        transaction_id: transactionId,
+        transaction_id: txn_id,
         amount: coinAmount,
-        offer_name: offerName || 'Unknown Offer',
-        status: status,
-        created_at: new Date().toISOString(),
+        offer_id: offer_id || '',
+        offer_name: offer_name || 'Unknown Offer',
+        event_id: event_id || null,
+        event_name: event_name || null,
+        status: isChargeback ? 'chargeback' : 'completed',
+        payout_usd: payout ? parseFloat(payout) : null,
+        conversion_ip: conversion_ip || null,
+        created_at: timestamp || new Date().toISOString(),
       });
 
     if (transactionError) {
@@ -147,34 +217,34 @@ async function handlePostback(request: NextRequest) {
     }
 
     console.log('✅ Notik postback processed successfully:', {
-      userId,
-      transactionId,
+      user_id,
+      txn_id,
       amount: coinAmount,
+      event_name: event_name || 'N/A',
       oldBalance: currentBalance,
       newBalance: newBalance,
+      isChargeback,
     });
 
+    // Return 200 status code (Notik requires this)
     return NextResponse.json(
       {
         success: true,
         message: 'Postback processed successfully',
-        userId,
-        transactionId,
-        amount: coinAmount,
-        newBalance,
       },
       { status: 200 }
     );
 
   } catch (error) {
     console.error('❌ Notik postback error:', error);
+    // Still return 200 to avoid Notik retry loop
     return NextResponse.json(
       { 
         success: false, 
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: 200 } // Return 200 even on error to prevent retries
     );
   }
 }
