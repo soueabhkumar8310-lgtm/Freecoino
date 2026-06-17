@@ -87,8 +87,13 @@ export async function GET(request: NextRequest) {
       const payout = parseFloat(offer.payout || offer.reward || 0);
       let events = offer.conversions || offer.events || [];
 
-      // Generate synthetic milestone events for offers without events
-      if (!events.length && payout > 0) {
+      // Revtoo often returns conversions without payout values or empty events.
+      // Generate synthetic milestone events when events are missing or have no valid payouts.
+      const hasValidPayouts = events.some((e: any) => {
+        const val = parseFloat(e.payout || e.reward || 0);
+        return val > 0;
+      });
+      if ((!events.length || !hasValidPayouts) && payout > 0) {
         events = [
           { id: 'install', name: 'Install the App & Register', payout: +(payout * 0.10).toFixed(2) },
           { id: 'level_3', name: 'Reach Level 3', payout: +(payout * 0.20).toFixed(2) },
@@ -98,6 +103,13 @@ export async function GET(request: NextRequest) {
         ].filter(e => e.payout > 0);
       }
 
+      // Ensure events always have valid id, name, and payout
+      events = events.map((e: any) => ({
+        id: e.id || `event_${Math.random().toString(36).slice(2, 8)}`,
+        name: e.name || e.title || 'Complete Task',
+        payout: parseFloat(e.payout || e.reward || 0),
+      })).filter((e: any) => e.payout > 0);
+
       return {
         offer_id: offer.id || offer.offer_id,
         name: offer.name || offer.title,
@@ -106,7 +118,7 @@ export async function GET(request: NextRequest) {
         description3: offer.terms || '',
         image_url: offer.image || offer.icon || 'https://via.placeholder.com/150',
         payout,
-        click_url: offer.link || offer.tracking_link,
+        click_url: offer.link || offer.tracking_link || offer.offer_link || offer.url || `https://revtoo.com/offerwall/${apiKey}/${userId}`,
         categories: offer.categories || [],
         events,
         provider: 'Revtoo',

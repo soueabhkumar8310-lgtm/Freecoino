@@ -526,6 +526,7 @@ function OfferDetailsModal({
   const hasEvents = offer.events && offer.events.length > 0;
 
   const handlePlayClick = () => {
+    if (!offer.click_url || offer.click_url === '#') return;
     if (isMobile) {
       window.open(offer.click_url, "_blank");
     } else {
