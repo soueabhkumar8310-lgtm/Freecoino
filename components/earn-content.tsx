@@ -1563,8 +1563,8 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return "";
     }
     if (activeWall === "Timewall") {
-      const placementId = "ba72f7d1dde24922";
-      return `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
+      const placementId = "ba72f7d1fde24922";
+      return `https://wall.timewall.io/${placementId}?userId=${userId}`;
     }
     return "";
   };
