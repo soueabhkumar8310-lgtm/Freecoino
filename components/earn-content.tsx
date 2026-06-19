@@ -1490,6 +1490,14 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return;
     }
 
+    // Timewall - open in new window (game downloads don't work in iframe)
+    if (wall === "Timewall") {
+      const placementId = "ba72f7d1dde24922";
+      const timewallUrl = `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
+      window.open(timewallUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     // Notik doesn't support iframe embedding, open in new window
     if (wall === "Notik") {
       const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
@@ -1563,8 +1571,8 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return "";
     }
     if (activeWall === "Timewall") {
-      const placementId = "ba72f7d1fde24922";
-      return `https://wall.timewall.io/${placementId}?userId=${userId}`;
+      const placementId = "ba72f7d1dde24922";
+      return `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
     }
     return "";
   };
