@@ -36,6 +36,7 @@ import {
   X,
   Mail,
   ShoppingBag,
+  Target,
 } from "lucide-react";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import Icons from "@/components/icons";
@@ -48,6 +49,7 @@ import colors from "@/theme/colors";
 const NAV_ITEMS = [
   { label: "Earn", href: "/earn", Icon: Gift },
   { label: "Offers", href: "/offers/all", Icon: ShoppingBag },
+  { label: "My Offers", href: "/my-offers", Icon: Target },
   { label: "Cashout", href: "/cashout", Icon: Wallet },
   { label: "Rewards", href: "/daily-bonus", Icon: CalendarCheck },
 ];
