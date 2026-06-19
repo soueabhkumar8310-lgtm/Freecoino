@@ -74,8 +74,44 @@ function OfferDetailsModal({
 
   const hasEvents = offer.events && offer.events.length > 0;
 
+  const getTrackedUrl = (clickUrl: string): string => {
+    if (!clickUrl || !userId) return clickUrl;
+    const separator = clickUrl.includes("?") ? "&" : "?";
+    switch (offer.provider) {
+      case "Revtoo":
+        return `${clickUrl}${separator}subId=${userId}`;
+      case "Notik":
+      case "Vortex":
+      case "Gemiad":
+        return `${clickUrl}${separator}user_id=${userId}`;
+      default:
+        return clickUrl;
+    }
+  };
+
+  const trackOfferClick = async () => {
+    try {
+      await fetch("/api/track-offer-click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          offerId: offer.offer_id,
+          offerName: offer.name,
+          provider: offer.provider,
+          payout: typeof offer.payout === "string" ? parseInt(offer.payout) : offer.payout,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to track offer click:", err);
+    }
+  };
+
   const handlePlayClick = () => {
-    if (!offer.click_url || offer.click_url === '#') return;
+    if (!offer.click_url || offer.click_url === "#") return;
+
+    trackOfferClick();
+    const trackedUrl = getTrackedUrl(offer.click_url);
 
     // If Revtoo offer with broken redirect URL, open offerwall instead
     if (offer.provider === "Revtoo" && offer.click_url.includes("revtoo.com/redirect")) {
@@ -86,7 +122,7 @@ function OfferDetailsModal({
     }
 
     if (isMobile) {
-      window.open(offer.click_url, "_blank");
+      window.open(trackedUrl, "_blank");
     } else {
       setQrDialogOpen(true);
     }
@@ -94,13 +130,15 @@ function OfferDetailsModal({
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(offer.click_url);
+      await navigator.clipboard.writeText(getTrackedUrl(offer.click_url));
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
     }
   };
+
+  const trackedClickUrl = getTrackedUrl(offer.click_url);
 
   return (
     <>
@@ -525,7 +563,7 @@ function OfferDetailsModal({
           }}
         >
           <QRCodeSVG 
-            value={offer.click_url} 
+            value={trackedClickUrl} 
             size={200}
             level="H"
             includeMargin={true}
@@ -565,7 +603,7 @@ function OfferDetailsModal({
           onClick={handleCopyLink}
         >
           <Box sx={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {offer.click_url}
+            {trackedClickUrl}
           </Box>
           <Box
             sx={{
