@@ -527,6 +527,14 @@ function OfferDetailsModal({
 
   const handlePlayClick = () => {
     if (!offer.click_url || offer.click_url === '#') return;
+
+    if (offer.provider === "Revtoo" && offer.click_url.includes("revtoo.com/redirect")) {
+      const apiKey = process.env.NEXT_PUBLIC_REVTOO_API_KEY || "lmtx1hoinv2rvigke7z15bn7pe20fh";
+      const offerwallUrl = `https://revtoo.com/offerwall/${apiKey}/${userId}`;
+      window.open(offerwallUrl, "_blank");
+      return;
+    }
+
     if (isMobile) {
       window.open(offer.click_url, "_blank");
     } else {

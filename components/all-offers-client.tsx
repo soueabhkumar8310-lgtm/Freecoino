@@ -37,11 +37,13 @@ interface NotikOffer {
 function OfferDetailsModal({ 
   offer, 
   open, 
-  onClose 
+  onClose,
+  userId 
 }: { 
   offer: NotikOffer | null; 
   open: boolean; 
   onClose: () => void;
+  userId?: string;
 }) {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
@@ -54,11 +56,17 @@ function OfferDetailsModal({
 
   const handlePlayClick = () => {
     if (!offer.click_url || offer.click_url === '#') return;
+
+    if (offer.provider === "Revtoo" && offer.click_url.includes("revtoo.com/redirect")) {
+      const apiKey = process.env.NEXT_PUBLIC_REVTOO_API_KEY || "lmtx1hoinv2rvigke7z15bn7pe20fh";
+      const offerwallUrl = `https://revtoo.com/offerwall/${apiKey}/${userId}`;
+      window.open(offerwallUrl, "_blank");
+      return;
+    }
+
     if (isMobile) {
-      // On mobile, open the link directly
       window.open(offer.click_url, "_blank");
     } else {
-      // On desktop, show QR code dialog
       setQrDialogOpen(true);
     }
   };
@@ -1096,7 +1104,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       </Box>
 
       {/* Offer Details Modal */}
-      <OfferDetailsModal offer={selectedOffer} open={modalOpen} onClose={() => setModalOpen(false)} />
+      <OfferDetailsModal offer={selectedOffer} open={modalOpen} onClose={() => setModalOpen(false)} userId={userId} />
     </Box>
   );
 }

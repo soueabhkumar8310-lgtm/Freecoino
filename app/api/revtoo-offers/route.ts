@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     }
 
     const endpoints = [
+      `https://revtoo.com/api/offers/?api_key=${apiKey}&user_id=${userId}`,
       `https://api.revtoo.com/v1/offers?apiKey=${apiKey}&userId=${userId}`,
-      `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}`,
       `https://wall.revtoo.com/api/offers?apiKey=${apiKey}&userId=${userId}`,
     ];
 

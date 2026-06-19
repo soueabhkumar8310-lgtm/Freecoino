@@ -18,7 +18,7 @@ type EarnContentProps = {
   userEmail: string;
 };
 
-type WallType = "MyLead" | "CPX Research" | "Vortex" | "Notik" | "Taskwall" | "GemiAd" | "TheoremReach" | "Revtoo";
+type WallType = "MyLead" | "CPX Research" | "Vortex" | "Notik" | "Taskwall" | "Timewall" | "GemiAd" | "TheoremReach" | "Revtoo";
 type DeviceOS = "android" | "ios" | "windows";
 
 interface NotikOffer {
@@ -57,11 +57,13 @@ interface CPXSurvey {
 function OfferDetailsModal({ 
   offer, 
   open, 
-  onClose 
+  onClose,
+  userId 
 }: { 
   offer: NotikOffer | null; 
   open: boolean; 
   onClose: () => void;
+  userId?: string;
 }) {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
@@ -74,11 +76,18 @@ function OfferDetailsModal({
 
   const handlePlayClick = () => {
     if (!offer.click_url || offer.click_url === '#') return;
+
+    // If Revtoo offer with broken redirect URL, open offerwall instead
+    if (offer.provider === "Revtoo" && offer.click_url.includes("revtoo.com/redirect")) {
+      const apiKey = process.env.NEXT_PUBLIC_REVTOO_API_KEY || "lmtx1hoinv2rvigke7z15bn7pe20fh";
+      const offerwallUrl = `https://revtoo.com/offerwall/${apiKey}/${userId}`;
+      window.open(offerwallUrl, "_blank");
+      return;
+    }
+
     if (isMobile) {
-      // On mobile, open the link directly
       window.open(offer.click_url, "_blank");
     } else {
-      // On desktop, show QR code dialog
       setQrDialogOpen(true);
     }
   };
@@ -1190,7 +1199,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       </Box>
 
       {/* Offer Details Modal */}
-      <OfferDetailsModal offer={selectedOffer} open={modalOpen} onClose={() => setModalOpen(false)} />
+      <OfferDetailsModal offer={selectedOffer} open={modalOpen} onClose={() => setModalOpen(false)} userId={userId} />
     </Box>
   );
 }
@@ -1475,6 +1484,12 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
   const myLeadBaseUrl = process.env.NEXT_PUBLIC_MYLEAD_WALL_URL ?? "";
 
   const handleOpenWall = (wall: WallType) => {
+    // Taskwall - coming soon
+    if (wall === "Taskwall") {
+      alert("Taskwall coming soon!");
+      return;
+    }
+
     // Notik doesn't support iframe embedding, open in new window
     if (wall === "Notik") {
       const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
@@ -1545,8 +1560,10 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return `https://revtoo.com/offerwall/${apiKey}/${userId}`;
     }
     if (activeWall === "Taskwall") {
-      // Timewall integration - using correct iframe URL from dashboard
-      const placementId = "ba72f7d1dde24922"; // Freecoino Main Offerwall
+      return "";
+    }
+    if (activeWall === "Timewall") {
+      const placementId = "ba72f7d1dde24922";
       return `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
     }
     return "";
@@ -1800,6 +1817,107 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
             <Box className="wall-rating" sx={{ display: "flex", gap: 0.25, transition: "filter 0.2s ease" }}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Box key={star} sx={{ color: star <= 4 ? "#fbbf24" : "rgba(255,255,255,0.2)", fontSize: "0.875rem" }}>
+                  ★
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+
+          {/* Timewall card */}
+          <Paper
+            onClick={() => handleOpenWall("Timewall")}
+            elevation={0}
+            sx={{
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderRadius: 2,
+              p: 2,
+              cursor: "pointer",
+              background: "linear-gradient(180deg, #1a1d2e 0%, #1f2d4f 40%, rgba(5, 159, 251, 0.3) 100%)",
+              border: "1px solid rgba(5, 159, 251, 0.2)",
+              transition: "all 0.2s ease",
+              minWidth: { xs: "auto", sm: 160 },
+              maxWidth: { xs: "none", sm: 160 },
+              width: { xs: "100%", sm: "auto" },
+              flexShrink: 0,
+              overflow: "hidden",
+              "&:hover": {
+                background: "linear-gradient(180deg, #1a1d2e 0%, #1f2d4f 40%, rgba(5, 159, 251, 0.4) 100%)",
+                "& .wall-logo": {
+                  filter: "blur(8px)",
+                },
+                "& .wall-rating": {
+                  filter: "blur(8px)",
+                },
+                "& .hover-play-button": {
+                  opacity: 1,
+                },
+              },
+            }}
+          >
+            {/* Hover Play Button */}
+            <Box
+              className="hover-play-button"
+              sx={{
+                position: "absolute",
+                inset: 0,
+                opacity: 0,
+                zIndex: 1000,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "opacity 0.2s ease",
+              }}
+            >
+              <Box
+                sx={{
+                  backgroundColor: colors.background.secondary,
+                  borderRadius: 10,
+                  padding: 2,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: 40,
+                  height: 40,
+                }}
+              >
+                <Box
+                  component="img"
+                  src="https://freecash.com/public/img/play-offer.svg"
+                  alt="play-button"
+                  sx={{ objectFit: "contain", objectPosition: "center" }}
+                />
+              </Box>
+            </Box>
+
+            {/* Logo */}
+            <Box
+              component="img"
+              src="/timewall.svg"
+              alt="Timewall"
+              sx={{
+                width: 100,
+                height: 100,
+                borderRadius: 1,
+                objectFit: "contain",
+                mb: 2,
+                transition: "filter 0.2s ease",
+              }}
+              className="wall-logo"
+            />
+
+            {/* Name */}
+            <Typography variant="subtitle2" isBold sx={{ color: "#fff", mb: 1, textAlign: "center" }}>
+              Timewall
+            </Typography>
+
+            {/* Star Rating */}
+            <Box className="wall-rating" sx={{ display: "flex", gap: 0.25, transition: "filter 0.2s ease" }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Box key={star} sx={{ color: star <= 5 ? "#fbbf24" : "rgba(255,255,255,0.2)", fontSize: "0.875rem" }}>
                   ★
                 </Box>
               ))}
@@ -2208,6 +2326,30 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
                 </Box>
               ))}
             </Box>
+          </Paper>
+
+          {/* Timewall Info Banner */}
+          <Paper
+            sx={{
+              borderRadius: 2,
+              background: "linear-gradient(135deg, rgba(5, 159, 251, 0.12) 0%, rgba(5, 159, 251, 0.04) 100%)",
+              border: "1px solid rgba(5, 159, 251, 0.2)",
+              p: 2.5,
+              display: "flex",
+              flexDirection: "column",
+              gap: 0.5,
+              minWidth: { xs: "auto", sm: 200 },
+              maxWidth: { xs: "none", sm: 200 },
+              width: { xs: "100%", sm: "auto" },
+              flexShrink: 0,
+            }}
+          >
+            <Typography sx={{ fontSize: "0.8rem", color: "#059FFB", fontWeight: 600 }}>
+              Timewall Offer Wall
+            </Typography>
+            <Typography sx={{ fontSize: "0.7rem", color: colors.text.secondary, lineHeight: 1.4 }}>
+              Complete offers & surveys to earn. New offers added daily!
+            </Typography>
           </Paper>
         </Box>
       </Box>
