@@ -1522,9 +1522,12 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
   const myLeadBaseUrl = process.env.NEXT_PUBLIC_MYLEAD_WALL_URL ?? "";
 
   const handleOpenWall = (wall: WallType) => {
-    // Taskwall - coming soon
+    // Taskwall - open in new window
     if (wall === "Taskwall") {
-      alert("Taskwall coming soon!");
+      const taskwallUrl = process.env.NEXT_PUBLIC_TASKWALL_URL;
+      if (taskwallUrl) {
+        window.open(taskwallUrl, '_blank', 'noopener,noreferrer');
+      }
       return;
     }
 
@@ -1606,7 +1609,8 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return `https://revtoo.com/offerwall/${apiKey}/${userId}`;
     }
     if (activeWall === "Taskwall") {
-      return "";
+      const apiKey = process.env.NEXT_PUBLIC_TASKWALL_API_KEY || "";
+      return apiKey ? `https://wall.taskwall.net/v1/${apiKey}/show/${userId}` : "";
     }
     if (activeWall === "Timewall") {
       const placementId = "ba72f7d1dde24922";
