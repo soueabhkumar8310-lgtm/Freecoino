@@ -73,6 +73,21 @@ export async function GET(req: NextRequest) {
       return new NextResponse("Internal Server Error", { status: 500 });
     }
 
+    // Create notification for user
+    try {
+      await supabaseAdmin
+        .from("notifications")
+        .insert({
+          user_id: userId,
+          title: "Survey Completed! 🎉",
+          message: `You earned ${coinsToAward} coins from a CPX Survey!`,
+          type: "success",
+          is_read: false,
+        });
+    } catch (notifError) {
+      console.error("Failed to create notification:", notifError);
+    }
+
     console.log(`✅ CPX postback processed: ${coinsToAward} coins (${amountUsd} USD) awarded to ${userId}`);
     return new NextResponse("OK", { status: 200 });
   } catch (error) {

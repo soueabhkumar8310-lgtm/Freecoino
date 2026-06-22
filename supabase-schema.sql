@@ -22,10 +22,12 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
 CREATE POLICY "Users can read own profile"
   ON public.profiles FOR SELECT
   USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id);
@@ -52,6 +54,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Users can read own transactions" ON public.transactions;
 CREATE POLICY "Users can read own transactions"
   ON public.transactions FOR SELECT
   USING (auth.uid() = user_id);
@@ -83,10 +86,12 @@ CREATE TABLE IF NOT EXISTS public.withdrawals (
 ALTER TABLE public.withdrawals ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Users can read own withdrawals" ON public.withdrawals;
 CREATE POLICY "Users can read own withdrawals"
   ON public.withdrawals FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create withdrawals" ON public.withdrawals;
 CREATE POLICY "Users can create withdrawals"
   ON public.withdrawals FOR INSERT
   WITH CHECK (auth.uid() = user_id);
@@ -114,6 +119,7 @@ CREATE UNIQUE INDEX idx_daily_bonuses_user_date ON public.daily_bonuses(user_id,
 ALTER TABLE public.daily_bonuses ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Users can read own daily bonuses" ON public.daily_bonuses;
 CREATE POLICY "Users can read own daily bonuses"
   ON public.daily_bonuses FOR SELECT
   USING (auth.uid() = user_id);
@@ -141,6 +147,7 @@ CREATE TABLE IF NOT EXISTS public.offer_completions (
 ALTER TABLE public.offer_completions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Users can read own offer completions" ON public.offer_completions;
 CREATE POLICY "Users can read own offer completions"
   ON public.offer_completions FOR SELECT
   USING (auth.uid() = user_id);
@@ -150,7 +157,36 @@ CREATE INDEX idx_offer_completions_user_id ON public.offer_completions(user_id);
 CREATE INDEX idx_offer_completions_status ON public.offer_completions(status);
 
 -- =====================================================
--- 6. FUNCTIONS
+-- 6. NOTIFICATIONS TABLE
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'info',
+  is_read BOOLEAN DEFAULT FALSE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  CONSTRAINT notifications_type_check CHECK (type IN ('info', 'success', 'warning', 'error'))
+);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own notifications" ON public.notifications;
+CREATE POLICY "Users can view own notifications"
+  ON public.notifications FOR SELECT
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
+CREATE POLICY "Users can update own notifications"
+  ON public.notifications FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE INDEX idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX idx_notifications_created_at ON public.notifications(created_at DESC);
+
+-- =====================================================
+-- 7. FUNCTIONS
 -- =====================================================
 
 -- Function: Auto-create profile on user signup

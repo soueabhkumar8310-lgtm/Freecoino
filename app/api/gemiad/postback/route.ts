@@ -144,6 +144,35 @@ async function handlePostback(request: NextRequest) {
       // User already got the coins
     }
 
+    // Update offer_completions from pending to completed
+    if (transactionId) {
+      try {
+        await supabase
+          .from('offer_completions')
+          .update({ status: 'completed', completed_at: new Date().toISOString() })
+          .eq('user_id', userId)
+          .eq('offer_id', transactionId)
+          .eq('status', 'pending');
+      } catch (updateError) {
+        console.error('⚠️ Failed to update offer_completions:', updateError);
+      }
+    }
+
+    // Create notification for user
+    try {
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          title: 'Offer Completed! 🎉',
+          message: `You earned ${coinAmount} coins from ${offerName || 'Gemiad Offer'}!`,
+          type: 'success',
+          is_read: false,
+        });
+    } catch (notifError) {
+      console.error('⚠️ Failed to create notification:', notifError);
+    }
+
     console.log('✅ Gemiad postback processed successfully:', {
       userId,
       transactionId,

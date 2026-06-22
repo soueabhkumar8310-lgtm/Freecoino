@@ -102,6 +102,21 @@ async function handlePostback(req: NextRequest) {
       return new NextResponse("Internal Server Error", { status: 500 });
     }
 
+    // Create notification for user
+    try {
+      await supabaseAdmin
+        .from("notifications")
+        .insert({
+          user_id: userId,
+          title: "Offer Completed! 🎉",
+          message: `You earned ${coinsToAward} coins from Revtoo Offer!`,
+          type: "success",
+          is_read: false,
+        });
+    } catch (notifError) {
+      console.error("Failed to create notification:", notifError);
+    }
+
     return new NextResponse("OK", { status: 200 });
   } catch (error) {
     console.error("Revtoo postback error:", error);

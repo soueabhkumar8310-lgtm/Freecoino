@@ -44,6 +44,7 @@ import Typography from "@/components/ui/Typography";
 import NotificationBell from "@/components/notification-bell";
 import BalanceDisplay from "@/components/balance-display";
 import BottomNavbar from "@/components/bottom-navbar";
+import CompletionToast from "@/components/completion-toast";
 import colors from "@/theme/colors";
 
 const NAV_ITEMS = [
@@ -453,6 +454,9 @@ export default function FullscreenShell({
       >
         {children}
       </Box>
+
+      {/* Completion Toast Notification */}
+      <CompletionToast />
 
       {/* Bottom Navigation Bar - Mobile & Tablet Only */}
       <BottomNavbar />

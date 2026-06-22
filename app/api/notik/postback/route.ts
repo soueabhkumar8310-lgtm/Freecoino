@@ -205,6 +205,35 @@ async function handlePostback(request: NextRequest) {
       // User already got the coins
     }
 
+    // Update offer_completions from pending to completed
+    if (!isChargeback && offer_id) {
+      try {
+        await supabase
+          .from('offer_completions')
+          .update({ status: 'completed', completed_at: new Date().toISOString() })
+          .eq('user_id', user_id)
+          .eq('offer_id', offer_id)
+          .eq('status', 'pending');
+      } catch (updateError) {
+        console.error('⚠️ Failed to update offer_completions:', updateError);
+      }
+    }
+
+    // Create notification for user
+    try {
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: user_id,
+          title: 'Offer Completed! 🎉',
+          message: `You earned ${coinAmount} coins from ${offer_name || 'Notik Offer'}!`,
+          type: 'success',
+          is_read: false,
+        });
+    } catch (notifError) {
+      console.error('⚠️ Failed to create notification:', notifError);
+    }
+
     console.log('✅ Notik postback processed successfully:', {
       user_id,
       txn_id,

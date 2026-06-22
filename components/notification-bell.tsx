@@ -11,6 +11,7 @@ import {
 import { Bell } from "lucide-react";
 import Typography from "@/components/ui/Typography";
 import colors from "@/theme/colors";
+import { supabase } from "@/lib/supabase/client";
 
 interface Notification {
   id: string;
@@ -27,11 +28,21 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      }
+    });
+  }, []);
 
   const fetchNotifications = useCallback(async () => {
+    if (!userId) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/notifications?t=${Date.now()}`, {
+      const res = await fetch(`/api/notifications?user_id=${userId}&t=${Date.now()}`, {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
       });
@@ -45,12 +56,14 @@ export default function NotificationBell() {
     }
     setLoading(false);
     setFetched(true);
-  }, []);
+  }, [userId]);
 
   // Fetch on mount to get unread count
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    if (userId) {
+      fetchNotifications();
+    }
+  }, [fetchNotifications, userId]);
 
   async function handleOpen(e: React.MouseEvent<HTMLElement>) {
     setAnchorEl(e.currentTarget);
