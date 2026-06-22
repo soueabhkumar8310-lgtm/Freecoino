@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import {
   Box,
@@ -89,7 +89,15 @@ export default function HistoryClient({
   const [completions, setCompletions] = useState<Completion[]>(initialCompletions);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(initialCompletions.length === 0);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  useEffect(() => {
+    if (initialCompletions.length === 0 && initialTotal === 0) {
+      setIsLoading(true);
+      fetchPage(0).finally(() => setIsLoading(false));
+    }
+  }, [userId, initialCompletions.length, initialTotal]);
 
   async function fetchPage(newPage: number) {
     const from = newPage * PAGE_SIZE;
@@ -226,7 +234,11 @@ export default function HistoryClient({
         </Box>
       </Box>
 
-      {completions.length === 0 ? (
+      {isLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 10 }}>
+          <Typography color="textSecondary" sx={{ animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" }}>Loading history...</Typography>
+        </Box>
+      ) : completions.length === 0 ? (
         <Paper
           elevation={0}
           sx={{

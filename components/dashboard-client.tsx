@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import Typography from "@/components/ui/Typography";
 import colors from "@/theme/colors";
-import { mockUser } from "@/lib/mock-data";
 
 interface Completion {
   id: string;
