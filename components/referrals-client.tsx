@@ -33,7 +33,7 @@ export default function ReferralsClient({
   const [claiming, setClaiming] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
   const [visibleCount, setVisibleCount] = useState(5);
-  const referralLink = `https://Freecoino.app/auth/signup?ref=${referralCode}`;
+  const referralLink = `https://freecoino.com/auth/signup?ref=${referralCode}`;
 
   async function handleCopy() {
     await navigator.clipboard.writeText(referralLink);
