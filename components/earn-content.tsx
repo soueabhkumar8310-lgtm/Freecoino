@@ -78,8 +78,6 @@ function OfferDetailsModal({
     if (!clickUrl || !userId) return clickUrl;
     const separator = clickUrl.includes("?") ? "&" : "?";
     switch (offer.provider) {
-      case "Revtoo":
-        return `${clickUrl}${separator}subId=${userId}`;
       case "Notik":
       case "Vortex":
       case "Gemiad":
@@ -112,14 +110,6 @@ function OfferDetailsModal({
 
     trackOfferClick();
     const trackedUrl = getTrackedUrl(offer.click_url);
-
-    // If Revtoo offer with broken redirect URL, open offerwall instead
-    if (offer.provider === "Revtoo" && offer.click_url.includes("revtoo.com/redirect")) {
-      const apiKey = process.env.NEXT_PUBLIC_REVTOO_API_KEY || "lmtx1hoinv2rvigke7z15bn7pe20fh";
-      const offerwallUrl = `https://revtoo.com/offerwall/${apiKey}/${userId}`;
-      window.open(offerwallUrl, "_blank");
-      return;
-    }
 
     if (isMobile) {
       window.open(trackedUrl, "_blank");
@@ -737,18 +727,16 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       setLoading(true);
       const primaryOS = deviceOS.length > 0 ? deviceOS[0] : 'android';
       
-      // Fetch from Gemiad, Notik, Vortex, and Revtoo APIs in parallel
-      const [gemiadResponse, notikResponse, vortexResponse, revtooResponse] = await Promise.all([
+      // Fetch from Gemiad, Notik, and Vortex APIs in parallel
+      const [gemiadResponse, notikResponse, vortexResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}`),
         fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}`),
         fetch(`/api/vortex-offers?user_id=${userId}`),
-        fetch(`/api/revtoo-offers?user_id=${userId}&device_os=${primaryOS}`)
       ]);
       
       let gemiadOffers: NotikOffer[] = [];
       let notikOffers: NotikOffer[] = [];
       let vortexOffers: NotikOffer[] = [];
-      let revtooOffers: NotikOffer[] = [];
       
       // Process Gemiad offers (Priority 1)
       if (gemiadResponse.ok) {
@@ -783,25 +771,15 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         }
       }
       
-      // Process Revtoo offers (Priority 4)
-      if (revtooResponse.ok) {
-        const revtooData = await revtooResponse.json();
-        if (revtooData.success && revtooData.offers && Array.isArray(revtooData.offers)) {
-          revtooOffers = revtooData.offers;
-          console.log(`Revtoo offers loaded: ${revtooOffers.length}`);
-        }
-      }
-      
-      // Combine offers with priority: Gemiad > Notik > Vortex > Revtoo
+      // Combine offers with priority: Gemiad > Notik > Vortex
       // Mix them in a round-robin fashion for better distribution
       const combinedOffers: NotikOffer[] = [];
-      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, revtooOffers.length);
+      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length);
       
       for (let i = 0; i < maxProviderLength; i++) {
         if (i < gemiadOffers.length) combinedOffers.push(gemiadOffers[i]);
         if (i < notikOffers.length) combinedOffers.push(notikOffers[i]);
         if (i < vortexOffers.length) combinedOffers.push(vortexOffers[i]);
-        if (i < revtooOffers.length) combinedOffers.push(revtooOffers[i]);
       }
       
       console.log(`Total combined offers: ${combinedOffers.length}`);

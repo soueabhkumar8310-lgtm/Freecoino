@@ -529,8 +529,6 @@ function OfferDetailsModal({
     if (!clickUrl || !userId) return clickUrl;
     const separator = clickUrl.includes("?") ? "&" : "?";
     switch (offer.provider) {
-      case "Revtoo":
-        return `${clickUrl}${separator}subId=${userId}`;
       case "Notik":
       case "Vortex":
       case "Gemiad":
@@ -563,13 +561,6 @@ function OfferDetailsModal({
 
     trackOfferClick();
     const trackedUrl = getTrackedUrl(offer.click_url);
-
-    if (offer.provider === "Revtoo" && offer.click_url.includes("revtoo.com/redirect")) {
-      const apiKey = process.env.NEXT_PUBLIC_REVTOO_API_KEY || "lmtx1hoinv2rvigke7z15bn7pe20fh";
-      const offerwallUrl = `https://revtoo.com/offerwall/${apiKey}/${userId}`;
-      window.open(offerwallUrl, "_blank");
-      return;
-    }
 
     if (isMobile) {
       window.open(trackedUrl, "_blank");
