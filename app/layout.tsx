@@ -99,12 +99,6 @@ export default function RootLayout({
       <head>
         {/* MyLead Verification */}
         <meta name="mylead-verification" content="06ee014a7eeebe13668d1ab6ff036b37" />
-        {/* AdWork / Monetag Verification */}
-        <meta name="monetag" content="bb3f9a104a4d9f24f2f20d08ab979abd" />
-        {/* AdWork MultiTag */}
-        <script src="https://quge5.com/88/tag.min.js" data-zone="253025" async data-cfasync="false"></script>
-        {/* AdWork Push Notifications */}
-        <script src="https://5gvci.com/act/files/tag.min.js?z=11194165" data-cfasync="false" async></script>
         <script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
           async
