@@ -850,10 +850,10 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       
       const primaryOS = selectedPlatforms.length > 0 ? selectedPlatforms[0] : 'android';
       
-      // Fetch from Gemiad, Notik, and Vortex APIs in parallel (Priority order)
-      const [gemiadResponse, notikResponse, vortexResponse] = await Promise.all([
+      // Fetch from Gemiad and Vortex APIs via server, Notik directly from browser (bypass Cloudflare)
+      const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
+      const [gemiadResponse, vortexResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}`),
-        fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}`),
         fetch(`/api/vortex-offers?user_id=${userId}`),
       ]);
       
@@ -870,13 +870,41 @@ export default function AllOffersClient({ userId }: { userId: string }) {
         }
       }
       
-      // Process Notik offers (Priority 2)
-      if (notikResponse.ok) {
-        const notikData = await notikResponse.json();
-        if (notikData.success && notikData.offers && Array.isArray(notikData.offers)) {
-          notikOffers = notikData.offers;
-          console.log(`All Offers - Notik: ${notikOffers.length}`);
+      // Process Notik offers (Priority 2) - direct browser fetch to bypass Cloudflare
+      try {
+        const notikDirectResponse = await fetch(
+          `https://notik.me/api/offers?api_key=${notikApiKey}&user_id=${userId}&device=${primaryOS}`,
+          { credentials: "include", mode: "cors" }
+        );
+        if (notikDirectResponse.ok) {
+          const notikData = await notikDirectResponse.json();
+          const rawOffers = notikData.offers || notikData.data || [];
+          if (Array.isArray(rawOffers)) {
+            notikOffers = rawOffers.map((offer: any) => ({
+              offer_id: offer.id || offer.offerId || offer.offer_id,
+              name: offer.name || offer.title || offer.offer_name,
+              description1: offer.description || offer.instructions || "",
+              image_url: offer.image || offer.icon || "https://via.placeholder.com/150",
+              payout: parseFloat(offer.payout || offer.reward || offer.amount || 0),
+              click_url: offer.link || offer.tracking_link || offer.click_url,
+              provider: "Notik",
+              trackingType: offer.conversion_type || offer.type || "CPA",
+            })).filter((o: any) => o.name && o.payout > 0);
+            console.log(`All Offers - Notik (direct): ${notikOffers.length}`);
+          }
         }
+      } catch (e) {
+        console.log("Notik direct fetch failed, trying server route...", e);
+        try {
+          const notikFallback = await fetch(`/api/notik-offers?user_id=${userId}&device_os=${primaryOS}`);
+          if (notikFallback.ok) {
+            const fbData = await notikFallback.json();
+            if (fbData.success && fbData.offers?.length) {
+              notikOffers = fbData.offers;
+              console.log(`All Offers - Notik (fallback): ${notikOffers.length}`);
+            }
+          }
+        } catch {}
       }
       
       // Process Vortex offers (Priority 3)

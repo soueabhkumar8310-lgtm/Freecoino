@@ -727,10 +727,10 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       setLoading(true);
       const primaryOS = deviceOS.length > 0 ? deviceOS[0] : 'android';
       
-      // Fetch from Gemiad, Notik, and Vortex APIs in parallel
-      const [gemiadResponse, notikResponse, vortexResponse] = await Promise.all([
+      // Fetch from Gemiad and Vortex APIs via server, Notik directly from browser (bypass Cloudflare)
+      const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
+      const [gemiadResponse, vortexResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}`),
-        fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}`),
         fetch(`/api/vortex-offers?user_id=${userId}`),
       ]);
       
@@ -747,19 +747,47 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         }
       }
       
-      // Process Notik offers (Priority 2)
-      if (notikResponse.ok) {
-        const notikText = await notikResponse.text();
-        if (notikText) {
-          const notikData = JSON.parse(notikText);
-          if (notikData.success && notikData.offers && Array.isArray(notikData.offers)) {
-            notikOffers = notikData.offers.map((offer: NotikOffer) => ({
-              ...offer,
-              provider: "Notik"
-            }));
-            console.log(`Notik offers loaded: ${notikOffers.length}`);
+      // Process Notik offers (Priority 2) - direct browser fetch to bypass Cloudflare
+      try {
+        const notikDirectResponse = await fetch(
+          `https://notik.me/api/offers?api_key=${notikApiKey}&user_id=${userId}&device=${primaryOS}`,
+          { credentials: "include", mode: "cors" }
+        );
+        if (notikDirectResponse.ok) {
+          const notikData = await notikDirectResponse.json();
+          const rawOffers = notikData.offers || notikData.data || [];
+          if (Array.isArray(rawOffers)) {
+            notikOffers = rawOffers.map((offer: any) => ({
+              offer_id: offer.id || offer.offerId || offer.offer_id,
+              name: offer.name || offer.title || offer.offer_name,
+              description1: offer.description || offer.instructions || "",
+              image_url: offer.image || offer.icon || "https://via.placeholder.com/150",
+              payout: parseFloat(offer.payout || offer.reward || offer.amount || 0),
+              click_url: offer.link || offer.tracking_link || offer.click_url,
+              categories: Array.isArray(offer.categories) ? offer.categories : offer.category ? [offer.category] : [],
+              events: (offer.conversions || offer.events || []).map((e: any) => ({
+                id: e.event_id || e.id || e.name || `evt_${Math.random().toString(36).slice(2,8)}`,
+                name: e.event_title || e.name || e.title || "Complete",
+                payout: parseFloat(e.event_payout || e.payout || e.reward || 0),
+              })).filter((e: any) => e.payout > 0),
+              provider: "Notik",
+              trackingType: offer.conversion_type || offer.type || "CPA",
+            })).filter((o: any) => o.name && o.payout > 0);
+            console.log(`Notik offers loaded (direct): ${notikOffers.length}`);
           }
         }
+      } catch (e) {
+        console.log("Notik direct fetch failed, trying server route...", e);
+        try {
+          const notikFallback = await fetch(`/api/notik-offers?user_id=${userId}&device_os=${primaryOS}`);
+          if (notikFallback.ok) {
+            const fbData = await notikFallback.json();
+            if (fbData.success && fbData.offers?.length) {
+              notikOffers = fbData.offers;
+              console.log(`Notik offers loaded (fallback): ${notikOffers.length}`);
+            }
+          }
+        } catch {}
       }
       
       // Process Vortex offers (Priority 3)
