@@ -99,6 +99,8 @@ export default function RootLayout({
       <head>
         {/* MyLead Verification */}
         <meta name="mylead-verification" content="06ee014a7eeebe13668d1ab6ff036b37" />
+        {/* AdWork / Monetag Verification */}
+        <meta name="monetag" content="bb3f9a104a4d9f24f2f20d08ab979abd" />
         <script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
           async
