@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET(req: NextRequest) {
+  return handlePostback(req);
+}
+
+export async function POST(req: NextRequest) {
+  return handlePostback(req);
+}
+
+async function handlePostback(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("user_id") || searchParams.get("uid") || searchParams.get("subid");
@@ -52,6 +60,7 @@ export async function GET(req: NextRequest) {
         offer_name: "CPX Survey",
         offer_provider: "cpx_research",
         coins_awarded: coinsToAward,
+        amount_earned: coinsToAward,
         status: "completed"
       });
 
@@ -70,7 +79,24 @@ export async function GET(req: NextRequest) {
 
     if (rpcError) {
       console.error("❌ Error adding coins:", rpcError);
-      return new NextResponse("Internal Server Error", { status: 500 });
+      // Fallback: update profiles directly
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("coins_balance")
+        .eq("id", userId)
+        .single();
+
+      if (profile) {
+        const newBalance = Math.max(0, (profile.coins_balance || 0) + coinsToAward);
+        await supabaseAdmin
+          .from("profiles")
+          .update({ coins_balance: newBalance })
+          .eq("id", userId);
+        console.log(`⚠️ CPX fallback balance update: ${newBalance} for user ${userId}`);
+      } else {
+        console.error("❌ CPX fallback: user not found in profiles:", userId);
+        return new NextResponse("User not found", { status: 404 });
+      }
     }
 
     // Create notification for user

@@ -234,15 +234,19 @@ CREATE OR REPLACE FUNCTION public.add_coins(
   p_description TEXT DEFAULT NULL
 )
 RETURNS BOOLEAN AS $$
+DECLARE
+  v_current_balance INTEGER;
 BEGIN
   -- Update balance
   UPDATE public.profiles
-  SET coins_balance = coins_balance + p_amount
-  WHERE id = p_user_id;
+  SET coins_balance = coins_balance + p_amount,
+      total_earned = CASE WHEN p_type = 'earn' THEN total_earned + p_amount ELSE total_earned END
+  WHERE id = p_user_id
+  RETURNING coins_balance INTO v_current_balance;
   
   -- Record transaction
-  INSERT INTO public.transactions (user_id, type, amount, description, status)
-  VALUES (p_user_id, p_type, p_amount, p_description, 'completed');
+  INSERT INTO public.transactions (user_id, type, amount, balance_after, description)
+  VALUES (p_user_id, p_type, p_amount, v_current_balance, p_description);
   
   RETURN TRUE;
 EXCEPTION
@@ -283,8 +287,8 @@ BEGIN
   RETURNING id INTO v_withdrawal_id;
   
   -- Record transaction
-  INSERT INTO public.transactions (user_id, type, amount, description, status)
-  VALUES (p_user_id, 'withdraw', -p_amount, 'Withdrawal request', 'pending');
+  INSERT INTO public.transactions (user_id, type, amount, balance_after, description)
+  VALUES (p_user_id, 'withdraw', -p_amount, v_current_balance - p_amount, 'Withdrawal request');
   
   RETURN v_withdrawal_id;
 END;

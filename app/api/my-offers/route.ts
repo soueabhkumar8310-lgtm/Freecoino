@@ -61,7 +61,7 @@ export async function GET(req: Request) {
         image_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(
           offer.offer_name
         )}&background=random`,
-        payout: offer.amount_earned,
+        payout: offer.amount_earned ?? offer.coins_awarded ?? 0,
         tracking_type: "cpa",
         status: offer.status === "pending" ? "in_progress" : offer.status,
         events_json: [],

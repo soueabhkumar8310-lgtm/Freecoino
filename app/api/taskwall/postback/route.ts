@@ -53,6 +53,7 @@ async function handlePostback(req: NextRequest) {
         offer_id: transactionId,
         offer_name: offerName,
         offer_provider: "taskwall",
+        coins_awarded: coinsToAward,
         amount_earned: coinsToAward,
         status: "completed",
       });
@@ -71,7 +72,24 @@ async function handlePostback(req: NextRequest) {
 
     if (rpcError) {
       console.error("Taskwall add_coins error:", rpcError);
-      return new NextResponse("Error", { status: 500 });
+      // Fallback: update profiles directly
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("coins_balance")
+        .eq("id", userId)
+        .single();
+
+      if (profile) {
+        const newBalance = Math.max(0, (profile.coins_balance || 0) + coinsToAward);
+        await supabaseAdmin
+          .from("profiles")
+          .update({ coins_balance: newBalance })
+          .eq("id", userId);
+        console.log(`⚠️ Taskwall fallback balance update: ${newBalance} for user ${userId}`);
+      } else {
+        console.error("❌ Taskwall fallback: user not found in profiles:", userId);
+        return new NextResponse("User not found", { status: 404 });
+      }
     }
 
     try {
