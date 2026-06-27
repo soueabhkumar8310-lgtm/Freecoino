@@ -40,7 +40,7 @@ async function handlePostback(req: NextRequest) {
       .eq("user_id", userId)
       .eq("offer_id", transactionId)
       .eq("offer_provider", "taskwall")
-      .single();
+      .maybeSingle();
 
     if (existing) {
       return new NextResponse("OK", { status: 200 });
@@ -60,7 +60,7 @@ async function handlePostback(req: NextRequest) {
 
     if (insertError) {
       console.error("Taskwall insert error:", insertError);
-      return new NextResponse("Error", { status: 500 });
+      return new NextResponse("Error", { status: 200 });
     }
 
     const { error: rpcError } = await supabaseAdmin.rpc("add_coins", {
@@ -75,20 +75,21 @@ async function handlePostback(req: NextRequest) {
       // Fallback: update profiles directly
       const { data: profile } = await supabaseAdmin
         .from("profiles")
-        .select("coins_balance")
+        .select("coins_balance, total_earned")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (profile) {
         const newBalance = Math.max(0, (profile.coins_balance || 0) + coinsToAward);
+        const newTotalEarned = (profile.total_earned || 0) + coinsToAward;
         await supabaseAdmin
           .from("profiles")
-          .update({ coins_balance: newBalance })
+          .update({ coins_balance: newBalance, total_earned: newTotalEarned })
           .eq("id", userId);
-        console.log(`⚠️ Taskwall fallback balance update: ${newBalance} for user ${userId}`);
+        console.log(`⚠️ Taskwall fallback: balance ${newBalance}, total ${newTotalEarned} for user ${userId}`);
       } else {
         console.error("❌ Taskwall fallback: user not found in profiles:", userId);
-        return new NextResponse("User not found", { status: 404 });
+        return new NextResponse("User not found", { status: 200 });
       }
     }
 
@@ -110,6 +111,6 @@ async function handlePostback(req: NextRequest) {
     return new NextResponse("OK", { status: 200 });
   } catch (error) {
     console.error("Taskwall postback error:", error);
-    return new NextResponse("Error", { status: 500 });
+    return new NextResponse("Error", { status: 200 });
   }
 }

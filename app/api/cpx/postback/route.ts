@@ -38,13 +38,13 @@ async function handlePostback(req: NextRequest) {
     );
 
     // Check if duplicate transaction
-    const { data: existingOffer, error: existingError } = await supabaseAdmin
+    const { data: existingOffer } = await supabaseAdmin
       .from("offer_completions")
       .select("id")
       .eq("user_id", userId)
       .eq("offer_id", transactionId)
       .eq("offer_provider", "cpx_research")
-      .single();
+      .maybeSingle();
 
     if (existingOffer) {
       console.log('⚠️ Duplicate transaction detected, returning OK');
@@ -82,20 +82,21 @@ async function handlePostback(req: NextRequest) {
       // Fallback: update profiles directly
       const { data: profile } = await supabaseAdmin
         .from("profiles")
-        .select("coins_balance")
+        .select("coins_balance, total_earned")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (profile) {
         const newBalance = Math.max(0, (profile.coins_balance || 0) + coinsToAward);
+        const newTotalEarned = (profile.total_earned || 0) + coinsToAward;
         await supabaseAdmin
           .from("profiles")
-          .update({ coins_balance: newBalance })
+          .update({ coins_balance: newBalance, total_earned: newTotalEarned })
           .eq("id", userId);
-        console.log(`⚠️ CPX fallback balance update: ${newBalance} for user ${userId}`);
+        console.log(`⚠️ CPX fallback: balance ${newBalance}, total ${newTotalEarned} for user ${userId}`);
       } else {
         console.error("❌ CPX fallback: user not found in profiles:", userId);
-        return new NextResponse("User not found", { status: 404 });
+        return new NextResponse("User not found", { status: 200 });
       }
     }
 

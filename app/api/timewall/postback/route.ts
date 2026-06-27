@@ -58,7 +58,7 @@ async function handlePostback(request: NextRequest) {
       .eq("user_id", userId)
       .eq("offer_id", transactionId)
       .eq("offer_provider", "timewall")
-      .single();
+      .maybeSingle();
 
     if (existingOffer) {
       console.log("⚠️ Duplicate transaction detected:", transactionId);
@@ -80,7 +80,7 @@ async function handlePostback(request: NextRequest) {
 
     if (insertError) {
       console.error("❌ Error inserting offer_completion:", insertError);
-      return new NextResponse("Internal Server Error", { status: 500 });
+      return new NextResponse("Internal Server Error", { status: 200 });
     }
 
     // Add coins using the database RPC (atomic)
@@ -96,20 +96,21 @@ async function handlePostback(request: NextRequest) {
       // Fallback: update profiles directly
       const { data: profile } = await supabaseAdmin
         .from("profiles")
-        .select("coins_balance")
+        .select("coins_balance, total_earned")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (profile) {
         const newBalance = Math.max(0, (profile.coins_balance || 0) + Math.round(coinAmount));
+        const newTotalEarned = (profile.total_earned || 0) + Math.round(coinAmount);
         await supabaseAdmin
           .from("profiles")
-          .update({ coins_balance: newBalance })
+          .update({ coins_balance: newBalance, total_earned: newTotalEarned })
           .eq("id", userId);
-        console.log(`⚠️ Fallback balance update: ${newBalance} for user ${userId}`);
+        console.log(`⚠️ Timewall fallback: balance ${newBalance}, total ${newTotalEarned} for user ${userId}`);
       } else {
         console.error("❌ User not found in profiles:", userId);
-        return new NextResponse("User not found", { status: 404 });
+        return new NextResponse("User not found", { status: 200 });
       }
     }
 
@@ -135,6 +136,6 @@ async function handlePostback(request: NextRequest) {
     return new NextResponse("OK", { status: 200 });
   } catch (error) {
     console.error("❌ Timewall postback error:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return new NextResponse("OK", { status: 200 });
   }
 }

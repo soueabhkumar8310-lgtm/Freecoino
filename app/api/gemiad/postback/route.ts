@@ -120,22 +120,23 @@ async function handlePostback(request: NextRequest) {
       // Fallback: update profiles directly
       const { data: profile } = await supabaseAdmin
         .from("profiles")
-        .select("coins_balance")
+        .select("coins_balance, total_earned")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (profile) {
         const newBalance = Math.max(0, (profile.coins_balance || 0) + Math.round(coinAmount));
+        const newTotalEarned = (profile.total_earned || 0) + Math.round(coinAmount);
         await supabaseAdmin
           .from("profiles")
-          .update({ coins_balance: newBalance })
+          .update({ coins_balance: newBalance, total_earned: newTotalEarned })
           .eq("id", userId);
-        console.log(`⚠️ Fallback balance update: ${newBalance} for user ${userId}`);
+        console.log(`⚠️ GemiAd fallback: balance ${newBalance}, total ${newTotalEarned} for user ${userId}`);
       } else {
         console.error("❌ User not found in profiles:", userId);
         return NextResponse.json(
           { success: false, error: "User not found" },
-          { status: 404 }
+          { status: 200 }
         );
       }
     }

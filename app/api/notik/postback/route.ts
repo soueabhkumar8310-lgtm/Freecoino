@@ -72,8 +72,10 @@ async function handlePostback(request: NextRequest) {
 
     const coinAmount = parseFloat(amount);
     if (isNaN(coinAmount)) {
-      return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 200 });
     }
+
+    const awardAmount = Math.max(1, Math.round(coinAmount));
 
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -87,7 +89,7 @@ async function handlePostback(request: NextRequest) {
       .eq("user_id", user_id)
       .eq("offer_id", txn_id)
       .eq("offer_provider", "notik")
-      .single();
+      .maybeSingle();
 
     if (existingOffer) {
       console.log("⚠️ Duplicate transaction detected:", txn_id);
@@ -107,8 +109,8 @@ async function handlePostback(request: NextRequest) {
         offer_id: txn_id,
         offer_name: displayName,
         offer_provider: "notik",
-        coins_awarded: Math.round(coinAmount),
-        amount_earned: payout ? parseFloat(payout) : Math.round(coinAmount),
+        coins_awarded: awardAmount,
+        amount_earned: payout ? parseFloat(payout) : awardAmount,
         status: isChargeback ? "rejected" : "completed",
       });
 
@@ -116,14 +118,16 @@ async function handlePostback(request: NextRequest) {
       console.error("❌ Error inserting offer_completion:", insertError);
       return NextResponse.json(
         { success: false, error: "Failed to record offer completion" },
-        { status: 500 }
+        { status: 200 }
       );
     }
+
+    const addAmount = isChargeback ? -awardAmount : awardAmount;
 
     // Add coins using the database RPC (atomic)
     const { error: rpcError } = await supabaseAdmin.rpc("add_coins", {
       p_user_id: user_id,
-      p_amount: Math.round(coinAmount),
+      p_amount: addAmount,
       p_type: isChargeback ? "chargeback" : "earn",
       p_description: `Notik: ${displayName} (txn: ${txn_id})`,
     });
@@ -133,22 +137,23 @@ async function handlePostback(request: NextRequest) {
       // Fallback: update profiles directly
       const { data: profile } = await supabaseAdmin
         .from("profiles")
-        .select("coins_balance")
+        .select("coins_balance, total_earned")
         .eq("id", user_id)
-        .single();
+        .maybeSingle();
 
       if (profile) {
-        const newBalance = Math.max(0, (profile.coins_balance || 0) + Math.round(coinAmount));
+        const newBalance = Math.max(0, (profile.coins_balance || 0) + addAmount);
+        const newTotalEarned = !isChargeback ? (profile.total_earned || 0) + addAmount : profile.total_earned;
         await supabaseAdmin
           .from("profiles")
-          .update({ coins_balance: newBalance })
+          .update({ coins_balance: newBalance, total_earned: newTotalEarned })
           .eq("id", user_id);
-        console.log(`⚠️ Fallback balance update: ${newBalance} for user ${user_id}`);
+        console.log(`⚠️ Notik fallback: balance ${newBalance}, total ${newTotalEarned} for user ${user_id}`);
       } else {
         console.error("❌ User not found in profiles:", user_id);
         return NextResponse.json(
           { success: false, error: "User not found" },
-          { status: 404 }
+          { status: 200 }
         );
       }
     }
@@ -158,13 +163,12 @@ async function handlePostback(request: NextRequest) {
       await supabaseAdmin.from("notik_transactions").insert({
         user_id: user_id,
         txn_id: txn_id,
-        amount: Math.round(coinAmount),
+        amount: awardAmount,
         offer_name: displayName,
         event_name: event_name || null,
         created_at: timestamp || new Date().toISOString(),
       });
     } catch (e) {
-      // Table might not exist — ok, offer_completions is the source of truth
       console.warn("⚠️ notik_transactions insert failed (table may not exist):", e);
     }
 
@@ -174,8 +178,8 @@ async function handlePostback(request: NextRequest) {
         user_id: user_id,
         title: isChargeback ? "Offer Reversed ⚠️" : "Offer Completed! 🎉",
         message: isChargeback
-          ? `${Math.abs(coinAmount)} coins reversed from ${displayName}`
-          : `You earned ${Math.round(coinAmount)} coins from ${displayName}!`,
+          ? `${awardAmount} coins reversed from ${displayName}`
+          : `You earned ${awardAmount} coins from ${displayName}!`,
         type: isChargeback ? "warning" : "success",
         is_read: false,
       });
@@ -186,7 +190,7 @@ async function handlePostback(request: NextRequest) {
     console.log("✅ Notik postback processed successfully:", {
       user_id,
       txn_id,
-      amount: coinAmount,
+      amount: awardAmount,
       displayName,
       isChargeback,
     });
