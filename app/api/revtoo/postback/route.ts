@@ -46,15 +46,14 @@ function convertToCoins(amountStr: string): number {
   }
 
   const hasDecimal = cleaned.includes(".");
+  const revtooRate = 100; // 100 Points = $1 USD in Revtoo
+  const ourRate = 1000; // 1000 coins = $1 USD
+
   if (hasDecimal || amountFloat < 1) {
-    return Math.round(amountFloat * 1000);
+    return Math.round(amountFloat * ourRate);
   }
 
-  if (amountFloat >= 1000) {
-    return Math.round(amountFloat);
-  }
-
-  return Math.round(amountFloat * 1000);
+  return Math.round(amountFloat * (ourRate / revtooRate));
 }
 
 async function handlePostback(req: NextRequest) {
