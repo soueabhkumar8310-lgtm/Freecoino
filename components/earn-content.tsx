@@ -1527,7 +1527,27 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
 
   const myLeadBaseUrl = process.env.NEXT_PUBLIC_MYLEAD_WALL_URL ?? "";
 
+  const trackOfferwallOpen = async (wall: string) => {
+    try {
+      await fetch("/api/track-offer-click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          offerId: `${wall.toLowerCase()}-${Date.now()}`,
+          offerName: `${wall} Offerwall`,
+          provider: wall,
+          payout: 0,
+        }),
+      });
+    } catch (err) {
+      console.error(`Failed to track ${wall} offerwall open:`, err);
+    }
+  };
+
   const handleOpenWall = (wall: WallType) => {
+    trackOfferwallOpen(wall);
+
     // Taskwall - open in new window
     if (wall === "Taskwall") {
       const taskwallUrl = process.env.NEXT_PUBLIC_TASKWALL_URL;
