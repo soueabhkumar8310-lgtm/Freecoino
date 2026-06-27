@@ -786,72 +786,96 @@ function OfferDetailsModal({
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            {offer.events.map((event) => {
+          <Box sx={{ position: "relative", ml: 0.5 }}>
+            {offer.events.map((event, index) => {
               const isCompleted = milestoneProgress.includes(event.id);
+              const isLast = index === offer.events!.length - 1;
               
               return (
-                <Box
-                  key={event.id}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    p: 1.5,
-                    bgcolor: isCompleted ? "rgba(1, 214, 118, 0.05)" : "#222339",
-                    borderRadius: 2,
-                    border: `1px solid ${isCompleted ? "rgba(1, 214, 118, 0.2)" : "rgba(255,255,255,0.05)"}`,
-                    transition: "all 0.2s",
-                    "&:hover": {
-                      borderColor: isCompleted ? "rgba(1, 214, 118, 0.4)" : "rgba(1, 214, 118, 0.3)",
-                      bgcolor: isCompleted ? "rgba(1, 214, 118, 0.08)" : "#252640",
-                    },
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1 }}>
+                <Box key={event.id} sx={{ position: "relative", pl: 4, pb: isLast ? 0 : 0 }}>
+                  {/* Vertical connecting line */}
+                  {!isLast && (
                     <Box
                       sx={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
-                        bgcolor: isCompleted ? "#01D676" : "#3d3f54",
+                        position: "absolute",
+                        left: 9,
+                        top: 16,
+                        width: 2,
+                        height: "calc(100% + 4px)",
+                        bgcolor: isCompleted && milestoneProgress.includes(offer.events![index + 1].id)
+                          ? "#01D676"
+                          : "#3d3f54",
+                        opacity: 0.5,
                       }}
                     />
-                    <Typography sx={{ 
-                      fontSize: "0.8125rem", 
-                      color: isCompleted ? "#01D676" : "#fff", 
-                      fontWeight: 500,
-                      textDecoration: isCompleted ? "line-through" : "none",
-                      opacity: isCompleted ? 0.8 : 1
-                    }}>
-                      {event.name}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Typography 
-                      sx={{ 
+                  )}
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      p: 1.5,
+                      bgcolor: isCompleted ? "rgba(1, 214, 118, 0.05)" : "#222339",
+                      borderRadius: 2,
+                      border: `1px solid ${isCompleted ? "rgba(1, 214, 118, 0.25)" : "rgba(255,255,255,0.05)"}`,
+                      transition: "all 0.2s",
+                      mb: 1,
+                      "&:hover": {
+                        borderColor: isCompleted ? "rgba(1, 214, 118, 0.4)" : "rgba(1, 214, 118, 0.3)",
+                        bgcolor: isCompleted ? "rgba(1, 214, 118, 0.08)" : "#252640",
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1 }}>
+                      {/* Step circle with line through it - positioned to align with the vertical line */}
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          left: 0,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          width: 20,
+                          height: 20,
+                          borderRadius: "50%",
+                          border: `2px solid ${isCompleted ? "#01D676" : "#3d3f54"}`,
+                          bgcolor: isCompleted ? "#01D676" : "#1a1b2e",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          zIndex: 1,
+                        }}
+                      >
+                        {isCompleted ? (
+                          <CheckIcon sx={{ fontSize: 12, color: "#000" }} />
+                        ) : (
+                          <Typography sx={{ fontSize: "0.6rem", color: "#3d3f54", fontWeight: 700 }}>
+                            {index + 1}
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <Typography sx={{ 
                         fontSize: "0.8125rem", 
-                        color: "#01D676",
-                        fontWeight: 700,
-                      }}
-                    >
-                      ${event.payout}
-                    </Typography>
-                    <Box
-                      sx={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        border: `1.5px solid ${isCompleted ? "#01D676" : "#3d3f54"}`,
-                        bgcolor: isCompleted ? "#01D676" : "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {isCompleted && (
-                        <CheckIcon sx={{ fontSize: 14, color: "#000" }} />
-                      )}
+                        color: isCompleted ? "#01D676" : "#fff", 
+                        fontWeight: isCompleted ? 600 : 500,
+                        textDecoration: isCompleted ? "line-through" : "none",
+                        opacity: isCompleted ? 0.85 : 1,
+                        ml: 1.5,
+                      }}>
+                        {event.name}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, ml: 1 }}>
+                      <Typography 
+                        sx={{ 
+                          fontSize: "0.8125rem", 
+                          color: isCompleted ? "#01D676" : "rgba(255,255,255,0.5)",
+                          fontWeight: 700,
+                        }}
+                      >
+                        +{event.payout} coins
+                      </Typography>
                     </Box>
                   </Box>
                 </Box>
