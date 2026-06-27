@@ -46,7 +46,7 @@ function convertToCoins(amountStr: string): number {
   }
 
   const hasDecimal = cleaned.includes(".");
-  const revtooRate = 100; // 100 Points = $1 USD in Revtoo
+  const revtooRate = 1000; // 1000 Points = $1 USD (updated in Revtoo dashboard)
   const ourRate = 1000; // 1000 coins = $1 USD
 
   if (hasDecimal || amountFloat < 1) {
