@@ -41,9 +41,15 @@ async function handlePostback(request: NextRequest) {
     }
 
     const coinAmount = parseFloat(amountStr);
-    if (isNaN(coinAmount) || coinAmount <= 0) {
+    if (isNaN(coinAmount)) {
       console.error("❌ Invalid amount:", amountStr);
-      return new NextResponse("Invalid amount", { status: 400 });
+      return new NextResponse("Invalid amount", { status: 200 });
+    }
+
+    const awardAmount = Math.max(1, Math.round(coinAmount));
+
+    if (coinAmount <= 0) {
+      console.warn("⚠️ Timewall postback: amount is zero/negative, awarding minimum 1 coin", { userId, transactionId, amountStr });
     }
 
     const supabaseAdmin = createClient(
@@ -73,8 +79,8 @@ async function handlePostback(request: NextRequest) {
         offer_id: transactionId,
         offer_name: "Timewall Task",
         offer_provider: "timewall",
-        coins_awarded: Math.round(coinAmount),
-        amount_earned: Math.round(coinAmount),
+        coins_awarded: awardAmount,
+        amount_earned: awardAmount,
         status: "completed",
       });
 
@@ -86,7 +92,7 @@ async function handlePostback(request: NextRequest) {
     // Add coins using the database RPC (atomic)
     const { error: rpcError } = await supabaseAdmin.rpc("add_coins", {
       p_user_id: userId,
-      p_amount: Math.round(coinAmount),
+      p_amount: awardAmount,
       p_type: "earn",
       p_description: `Timewall Offer: ${transactionId}`,
     });
@@ -101,8 +107,8 @@ async function handlePostback(request: NextRequest) {
         .maybeSingle();
 
       if (profile) {
-        const newBalance = Math.max(0, (profile.coins_balance || 0) + Math.round(coinAmount));
-        const newTotalEarned = (profile.total_earned || 0) + Math.round(coinAmount);
+        const newBalance = Math.max(0, (profile.coins_balance || 0) + awardAmount);
+        const newTotalEarned = (profile.total_earned || 0) + awardAmount;
         await supabaseAdmin
           .from("profiles")
           .update({ coins_balance: newBalance, total_earned: newTotalEarned })
@@ -119,7 +125,7 @@ async function handlePostback(request: NextRequest) {
       await supabaseAdmin.from("notifications").insert({
         user_id: userId,
         title: "Offer Completed! 🎉",
-        message: `You earned ${Math.round(coinAmount)} coins from Timewall Task!`,
+        message: `You earned ${awardAmount} coins from Timewall Task!`,
         type: "success",
         is_read: false,
       });
@@ -130,7 +136,7 @@ async function handlePostback(request: NextRequest) {
     console.log("✅ Timewall postback processed successfully:", {
       userId,
       transactionId,
-      amount: coinAmount,
+      amount: awardAmount,
     });
 
     return new NextResponse("OK", { status: 200 });
