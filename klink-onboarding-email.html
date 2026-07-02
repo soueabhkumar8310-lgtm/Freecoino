@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klink Labs - Welcome to the Publisher Network</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f4f6f8; padding: 40px 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header { background: linear-gradient(135deg, #6C5CE7, #a29bfe); padding: 40px 32px; text-align: center; }
+    .header img { max-height: 48px; }
+    .header h1 { color: #fff; font-size: 24px; margin-top: 16px; font-weight: 700; }
+    .body { padding: 32px; }
+    .body p { color: #333; font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+    .steps { list-style: none; margin: 20px 0; }
+    .steps li { padding: 10px 0 10px 28px; position: relative; font-size: 14px; color: #444; border-bottom: 1px solid #eee; }
+    .steps li::before { content: "✓"; position: absolute; left: 0; color: #6C5CE7; font-weight: bold; }
+    .btn { display: inline-block; background: #6C5CE7; color: #fff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 600; font-size: 15px; margin: 16px 0; }
+    .btn:hover { background: #5a4bd1; }
+    .creds { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .creds-row { display: flex; padding: 8px 0; font-size: 13px; }
+    .creds-label { color: #888; width: 120px; flex-shrink: 0; font-weight: 600; }
+    .creds-value { color: #222; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; word-break: break-all; font-size: 12px; }
+    .warning { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 14px 18px; font-size: 13px; color: #856404; margin: 16px 0; }
+    .footer { border-top: 1px solid #eee; padding: 24px 32px; text-align: center; font-size: 13px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <!-- ================================================== -->
+      <!-- REPLACE THE SRC BELOW WITH YOUR LOGO IMAGE URL/PATH -->
+      <!-- ================================================== -->
+      <img src="./public/klink-logo.png" alt="Klink Labs" onerror="this.style.display='none'">
+      <h1>Welcome to Klink Labs!</h1>
+    </div>
+
+    <div class="body">
+      <p>Dear <strong>Sourabh Kumar</strong>,</p>
+      <p>We're excited to let you know that your account has been reviewed and approved. Welcome to the Klink publisher network — we're thrilled to have you on board!</p>
+
+      <p><strong>What's next?</strong></p>
+      <ul class="steps">
+        <li>Log in to your dashboard to get started</li>
+        <li>Review your integration settings and configure your postback URL</li>
+        <li>Explore our offer catalogue and start monetising your traffic</li>
+        <li>Reach out to your account manager for onboarding support</li>
+      </ul>
+
+      <p>You can now log in to the platform by clicking the link below:</p>
+      <p style="text-align:center"><a href="#" class="btn">Log In to Klink Labs</a></p>
+
+      <p><strong>Your Account Credentials</strong></p>
+      <p style="font-size:13px;color:#666;margin-bottom:12px">Please keep the following details safe. You will need them to authenticate API requests.</p>
+
+      <div class="creds">
+        <div class="creds-row">
+          <span class="creds-label">Publisher ID</span>
+          <span class="creds-value">489cbf22-91da-4cea-9b75-06488105d4e7</span>
+        </div>
+        <div class="creds-row">
+          <span class="creds-label">API Key</span>
+          <span class="creds-value">c236d379aede5f8b521bf02585c4c509bb239365a22bc28218e849235d24d5f0</span>
+        </div>
+        <div class="creds-row">
+          <span class="creds-label">JWT Secret</span>
+          <span class="creds-value">+/Qo8GzIsseKG21q4lGzWXfU5MYW7IfMVBxRKcVUGsVnLfzWyXA0G4hZXPDKxRei338hMAcNCCcE1ZXwhpimsQ==</span>
+        </div>
+      </div>
+
+      <div class="warning">
+        ⚠️ <strong>Do not share your API key with anyone.</strong> Contact support immediately if you believe it has been compromised.
+      </div>
+
+      <p>If you have any questions or need assistance getting set up, don't hesitate to reach out — we're here to help you succeed.</p>
+
+      <p>Regards,<br><strong>Klink Team</strong></p>
+    </div>
+
+    <div class="footer">
+      &copy; 2025 Klink Labs. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

@@ -10,6 +10,7 @@
 | **Timewall** | ✅ Ready | Code deployed | ❓ Need to check |
 | **Vortex** | ✅ Ready | Just deployed | ❓ Need to check |
 | **CPX Research** | ✅ Ready | Just deployed | ❓ Need to check |
+| **Klink** | ✅ Ready | Just deployed | ❓ Need to check |
 
 ---
 
@@ -90,6 +91,25 @@ https://freecoino.com/api/cpx/postback?user_id={USER_ID}&tx_id={TRANSACTION_ID}&
 - `{USER_ID}` → Usually `{ext_user_id}` or `{user_id}`
 - `{TRANSACTION_ID}` → Usually `{trans_id}` or `{transaction_id}`
 - `{AMOUNT}` → Usually `{reward_usd}` (in USD)
+
+---
+
+### 5. Klink Postback (NEW!)
+**URL**:
+```
+https://freecoino.com/api/klink/postback?user_id={USER_ID}&tx_id={TRANSACTION_ID}&amount={AMOUNT}
+```
+
+**Where to configure**:
+- Login to Klink publisher dashboard: https://app.klinklabs.com/
+- Go to Integration Settings
+- Find "Postback URL" or "Server Callback" section
+- Paste the URL above
+
+**Parameter mapping** (check Klink docs):
+- `{USER_ID}` → Their parameter name (might be `{user_id}`, `{uid}`, `{subid}`, `{sub1}`)
+- `{TRANSACTION_ID}` → Their parameter name (might be `{tx_id}`, `{transaction_id}`, `{offer_id}`)
+- `{AMOUNT}` → Reward amount in coins (might be `{payout}`, `{reward}`, `{amount}`)
 
 ---
 

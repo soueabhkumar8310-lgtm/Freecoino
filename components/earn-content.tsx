@@ -18,7 +18,7 @@ type EarnContentProps = {
   userEmail: string;
 };
 
-type WallType = "MyLead" | "CPX Research" | "Vortex" | "Notik" | "Taskwall" | "Timewall" | "GemiAd" | "TheoremReach" | "Revtoo";
+type WallType = "MyLead" | "CPX Research" | "Vortex" | "Notik" | "Taskwall" | "Timewall" | "GemiAd" | "TheoremReach" | "Revtoo" | "Klink";
 type DeviceOS = "android" | "ios" | "windows";
 
 interface NotikOffer {
@@ -81,6 +81,7 @@ function OfferDetailsModal({
       case "Notik":
       case "Vortex":
       case "Gemiad":
+      case "Klink":
         return `${clickUrl}${separator}user_id=${userId}`;
       default:
         return clickUrl;
@@ -98,6 +99,8 @@ function OfferDetailsModal({
           offerName: offer.name,
           provider: offer.provider,
           payout: typeof offer.payout === "string" ? parseInt(offer.payout) : offer.payout,
+          clickUrl: offer.click_url,
+          events: offer.events || [],
         }),
       });
     } catch (err) {
@@ -727,16 +730,18 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       setLoading(true);
       const primaryOS = deviceOS.length > 0 ? deviceOS[0] : 'android';
       
-      // Fetch from Gemiad and Vortex APIs via server, Notik directly from browser (bypass Cloudflare)
+      // Fetch from Gemiad, Vortex, and Klink APIs via server, Notik directly from browser (bypass Cloudflare)
       const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
-      const [gemiadResponse, vortexResponse] = await Promise.all([
+      const [gemiadResponse, vortexResponse, klinkResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}`),
         fetch(`/api/vortex-offers?user_id=${userId}`),
+        fetch(`/api/klink-offers?user_id=${userId}`),
       ]);
       
       let gemiadOffers: NotikOffer[] = [];
       let notikOffers: NotikOffer[] = [];
       let vortexOffers: NotikOffer[] = [];
+      let klinkOffers: NotikOffer[] = [];
       
       // Process Gemiad offers (Priority 1)
       if (gemiadResponse.ok) {
@@ -799,15 +804,25 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         }
       }
       
-      // Combine offers with priority: Gemiad > Notik > Vortex
+      // Process Klink offers (Priority 4)
+      if (klinkResponse.ok) {
+        const klinkData = await klinkResponse.json();
+        if (klinkData.success && klinkData.offers && Array.isArray(klinkData.offers)) {
+          klinkOffers = klinkData.offers;
+          console.log(`Klink offers loaded: ${klinkOffers.length}`);
+        }
+      }
+      
+      // Combine offers with priority: Gemiad > Notik > Vortex > Klink
       // Mix them in a round-robin fashion for better distribution
       const combinedOffers: NotikOffer[] = [];
-      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length);
+      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length);
       
       for (let i = 0; i < maxProviderLength; i++) {
         if (i < gemiadOffers.length) combinedOffers.push(gemiadOffers[i]);
         if (i < notikOffers.length) combinedOffers.push(notikOffers[i]);
         if (i < vortexOffers.length) combinedOffers.push(vortexOffers[i]);
+        if (i < klinkOffers.length) combinedOffers.push(klinkOffers[i]);
       }
       
       console.log(`Total combined offers: ${combinedOffers.length}`);
@@ -1575,6 +1590,15 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return;
     }
 
+    // Klink - open in new window
+    if (wall === "Klink") {
+      const apiKey = process.env.KLINK_API_KEY || "";
+      const pubId = process.env.KLINK_PUBLISHER_ID || "";
+      const klinkUrl = `https://klink-quest.klink.finance/offerwall?apiKey=${apiKey}&publisherId=${pubId}&userId=${userId}`;
+      window.open(klinkUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     setActiveWall(wall);
     setIframeLoading(true);
     setIframeError(false);
@@ -1641,6 +1665,11 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
     if (activeWall === "Timewall") {
       const placementId = "ba72f7d1dde24922";
       return `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
+    }
+    if (activeWall === "Klink") {
+      const apiKey = process.env.KLINK_API_KEY || "";
+      const pubId = process.env.KLINK_PUBLISHER_ID || "";
+      return `https://klink-quest.klink.finance/offerwall?apiKey=${apiKey}&publisherId=${pubId}&userId=${userId}`;
     }
     return "";
   };
@@ -2398,6 +2427,107 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
             <Box className="wall-rating" sx={{ display: "flex", gap: 0.25, transition: "filter 0.2s ease" }}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Box key={star} sx={{ color: star <= 3 ? "#fbbf24" : "rgba(255,255,255,0.2)", fontSize: "0.875rem" }}>
+                  ★
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+
+          {/* Klink card */}
+          <Paper
+            onClick={() => handleOpenWall("Klink")}
+            elevation={0}
+            sx={{
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderRadius: 2,
+              p: 2,
+              cursor: "pointer",
+              background: "linear-gradient(180deg, #1a1d2e 0%, #2d1f3d 40%, rgba(147, 51, 234, 0.3) 100%)",
+              border: "1px solid rgba(147, 51, 234, 0.2)",
+              transition: "all 0.2s ease",
+              minWidth: { xs: "auto", sm: 160 },
+              maxWidth: { xs: "none", sm: 160 },
+              width: { xs: "100%", sm: "auto" },
+              flexShrink: 0,
+              overflow: "hidden",
+              "&:hover": {
+                background: "linear-gradient(180deg, #1a1d2e 0%, #2d1f3d 40%, rgba(147, 51, 234, 0.4) 100%)",
+                "& .wall-logo": {
+                  filter: "blur(8px)",
+                },
+                "& .wall-rating": {
+                  filter: "blur(8px)",
+                },
+                "& .hover-play-button": {
+                  opacity: 1,
+                },
+              },
+            }}
+          >
+            {/* Hover Play Button */}
+            <Box
+              className="hover-play-button"
+              sx={{
+                position: "absolute",
+                inset: 0,
+                opacity: 0,
+                zIndex: 1000,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "opacity 0.2s ease",
+              }}
+            >
+              <Box
+                sx={{
+                  backgroundColor: colors.background.secondary,
+                  borderRadius: 10,
+                  padding: 2,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: 40,
+                  height: 40,
+                }}
+              >
+                <Box
+                  component="img"
+                  src="https://freecash.com/public/img/play-offer.svg"
+                  alt="play-button"
+                  sx={{ objectFit: "contain", objectPosition: "center" }}
+                />
+              </Box>
+            </Box>
+
+            {/* Logo */}
+            <Box
+              component="img"
+              src="/klink-logo.png"
+              alt="Klink"
+              className="wall-logo"
+              sx={{
+                width: 100,
+                height: 100,
+                borderRadius: 1,
+                objectFit: "contain",
+                mb: 2,
+                transition: "filter 0.2s ease",
+              }}
+            />
+
+            {/* Name */}
+            <Typography variant="subtitle2" isBold sx={{ color: "#fff", mb: 1, textAlign: "center" }}>
+              Klink
+            </Typography>
+
+            {/* Star Rating */}
+            <Box className="wall-rating" sx={{ display: "flex", gap: 0.25, transition: "filter 0.2s ease" }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Box key={star} sx={{ color: star <= 4 ? "#fbbf24" : "rgba(255,255,255,0.2)", fontSize: "0.875rem" }}>
                   ★
                 </Box>
               ))}

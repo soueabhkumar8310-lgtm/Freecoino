@@ -61,6 +61,7 @@ function OfferDetailsModal({
       case "Notik":
       case "Vortex":
       case "Gemiad":
+      case "Klink":
         return `${clickUrl}${separator}user_id=${userId}`;
       default:
         return clickUrl;
@@ -78,6 +79,8 @@ function OfferDetailsModal({
           offerName: offer.name,
           provider: offer.provider,
           payout: typeof offer.payout === "string" ? parseInt(offer.payout) : offer.payout,
+          clickUrl: offer.click_url,
+          events: offer.events || [],
         }),
       });
     } catch (err) {
@@ -852,14 +855,16 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       
       // Fetch from Gemiad and Vortex APIs via server, Notik directly from browser (bypass Cloudflare)
       const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
-      const [gemiadResponse, vortexResponse] = await Promise.all([
+      const [gemiadResponse, vortexResponse, klinkResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}`),
         fetch(`/api/vortex-offers?user_id=${userId}`),
+        fetch(`/api/klink-offers?user_id=${userId}`),
       ]);
       
       let gemiadOffers: any[] = [];
       let notikOffers: any[] = [];
       let vortexOffers: any[] = [];
+      let klinkOffers: any[] = [];
       
       // Process Gemiad offers (Priority 1)
       if (gemiadResponse.ok) {
@@ -916,15 +921,25 @@ export default function AllOffersClient({ userId }: { userId: string }) {
         }
       }
       
-      // Combine offers with priority: Gemiad > Notik > Vortex
+      // Process Klink offers (Priority 4)
+      if (klinkResponse.ok) {
+        const klinkData = await klinkResponse.json();
+        if (klinkData.success && klinkData.offers && Array.isArray(klinkData.offers)) {
+          klinkOffers = klinkData.offers;
+          console.log(`All Offers - Klink: ${klinkOffers.length}`);
+        }
+      }
+      
+      // Combine offers with priority: Gemiad > Notik > Vortex > Klink
       // Mix them in a round-robin fashion for better distribution
       const allOffersData: any[] = [];
-      const maxLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length);
+      const maxLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length);
       
       for (let i = 0; i < maxLength; i++) {
         if (i < gemiadOffers.length) allOffersData.push(gemiadOffers[i]);
         if (i < notikOffers.length) allOffersData.push(notikOffers[i]);
         if (i < vortexOffers.length) allOffersData.push(vortexOffers[i]);
+        if (i < klinkOffers.length) allOffersData.push(klinkOffers[i]);
       }
       
       console.log(`All Offers - Total combined: ${allOffersData.length}`);
