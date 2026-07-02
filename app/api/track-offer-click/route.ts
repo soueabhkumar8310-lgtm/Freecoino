@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, offerId, offerName, provider, payout } = await req.json();
+    const { userId, offerId, offerName, provider, payout, clickUrl, events } = await req.json();
 
     if (!userId || !offerId || !provider) {
       return NextResponse.json(
@@ -29,6 +29,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data: existing });
     }
 
+    const eventsArray = Array.isArray(events) ? events : [];
+    const maxPayout = eventsArray.length > 0
+      ? Math.max(...eventsArray.map((e: any) => parseInt(e.payout) || 0), payout || 0)
+      : (payout || 0);
+
     // Insert with pending status
     const { data, error } = await supabaseAdmin
       .from("offer_completions")
@@ -37,7 +42,11 @@ export async function POST(req: NextRequest) {
         offer_id: offerId,
         offer_name: offerName || "Unknown Offer",
         offer_provider: provider,
-        amount_earned: payout || 0,
+        amount_earned: 0,
+        payout_potential: maxPayout,
+        coins_awarded: 0,
+        click_url: clickUrl || null,
+        events_json: eventsArray,
         status: "pending",
       })
       .select()

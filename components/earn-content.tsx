@@ -730,18 +730,20 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       setLoading(true);
       const primaryOS = deviceOS.length > 0 ? deviceOS[0] : 'android';
       
-      // Fetch from Gemiad, Vortex, and Klink APIs via server, Notik directly from browser (bypass Cloudflare)
+      // Fetch from all offerwalls: Gemiad, Notik, Vortex, KLink, and Revtoo
       const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
-      const [gemiadResponse, vortexResponse, klinkResponse] = await Promise.all([
+      const [gemiadResponse, vortexResponse, klinkResponse, revtooResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}`),
         fetch(`/api/vortex-offers?user_id=${userId}`),
         fetch(`/api/klink-offers?user_id=${userId}`),
+        fetch(`/api/revtoo-offers?user_id=${userId}`),
       ]);
       
       let gemiadOffers: NotikOffer[] = [];
       let notikOffers: NotikOffer[] = [];
       let vortexOffers: NotikOffer[] = [];
       let klinkOffers: NotikOffer[] = [];
+      let revtooOffers: NotikOffer[] = [];
       
       // Process Gemiad offers (Priority 1)
       if (gemiadResponse.ok) {
@@ -813,16 +815,26 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         }
       }
       
-      // Combine offers with priority: Gemiad > Notik > Vortex > Klink
+      // Process Revtoo offers (Priority 5)
+      if (revtooResponse.ok) {
+        const revtooData = await revtooResponse.json();
+        if (revtooData.success && revtooData.offers && Array.isArray(revtooData.offers)) {
+          revtooOffers = revtooData.offers;
+          console.log(`Revtoo offers loaded: ${revtooOffers.length}`);
+        }
+      }
+      
+      // Combine offers with priority: Gemiad > Notik > Vortex > Klink > Revtoo
       // Mix them in a round-robin fashion for better distribution
       const combinedOffers: NotikOffer[] = [];
-      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length);
+      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length, revtooOffers.length);
       
       for (let i = 0; i < maxProviderLength; i++) {
         if (i < gemiadOffers.length) combinedOffers.push(gemiadOffers[i]);
         if (i < notikOffers.length) combinedOffers.push(notikOffers[i]);
         if (i < vortexOffers.length) combinedOffers.push(vortexOffers[i]);
         if (i < klinkOffers.length) combinedOffers.push(klinkOffers[i]);
+        if (i < revtooOffers.length) combinedOffers.push(revtooOffers[i]);
       }
       
       console.log(`Total combined offers: ${combinedOffers.length}`);

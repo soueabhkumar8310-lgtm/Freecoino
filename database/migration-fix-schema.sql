@@ -121,6 +121,17 @@ SELECT
 FROM public.offer_completions oc
 WHERE oc.status = 'completed';
 
+-- STEP 6: Add click tracking columns to offer_completions
+
+ALTER TABLE public.offer_completions
+  ADD COLUMN IF NOT EXISTS click_url TEXT;
+
+ALTER TABLE public.offer_completions
+  ADD COLUMN IF NOT EXISTS events_json JSONB DEFAULT '[]'::jsonb;
+
+ALTER TABLE public.offer_completions
+  ADD COLUMN IF NOT EXISTS payout_potential INTEGER DEFAULT 0;
+
 -- ==========================================
 -- VERIFICATION QUERIES (run separately)
 -- ==========================================

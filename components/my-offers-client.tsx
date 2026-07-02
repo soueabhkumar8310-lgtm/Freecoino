@@ -549,6 +549,8 @@ function OfferDetailsModal({
           offerName: offer.name,
           provider: offer.provider,
           payout: typeof offer.payout === "string" ? parseInt(offer.payout) : offer.payout,
+          clickUrl: offer.click_url,
+          events: offer.events || [],
         }),
       });
     } catch (err) {

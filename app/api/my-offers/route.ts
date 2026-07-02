@@ -53,6 +53,11 @@ export async function GET(req: Request) {
 
     // Map database rows to the expected UI format (OfferInteraction)
     completions?.forEach((offer) => {
+      const eventsData = Array.isArray(offer.events_json) ? offer.events_json : [];
+      const payoutValue = offer.status === "completed"
+        ? (offer.amount_earned ?? offer.coins_awarded ?? 0)
+        : (offer.payout_potential ?? 0);
+
       const mappedOffer = {
         id: offer.id,
         offer_id: offer.offer_id,
@@ -61,15 +66,15 @@ export async function GET(req: Request) {
         image_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(
           offer.offer_name
         )}&background=random`,
-        payout: offer.amount_earned ?? offer.coins_awarded ?? 0,
+        payout: payoutValue,
         tracking_type: "cpa",
         status: offer.status === "pending" ? "in_progress" : offer.status,
-        events_json: [],
-        clicked_at: offer.completed_at, // Use completed_at as clicked_at fallback
-        click_url: "#",
+        events_json: eventsData,
+        clicked_at: offer.completed_at || offer.created_at,
+        click_url: offer.click_url || "#",
         milestone_progress: {
-          completed_count: offer.status === "completed" ? 1 : 0,
-          total_count: 1,
+          completed_count: offer.status === "completed" ? (eventsData.length || 1) : 0,
+          total_count: eventsData.length || 1,
           completed_milestone_ids: [],
           completed_milestones: [],
         },
