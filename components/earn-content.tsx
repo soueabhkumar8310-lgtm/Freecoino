@@ -1592,9 +1592,8 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
 
     // Klink - open in new window
     if (wall === "Klink") {
-      const apiKey = process.env.NEXT_PUBLIC_KLINK_API_KEY || "";
-      const pubId = process.env.NEXT_PUBLIC_KLINK_PUBLISHER_ID || "";
-      const klinkUrl = `https://klink-quest.klink.finance/quest?publisherId=${pubId}&userId=${userId}`;
+      const pubId = process.env.NEXT_PUBLIC_KLINK_PUBLISHER_ID || "489cbf22-91da-4cea-9b75-06488105d4e7";
+      const klinkUrl = `https://offerwall.klinkfinance.com/wall?pub_id=${pubId}&user_id=${userId}`;
       window.open(klinkUrl, '_blank', 'noopener,noreferrer');
       return;
     }
@@ -1667,9 +1666,8 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
     }
     if (activeWall === "Klink") {
-      const apiKey = process.env.NEXT_PUBLIC_KLINK_API_KEY || "";
-      const pubId = process.env.NEXT_PUBLIC_KLINK_PUBLISHER_ID || "";
-      return `https://klink-quest.klink.finance/quest?publisherId=${pubId}&userId=${userId}`;
+      const pubId = process.env.NEXT_PUBLIC_KLINK_PUBLISHER_ID || "489cbf22-91da-4cea-9b75-06488105d4e7";
+      return `https://offerwall.klinkfinance.com/wall?pub_id=${pubId}&user_id=${userId}`;
     }
     return "";
   };
