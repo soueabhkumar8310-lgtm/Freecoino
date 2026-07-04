@@ -12,20 +12,87 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const apiKey = process.env.VORTEX_API_KEY;
     const placementId = process.env.VORTEX_PLACEMENT_ID || '69dfafd0a982f180b5caa54c';
 
-    console.log('ℹ️ Vortex is iframe-only (no REST API available)');
+    if (!apiKey) {
+      console.error('❌ Vortex API key not configured');
+      return NextResponse.json({
+        success: true,
+        offers: [],
+        message: 'Vortex API key not configured. Add VORTEX_API_KEY to environment variables.',
+      });
+    }
+
+    console.log('✅ Vortex API Key loaded, first 10 chars:', apiKey.substring(0, 10));
+
+    // Vortex REST API endpoint (per official documentation)
+    // https://api.vortexwall.com/api/v1/offers/static?placementId={placementId}&apiKey={apiKey}
+    const apiUrl = `https://api.vortexwall.com/api/v1/offers/static?placementId=${placementId}&apiKey=${apiKey}`;
+
+    console.log('🔄 Fetching from Vortex API...');
     
-    // Vortex does NOT provide a REST API for fetching offers
-    // According to official documentation: https://vortexwall.com/documentation
-    // Only iframe integration is supported
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Freecoino/1.0',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Vortex API error: ${response.status} - ${errorText.substring(0, 200)}`);
+      return NextResponse.json({
+        success: true,
+        offers: [],
+        message: `Vortex API error: ${response.status}`,
+      });
+    }
+
+    const data = await response.json();
     
+    if (!data.success || !data.data || !Array.isArray(data.data)) {
+      console.error('❌ Invalid Vortex API response format');
+      return NextResponse.json({
+        success: true,
+        offers: [],
+        message: 'Invalid API response',
+      });
+    }
+    
+    // Transform Vortex offers to our standard format
+    const offers = data.data.map((offer: any) => {
+      // Calculate total payout from events (use highest payout event or total)
+      const totalPayout = offer.payout || 0;
+      
+      return {
+        offer_id: offer.id,
+        name: offer.name,
+        description1: typeof offer.description === 'object' ? offer.description.en || '' : offer.description || '',
+        description2: '',
+        description3: '',
+        image_url: offer.icon || 'https://via.placeholder.com/150',
+        payout: totalPayout,
+        click_url: offer.url ? offer.url.replace('[USER_ID]', userId) : '',
+        categories: [offer.category || 'app'],
+        events: (offer.events || []).map((event: any) => ({
+          id: event.eventId,
+          name: typeof event.action === 'object' ? event.action.en || 'Complete' : event.action || 'Complete',
+          payout: event.payout || 0,
+        })).filter((e: any) => e.payout > 0), // Only include paid events
+        provider: 'Vortex',
+        trackingType: offer.multiEvent ? 'CPE' : 'CPI',
+        device: offer.device || ['android'],
+      };
+    });
+
+    console.log(`✅ Vortex offers loaded: ${offers.length}`);
+
     return NextResponse.json({
       success: true,
-      offers: [],
-      message: 'Vortex is iframe-based only. No REST API available. Use embedded offerwall instead.',
-      iframeUrl: `https://vortexwall.com/ow/${placementId}/${userId}`,
-      documentation: 'Vortex only supports iframe integration. See: https://vortexwall.com/documentation',
+      offers,
+      count: offers.length,
     });
 
   } catch (error) {
@@ -34,7 +101,7 @@ export async function GET(request: NextRequest) {
       {
         success: true, // Return success to avoid breaking the app
         offers: [],
-        message: 'Vortex is iframe-only',
+        message: error instanceof Error ? error.message : 'Failed to fetch offers',
       },
       { status: 200 }
     );

@@ -271,7 +271,7 @@ function OfferDetailsModal({
                     color: "#01D676",
                   }}
                 >
-                  ${offer.payout}
+                  {offer.payout} coins
                 </Typography>
                 <Box
                   sx={{
@@ -339,7 +339,7 @@ function OfferDetailsModal({
                   fill="currentColor"
                 />
               </svg>
-              Play and Earn ${offer.payout}
+              Play and Earn {offer.payout} coins
             </Box>
           </Box>
         </Box>
@@ -458,7 +458,7 @@ function OfferDetailsModal({
                       fontWeight: 700,
                     }}
                   >
-                    ${event.payout}
+                    {event.payout} coins
                   </Typography>
                   <Box
                     sx={{
@@ -1253,7 +1253,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
               </Typography>
 
               <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600 }}>
-                ${offer.payout}
+                {offer.payout} coins
               </Typography>
             </Box>
           </Box>

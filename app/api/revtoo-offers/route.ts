@@ -68,7 +68,9 @@ export async function GET(request: NextRequest) {
     const rawOffers = data.offers || [];
     const offers = rawOffers
       .map((offer: any) => {
-        const payout = parseFloat(offer.payout || offer.reward || 0);
+        // Revtoo returns payout in USD, convert to coins (1 USD = 1000 coins)
+        const payoutUSD = parseFloat(offer.payout || offer.reward || 0);
+        const payout = payoutUSD * 1000; // Convert to coins
         const name = offer.name || offer.title;
         if (!payout || !name) return null;
 
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest) {
           .map((e: any) => ({
             id: e.event_id || e.id || e.name || `event_${Math.random().toString(36).slice(2, 8)}`,
             name: e.event_title || e.name || e.title || "Complete Task",
-            payout: parseFloat(e.event_payout || e.payout || e.reward || 0),
+            payout: parseFloat(e.event_payout || e.payout || e.reward || 0) * 1000, // Convert to coins
           }))
           .filter((e: any) => e.payout > 0);
 
