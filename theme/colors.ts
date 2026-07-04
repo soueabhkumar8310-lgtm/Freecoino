@@ -1,14 +1,14 @@
 const colors = {
   // Luminous Prism - Glassmorphic Design System
   primary: "#6366F1", // Indigo
-  secondary: "#01D676", // Green (changed from pink)
-  tertiary: "#14B8A6", // Teal
+  secondary: "#E2E8F0", // Silver/White
+  tertiary: "#94A3B8", // Slate
   divider: "rgba(148, 163, 184, 0.2)",
   
   // Backward compatibility aliases
-  green: "#01D676",
-  greenTint: "rgba(1, 214, 118, 0.1)",
-  gradient: "linear-gradient(135deg, #01D676 0%, #00B894 100%)",
+  accent: "#E2E8F0",
+  accentTint: "rgba(226, 232, 240, 0.1)",
+  gradient: "linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%)",
   bgPage: "#0a0b0f",
   bgCard: "#12131c",
   bgButton: "#1a1b2e",
@@ -28,7 +28,7 @@ const colors = {
     ternary: "#2b3544", // Surface container high
     drawer: "#16202e",
     hover: "rgba(99, 102, 241, 0.08)",
-    gradient: "linear-gradient(135deg, #01D676 0%, #00B894 100%)", // Green gradient instead of purple
+    gradient: "linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%)", // Silver gradient
     // Glassmorphic surfaces
     glass: "rgba(43, 53, 68, 0.6)", // surface-container-high at 60% opacity
     glassHover: "rgba(43, 53, 68, 0.75)",

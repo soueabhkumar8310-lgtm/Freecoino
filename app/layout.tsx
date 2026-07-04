@@ -110,7 +110,7 @@ export default function RootLayout({
           <ThemeProvider theme={theme}>
             <CssBaseline />
             <AuthProvider>
-              <NextTopLoader color="#01D676" showSpinner={false} />
+              <NextTopLoader color="#E2E8F0" showSpinner={false} />
               {children}
               <ToastContainer
                 autoClose={3000}

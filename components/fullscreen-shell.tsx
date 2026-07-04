@@ -215,8 +215,8 @@ export default function FullscreenShell({
                     href={href}
                     startIcon={<Icon size={18} />}
                     sx={{
-                      color: isActive ? "#01D676" : colors.text.secondary,
-                      bgcolor: isActive ? "rgba(1, 214, 118, 0.1)" : "transparent",
+                      color: isActive ? "#E2E8F0" : colors.text.secondary,
+                      bgcolor: isActive ? "rgba(226, 232, 240, 0.1)" : "transparent",
                       px: 2,
                       py: 1,
                       borderRadius: 2,
@@ -224,8 +224,8 @@ export default function FullscreenShell({
                       fontWeight: isActive ? 600 : 500,
                       fontSize: "0.9375rem",
                       "&:hover": {
-                        bgcolor: isActive ? "rgba(1, 214, 118, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                        color: isActive ? "#01D676" : colors.text.primary,
+                        bgcolor: isActive ? "rgba(226, 232, 240, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                        color: isActive ? "#E2E8F0" : colors.text.primary,
                       },
                     }}
                   >
@@ -394,20 +394,20 @@ export default function FullscreenShell({
                     selected={isActive}
                     sx={{
                       borderRadius: 2,
-                      color: isActive ? "#01D676" : colors.text.primary,
-                      bgcolor: isActive ? "rgba(1, 214, 118, 0.1)" : "transparent",
+                      color: isActive ? "#E2E8F0" : colors.text.primary,
+                      bgcolor: isActive ? "rgba(226, 232, 240, 0.1)" : "transparent",
                       "&:hover": {
-                        bgcolor: isActive ? "rgba(1, 214, 118, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                        bgcolor: isActive ? "rgba(226, 232, 240, 0.15)" : "rgba(255, 255, 255, 0.05)",
                       },
                       "&.Mui-selected": {
-                        bgcolor: "rgba(1, 214, 118, 0.1)",
+                        bgcolor: "rgba(226, 232, 240, 0.1)",
                         "&:hover": {
-                          bgcolor: "rgba(1, 214, 118, 0.15)",
+                          bgcolor: "rgba(226, 232, 240, 0.15)",
                         },
                       },
                     }}
                   >
-                    <ListItemIcon sx={{ minWidth: 40, color: isActive ? "#01D676" : colors.text.secondary }}>
+                    <ListItemIcon sx={{ minWidth: 40, color: isActive ? "#E2E8F0" : colors.text.secondary }}>
                       <Icon size={20} />
                     </ListItemIcon>
                     <ListItemText primary={label} />

@@ -76,7 +76,7 @@ export default function EarnPage() {
               textTransform: "none",
               "&:hover": {
                 borderColor: colors.secondary,
-                bgcolor: "rgba(1, 214, 118, 0.1)",
+                bgcolor: "rgba(226, 232, 240, 0.1)",
               },
             }}
           >

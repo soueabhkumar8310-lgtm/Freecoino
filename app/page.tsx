@@ -40,13 +40,13 @@ const colors = {
   bgCard: "#1d1e30",
   bgInput: "#252539",
   bgButton: "#2F3043",
-  green: "#01D676",
-  greenDark: "#007e45",
+  accent: "#E2E8F0",
+  accentDark: "#475569",
   textPrimary: "#ffffff",
   textSecondary: "#a9a9ca",
   divider: "#2a2b43",
-  greenTint: "#00e9411a",
-  gradient: "linear-gradient(180deg, #01d676 0, #007e45 100%)",
+  accentTint: "rgba(226, 232, 240, 0.1)",
+  gradient: "linear-gradient(180deg, #E2E8F0 0, #475569 100%)",
 };
 
 const sxGradientBtn = {
@@ -66,21 +66,21 @@ const sxCard = {
   borderRadius: "16px",
   transition: "border-color 0.2s, box-shadow 0.2s",
   "&:hover": {
-    borderColor: "rgba(1,214,118,0.3)",
+    borderColor: "rgba(226,232,240,0.3)",
   },
 } as const;
 
 const sxBadge = {
   display: "inline-flex",
   alignItems: "center",
-  bgcolor: colors.greenTint,
-  color: colors.green,
+  bgcolor: colors.accentTint,
+  color: colors.accent,
   fontSize: "0.75rem",
   fontWeight: 700,
   px: 1.5,
   py: 0.5,
   borderRadius: "100px",
-  border: `1px solid rgba(1,214,118,0.2)`,
+  border: `1px solid rgba(226,232,240,0.2)`,
   letterSpacing: "0.05em",
 } as const;
 
@@ -196,7 +196,7 @@ export default function Home() {
               height: 600,
               width: 900,
               borderRadius: "50%",
-              background: "rgba(1,214,118,0.05)",
+              background: "rgba(226,232,240,0.05)",
               filter: "blur(150px)",
             }}
           />
@@ -264,8 +264,8 @@ export default function Home() {
                         width: 32,
                         height: 32,
                         borderRadius: "8px",
-                        bgcolor: colors.greenTint,
-                        color: colors.green,
+                        bgcolor: colors.accentTint,
+                        color: colors.accent,
                       }}
                     >
                       {badge.icon}
@@ -319,7 +319,7 @@ export default function Home() {
                     borderRadius: "8px",
                     textTransform: "none",
                     "&:hover": { 
-                      borderColor: `${colors.green}66`, 
+                      borderColor: `${colors.accent}66`, 
                       bgcolor: colors.bgInput 
                     },
                   }}
@@ -355,7 +355,7 @@ export default function Home() {
                     href="/auth/login"
                     sx={{ 
                       fontWeight: 600, 
-                      color: colors.green, 
+                      color: colors.accent, 
                       textDecoration: "none",
                       "&:hover": { textDecoration: "underline" }
                     }}
@@ -400,7 +400,7 @@ export default function Home() {
             <Grid size={{ xs: 12, sm: 4 }}>
               <StepCard
                 step={1}
-                icon={<ClipboardList size={28} color={colors.green} />}
+                icon={<ClipboardList size={28} color={colors.accent} />}
                 title="Create Free Account"
                 description="Sign up in seconds with email or Google. Completely free to join."
               />
@@ -408,7 +408,7 @@ export default function Home() {
             <Grid size={{ xs: 12, sm: 4 }}>
               <StepCard
                 step={2}
-                icon={<CheckCircle size={28} color={colors.green} />}
+                icon={<CheckCircle size={28} color={colors.accent} />}
                 title="Complete Tasks"
                 description="Play games, fill surveys, try apps and earn coins for every task."
               />
@@ -416,7 +416,7 @@ export default function Home() {
             <Grid size={{ xs: 12, sm: 4 }}>
               <StepCard
                 step={3}
-                icon={<Wallet size={28} color={colors.green} />}
+                icon={<Wallet size={28} color={colors.accent} />}
                 title="Withdraw Crypto"
                 description="Cash out instantly to your LTC wallet."
               />
@@ -487,22 +487,22 @@ export default function Home() {
           <Grid container spacing={2.5} sx={{ mt: 7 }}>
             {[
               {
-                icon: <DollarSign size={24} color={colors.green} />,
+                icon: <DollarSign size={24} color={colors.accent} />,
                 title: "Crypto Payouts",
                 description: "Withdraw USDT via TRC-20, BEP-20, or SOL",
               },
               {
-                icon: <CalendarCheck size={24} color={colors.green} />,
+                icon: <CalendarCheck size={24} color={colors.accent} />,
                 title: "Daily Bonus",
                 description: "Free coins every day with streak rewards",
               },
               {
-                icon: <Trophy size={24} color={colors.green} />,
+                icon: <Trophy size={24} color={colors.accent} />,
                 title: "Leaderboard",
                 description: "Compete with others and win extra rewards",
               },
               {
-                icon: <Users size={24} color={colors.green} />,
+                icon: <Users size={24} color={colors.accent} />,
                 title: "Referral Program",
                 description: "Invite friends and earn bonus coins",
               },
@@ -573,11 +573,11 @@ export default function Home() {
                       width: 48,
                       height: 48,
                       borderRadius: "12px",
-                      bgcolor: colors.greenTint,
-                      border: `1px solid rgba(1,214,118,0.2)`,
+                      bgcolor: colors.accentTint,
+                      border: `1px solid rgba(226,232,240,0.2)`,
                     }}
                   >
-                    <Bitcoin size={20} color={colors.green} />
+                    <Bitcoin size={20} color={colors.accent} />
                   </Box>
                   <Typography sx={{ fontSize: "0.875rem", fontWeight: 600 }}>
                     {p.name}
@@ -669,8 +669,8 @@ export default function Home() {
                 width: 64,
                 height: 64,
                 borderRadius: "16px",
-                background: "linear-gradient(135deg, #01D676 0%, #007e45 100%)",
-                boxShadow: "0 8px 32px rgba(1,214,118,0.25)",
+                background: "linear-gradient(135deg, #E2E8F0 0%, #475569 100%)",
+                boxShadow: "0 8px 32px rgba(226,232,240,0.25)",
               }}
             >
               <Sparkles size={32} color="#fff" />
@@ -701,7 +701,7 @@ export default function Home() {
                 height: 56,
                 px: 5,
                 fontSize: "1rem",
-                boxShadow: "0 8px 32px rgba(1,214,118,0.25)",
+                boxShadow: "0 8px 32px rgba(226,232,240,0.25)",
                 gap: 1,
               }}
             >
@@ -807,7 +807,7 @@ export default function Home() {
                           textDecoration: "none",
                           fontSize: "0.8125rem",
                           transition: "color 0.2s",
-                          "&:hover": { color: colors.green },
+                          "&:hover": { color: colors.accent },
                         }}
                       >
                         {text}
@@ -892,7 +892,7 @@ function StepCard({
             fontSize: "0.75rem",
             fontWeight: 700,
             color: colors.textPrimary,
-            boxShadow: "0 4px 12px rgba(1,214,118,0.3)",
+            boxShadow: "0 4px 12px rgba(226,232,240,0.3)",
           }}
         >
           {step}
@@ -909,8 +909,8 @@ function StepCard({
           width: 56,
           height: 56,
           borderRadius: "16px",
-          bgcolor: colors.greenTint,
-          border: `1px solid rgba(1,214,118,0.2)`,
+          bgcolor: colors.accentTint,
+          border: `1px solid rgba(226,232,240,0.2)`,
         }}
       >
         {icon}
@@ -981,8 +981,8 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         transition: "border-color 0.3s, box-shadow 0.3s",
         "&:before": { display: "none" },
         "&.Mui-expanded": {
-          borderColor: "rgba(1,214,118,0.3)",
-          boxShadow: "0 8px 32px rgba(1,214,118,0.05)",
+          borderColor: "rgba(226,232,240,0.3)",
+          boxShadow: "0 8px 32px rgba(226,232,240,0.05)",
         },
       }}
     >
@@ -993,9 +993,9 @@ function FaqItem({ q, a }: { q: string; a: string }) {
           py: 0.5,
           fontWeight: 600,
           color: colors.textPrimary,
-          "&:hover": { color: colors.green },
+          "&:hover": { color: colors.accent },
           "& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
-            "& svg": { color: colors.green },
+            "& svg": { color: colors.accent },
           },
         }}
       >

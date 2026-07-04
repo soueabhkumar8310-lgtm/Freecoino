@@ -67,8 +67,8 @@ body {
 }
 
 /* Text glow effect */
-.text-glow-green {
-  text-shadow: 0 0 10px rgba(1, 214, 118, 0.3);
+.text-glow-accent {
+  text-shadow: 0 0 10px rgba(226, 232, 240, 0.3);
 }
 
 /* Smooth transitions */
@@ -80,7 +80,7 @@ body {
 .hero-gradient {
   background: radial-gradient(
     ellipse 80% 50% at 50% -20%,
-    rgba(1, 214, 118, 0.15),
+    rgba(226, 232, 240, 0.15),
     transparent
   );
 }
@@ -89,7 +89,7 @@ body {
   .hero-gradient {
     background: radial-gradient(
       ellipse 150% 80% at 50% -20%,
-      rgba(1, 214, 118, 0.12),
+      rgba(226, 232, 240, 0.12),
       transparent
     );
   }

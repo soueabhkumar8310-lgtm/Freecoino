@@ -34,9 +34,9 @@ export default function OfferwallModal() {
           cursor: "pointer",
           transition: "all 0.2s ease",
           "&:hover": {
-            borderColor: "rgba(1, 214, 118, 0.3)",
+            borderColor: "rgba(226, 232, 240, 0.3)",
             "& .card-title": {
-              color: "#01D676",
+              color: "#E2E8F0",
             },
           },
         }}
@@ -51,14 +51,14 @@ export default function OfferwallModal() {
             justifyContent: "center",
             borderRadius: 4,
             bgcolor: "#00e9411a",
-            border: "1px solid rgba(1, 214, 118, 0.2)",
+            border: "1px solid rgba(226, 232, 240, 0.2)",
           }}
         >
           <Typography
             sx={{
               fontSize: "1.5rem",
               fontWeight: 800,
-              color: "#01D676",
+              color: "#E2E8F0",
             }}
           >
             M

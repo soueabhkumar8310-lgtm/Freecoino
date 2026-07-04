@@ -69,7 +69,7 @@ export default function CompletionToast() {
           alignItems: "flex-start",
           gap: 1.5,
           bgcolor: "#1a1b2e",
-          border: "1px solid rgba(1, 214, 118, 0.3)",
+          border: "1px solid rgba(226, 232, 240, 0.3)",
           borderRadius: 2,
           p: 2,
           boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
@@ -77,9 +77,9 @@ export default function CompletionToast() {
           minWidth: 300,
         }}
       >
-        <CheckCircleIcon sx={{ color: "#01D676", fontSize: 28, flexShrink: 0, mt: 0.25 }} />
+        <CheckCircleIcon sx={{ color: "#E2E8F0", fontSize: 28, flexShrink: 0, mt: 0.25 }} />
         <Box sx={{ flex: 1 }}>
-          <Typography sx={{ fontSize: "0.875rem", fontWeight: 700, color: "#01D676", mb: 0.25 }}>
+          <Typography sx={{ fontSize: "0.875rem", fontWeight: 700, color: "#E2E8F0", mb: 0.25 }}>
             {snackbar.title}
           </Typography>
           <Typography sx={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>

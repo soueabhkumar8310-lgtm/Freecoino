@@ -108,7 +108,7 @@ export default function TermsPage() {
           <Box
             component="a"
             href="mailto:support@freecoino.com"
-            sx={{ color: colors.green, textDecoration: "none" }}
+            sx={{ color: colors.accent, textDecoration: "none" }}
           >
             support@freecoino.com
           </Box>

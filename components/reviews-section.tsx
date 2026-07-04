@@ -102,7 +102,7 @@ export default function ReviewsSection() {
             px: 3,
             "&:hover": {
               borderColor: colors.primary,
-              bgcolor: "rgba(1, 214, 118, 0.08)",
+              bgcolor: "rgba(226, 232, 240, 0.08)",
             },
           }}
         >
@@ -135,7 +135,7 @@ export default function ReviewsSection() {
                 "&:hover": {
                   borderColor: colors.glass.borderHover,
                   transform: "translateY(-4px)",
-                  boxShadow: `0 8px 24px rgba(1, 214, 118, 0.1)`,
+                  boxShadow: `0 8px 24px rgba(226, 232, 240, 0.1)`,
                 },
               }}
             >

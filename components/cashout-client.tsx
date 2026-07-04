@@ -467,8 +467,8 @@ export default function CashoutClient({
                         fontSize: "0.875rem",
                         color: "#fff",
                         "& fieldset": { borderColor: colors.divider },
-                        "&:hover fieldset": { borderColor: "rgba(1,214,118,0.3)" },
-                        "&.Mui-focused fieldset": { borderColor: "#01D676", borderWidth: "1px" },
+                        "&:hover fieldset": { borderColor: "rgba(226,232,240,0.3)" },
+                        "&.Mui-focused fieldset": { borderColor: "#E2E8F0", borderWidth: "1px" },
                         "& input::placeholder": { color: `${colors.text.secondary}80`, opacity: 1 },
                       },
                     }}
@@ -492,8 +492,8 @@ export default function CashoutClient({
                         fontSize: "0.875rem",
                         color: "#fff",
                         "& fieldset": { borderColor: colors.divider },
-                        "&:hover fieldset": { borderColor: "rgba(1,214,118,0.3)" },
-                        "&.Mui-focused fieldset": { borderColor: "#01D676", borderWidth: "1px" },
+                        "&:hover fieldset": { borderColor: "rgba(226,232,240,0.3)" },
+                        "&.Mui-focused fieldset": { borderColor: "#E2E8F0", borderWidth: "1px" },
                         "& input::placeholder": { color: `${colors.text.secondary}80`, opacity: 1 },
                       },
                     }}
@@ -565,7 +565,7 @@ export default function CashoutClient({
                 sx={{
                   py: 1.5,
                   borderRadius: 3,
-                  background: "linear-gradient(180deg,#00D084,#007e45)",
+                  background: "linear-gradient(180deg,#00D084,#475569)",
                   fontWeight: 700,
                   fontSize: "1rem",
                   textTransform: "none",
@@ -662,7 +662,7 @@ export default function CashoutClient({
                         <TableCell sx={{ borderColor: colors.divider }}>
                           {w.tx_hash ? (
                             <Box component="a" href={`https://litecoin.info/tx/${w.tx_hash}`} target="_blank" rel="noopener noreferrer"
-                              sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#01D676", textDecoration: "none", fontSize: "0.8rem", "&:hover": { opacity: 0.8 } }}>
+                              sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#E2E8F0", textDecoration: "none", fontSize: "0.8rem", "&:hover": { opacity: 0.8 } }}>
                               Tx <ExternalLink size={12} />
                             </Box>
                           ) : (

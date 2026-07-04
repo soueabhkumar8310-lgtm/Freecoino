@@ -145,7 +145,7 @@ export default function NotificationBell() {
 
         {loading && !fetched ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress size={24} sx={{ color: "#01D676" }} />
+            <CircularProgress size={24} sx={{ color: "#E2E8F0" }} />
           </Box>
         ) : notifications.length === 0 ? (
           <Box sx={{ py: 4, textAlign: "center" }}>
@@ -162,7 +162,7 @@ export default function NotificationBell() {
                   px: 2,
                   py: 1.5,
                   borderBottom: `1px solid ${colors.divider}`,
-                  bgcolor: n.read ? "transparent" : "rgba(1,214,118,0.05)",
+                  bgcolor: n.read ? "transparent" : "rgba(226,232,240,0.05)",
                   "&:last-child": { borderBottom: "none" },
                 }}
               >

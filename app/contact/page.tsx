@@ -19,13 +19,13 @@ import Typography from "@/components/ui/Typography";
 const colors = {
   bgPage: "#141523",
   bgCard: "#1d1e30",
-  green: "#01D676",
-  greenDark: "#007e45",
+  accent: "#E2E8F0",
+  accentDark: "#475569",
   textPrimary: "#ffffff",
   textSecondary: "#a9a9ca",
   divider: "#2a2b43",
-  greenTint: "#00e9411a",
-  gradient: "linear-gradient(180deg, #01d676 0, #007e45 100%)",
+  accentTint: "rgba(226, 232, 240, 0.1)",
+  gradient: "linear-gradient(180deg, #E2E8F0 0, #475569 100%)",
 };
 
 export default function ContactPage() {
@@ -113,17 +113,17 @@ export default function ContactPage() {
                 width: 48,
                 height: 48,
                 borderRadius: 3,
-                bgcolor: colors.greenTint,
-                border: "1px solid rgba(1,214,118,0.2)",
+                bgcolor: colors.accentTint,
+                border: "1px solid rgba(226,232,240,0.2)",
               }}
             >
-              <Mail size={22} color={colors.green} />
+              <Mail size={22} color={colors.accent} />
             </Box>
             <Typography sx={{ fontWeight: 600, fontSize: "0.95rem" }}>Email</Typography>
             <Box
               component="a"
               href="mailto:support@freecoino.com"
-              sx={{ fontSize: "0.85rem", color: colors.green, textDecoration: "none" }}
+              sx={{ fontSize: "0.85rem", color: colors.accent, textDecoration: "none" }}
             >
               support@freecoino.com
             </Box>
@@ -150,17 +150,17 @@ export default function ContactPage() {
                 width: 48,
                 height: 48,
                 borderRadius: 3,
-                bgcolor: colors.greenTint,
-                border: "1px solid rgba(1,214,118,0.2)",
+                bgcolor: colors.accentTint,
+                border: "1px solid rgba(226,232,240,0.2)",
               }}
             >
-              <HelpCircle size={22} color={colors.green} />
+              <HelpCircle size={22} color={colors.accent} />
             </Box>
             <Typography sx={{ fontWeight: 600, fontSize: "0.95rem" }}>FAQ</Typography>
             <Box
               component={Link}
               href="/#faq"
-              sx={{ fontSize: "0.85rem", color: colors.green, textDecoration: "none" }}
+              sx={{ fontSize: "0.85rem", color: colors.accent, textDecoration: "none" }}
             >
               View common questions
             </Box>
@@ -178,7 +178,7 @@ export default function ContactPage() {
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-            <MessageSquare size={20} color={colors.green} />
+            <MessageSquare size={20} color={colors.accent} />
             <Typography sx={{ fontWeight: 600, fontSize: "1.1rem" }}>
               Send a Message
             </Typography>

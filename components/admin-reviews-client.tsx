@@ -42,7 +42,7 @@ interface Review {
 
 const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   pending: { color: "#facc15", bg: "rgba(250,204,21,0.15)" },
-  approved: { color: "#01D676", bg: "rgba(1,214,118,0.15)" },
+  approved: { color: "#E2E8F0", bg: "rgba(226,232,240,0.15)" },
   rejected: { color: "#f87171", bg: "rgba(239,68,68,0.15)" },
 };
 
@@ -217,7 +217,7 @@ export default function AdminReviewsClient() {
           isBold
           sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
         >
-          <Star size={24} color="#01D676" />
+          <Star size={24} color="#E2E8F0" />
           Reviews Management
         </Typography>
         <Typography variant="body2" color="textSecondary">
@@ -409,9 +409,9 @@ export default function AdminReviewsClient() {
                               onClick={() => handleApprove(review.id)}
                               disabled={actionLoading === review.id}
                               sx={{
-                                color: "#01D676",
-                                bgcolor: "rgba(1,214,118,0.1)",
-                                "&:hover": { bgcolor: "rgba(1,214,118,0.2)" },
+                                color: "#E2E8F0",
+                                bgcolor: "rgba(226,232,240,0.1)",
+                                "&:hover": { bgcolor: "rgba(226,232,240,0.2)" },
                               }}
                             >
                               <CheckCircle size={16} />
@@ -519,16 +519,16 @@ export default function AdminReviewsClient() {
           sx={{
             bgcolor:
               toast.severity === "success"
-                ? "rgba(1,214,118,0.1)"
+                ? "rgba(226,232,240,0.1)"
                 : "rgba(239,68,68,0.1)",
             border: `1px solid ${
               toast.severity === "success"
-                ? "rgba(1,214,118,0.3)"
+                ? "rgba(226,232,240,0.3)"
                 : "rgba(239,68,68,0.3)"
             }`,
-            color: toast.severity === "success" ? "#01D676" : "#f87171",
+            color: toast.severity === "success" ? "#E2E8F0" : "#f87171",
             "& .MuiAlert-icon": {
-              color: toast.severity === "success" ? "#01D676" : "#f87171",
+              color: toast.severity === "success" ? "#E2E8F0" : "#f87171",
             },
           }}
         >

@@ -29,7 +29,7 @@ export async function sendWithdrawalApprovedEmail(
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                   <!-- Header -->
                   <tr>
-                    <td style="background: linear-gradient(180deg, #01d676 0%, #007e45 100%); padding: 30px; text-align: center;">
+                    <td style="background: linear-gradient(180deg, #64748B 0%, #334155 100%); padding: 30px; text-align: center;">
                       <h1 style="margin: 0; color: #ffffff; font-size: 24px;">Freecoino</h1>
                     </td>
                   </tr>
@@ -40,7 +40,7 @@ export async function sendWithdrawalApprovedEmail(
                       <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 20px;">Hi ${userName},</h2>
                       
                       <p style="margin: 0 0 15px 0; color: #666666; font-size: 16px; line-height: 1.6;">
-                        Great news! Your withdrawal request has been <strong style="color: #01d676;">approved</strong> and processed.
+                        Great news! Your withdrawal request has been <strong style="color: #64748B;">approved</strong> and processed.
                       </p>
                       
                       <!-- Withdrawal Details Box -->
@@ -54,7 +54,7 @@ export async function sendWithdrawalApprovedEmail(
                               </tr>
                               <tr>
                                 <td style="color: #666666; font-size: 14px;">USD Value:</td>
-                                <td align="right" style="color: #01d676; font-size: 16px; font-weight: bold;">$${amountUsd.toFixed(2)} USD</td>
+                                <td align="right" style="color: #64748B; font-size: 16px; font-weight: bold;">$${amountUsd.toFixed(2)} USD</td>
                               </tr>
                               <tr>
                                 <td style="color: #666666; font-size: 14px;">Network:</td>
@@ -63,7 +63,7 @@ export async function sendWithdrawalApprovedEmail(
                               <tr>
                                 <td style="color: #666666; font-size: 14px; padding-top: 10px;">Transaction Hash:</td>
                                 <td align="right" style="padding-top: 10px;">
-                                  <a href="https://litecoin.info/tx/${txHash}" target="_blank" style="color: #01d676; font-size: 12px; word-break: break-all; text-decoration: none;">
+                                  <a href="https://litecoin.info/tx/${txHash}" target="_blank" style="color: #64748B; font-size: 12px; word-break: break-all; text-decoration: none;">
                                     ${txHash}
                                   </a>
                                 </td>
@@ -78,7 +78,7 @@ export async function sendWithdrawalApprovedEmail(
                       </p>
                       
                       <div style="margin-top: 30px; text-align: center;">
-                        <a href="https://freecoino.com/history" style="display: inline-block; background: linear-gradient(180deg, #01d676 0%, #007e45 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; font-size: 14px;">
+                        <a href="https://freecoino.com/history" style="display: inline-block; background: linear-gradient(180deg, #64748B 0%, #334155 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; font-size: 14px;">
                           View Withdrawal History
                         </a>
                       </div>
@@ -92,7 +92,7 @@ export async function sendWithdrawalApprovedEmail(
                         This is an automated message from Freecoino.
                       </p>
                       <p style="margin: 0; color: #999999; font-size: 12px;">
-                        Need help? Contact us at <a href="mailto:support@freecoino.com" style="color: #01d676; text-decoration: none;">support@freecoino.com</a>
+                        Need help? Contact us at <a href="mailto:support@freecoino.com" style="color: #64748B; text-decoration: none;">support@freecoino.com</a>
                       </p>
                     </td>
                   </tr>
@@ -179,7 +179,7 @@ export async function sendWithdrawalRejectedEmail(
                         </tr>
                       </table>
                       
-                      <div style="background-color: #f0fdf4; border-left: 4px solid #01d676; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                      <div style="background-color: #f0fdf4; border-left: 4px solid #64748B; padding: 15px; margin: 20px 0; border-radius: 4px;">
                         <p style="margin: 0; color: #166534; font-size: 14px; font-weight: bold;">
                           ✓ Your coins have been refunded
                         </p>
@@ -193,7 +193,7 @@ export async function sendWithdrawalRejectedEmail(
                       </p>
                       
                       <div style="margin-top: 30px; text-align: center;">
-                        <a href="https://freecoino.com/contact" style="display: inline-block; background: linear-gradient(180deg, #01d676 0%, #007e45 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; font-size: 14px; margin-right: 10px;">
+                        <a href="https://freecoino.com/contact" style="display: inline-block; background: linear-gradient(180deg, #64748B 0%, #334155 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; font-size: 14px; margin-right: 10px;">
                           Contact Support
                         </a>
                         <a href="https://freecoino.com/cashout" style="display: inline-block; background-color: #f3f4f6; color: #333333; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; font-size: 14px; border: 1px solid #d1d5db;">
@@ -210,7 +210,7 @@ export async function sendWithdrawalRejectedEmail(
                         This is an automated message from Freecoino.
                       </p>
                       <p style="margin: 0; color: #999999; font-size: 12px;">
-                        Need help? Contact us at <a href="mailto:support@freecoino.com" style="color: #01d676; text-decoration: none;">support@freecoino.com</a>
+                        Need help? Contact us at <a href="mailto:support@freecoino.com" style="color: #64748B; text-decoration: none;">support@freecoino.com</a>
                       </p>
                     </td>
                   </tr>
