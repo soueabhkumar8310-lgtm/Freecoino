@@ -52,7 +52,7 @@ export default function ClearSessionPage() {
     >
       <Container maxWidth="sm">
         <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress sx={{ color: '#E2E8F0', mb: 3 }} size={48} />
+          <CircularProgress sx={{ color: '#01D676', mb: 3 }} size={48} />
           <Typography variant="h5" isBold sx={{ color: '#fff', mb: 2 }}>
             Clearing Sessions...
           </Typography>

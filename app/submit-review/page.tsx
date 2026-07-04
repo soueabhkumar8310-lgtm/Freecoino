@@ -186,9 +186,9 @@ export default function SubmitReviewPage() {
                     fontSize: "0.875rem",
                     color: "#fff",
                     "& fieldset": { borderColor: colors.divider },
-                    "&:hover fieldset": { borderColor: "rgba(226,232,240,0.3)" },
+                    "&:hover fieldset": { borderColor: "rgba(1, 214, 118,0.3)" },
                     "&.Mui-focused fieldset": {
-                      borderColor: "#E2E8F0",
+                      borderColor: "#01D676",
                       borderWidth: "1px",
                     },
                     "& input::placeholder": {
@@ -223,9 +223,9 @@ export default function SubmitReviewPage() {
                     fontSize: "0.875rem",
                     color: "#fff",
                     "& fieldset": { borderColor: colors.divider },
-                    "&:hover fieldset": { borderColor: "rgba(226,232,240,0.3)" },
+                    "&:hover fieldset": { borderColor: "rgba(1, 214, 118,0.3)" },
                     "&.Mui-focused fieldset": {
-                      borderColor: "#E2E8F0",
+                      borderColor: "#01D676",
                       borderWidth: "1px",
                     },
                     "& textarea::placeholder": {

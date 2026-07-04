@@ -30,7 +30,7 @@ function RankBadge({ rank }: { rank: number }) {
     );
   }
   return (
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, fontSize: "0.875rem", fontWeight: 600, color: rank <= 10 ? "#E2E8F0" : colors.text.secondary }}>
+    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, fontSize: "0.875rem", fontWeight: 600, color: rank <= 10 ? "#01D676" : colors.text.secondary }}>
       {rank}
     </Box>
   );
@@ -132,16 +132,16 @@ export default function LeaderboardClient({ userId }: { userId: string }) {
                   const isMe = userId === row.user_id;
                   const initials = (row.display_name || "??").slice(0, 2).toUpperCase();
                   return (
-                    <Paper key={row.user_id} elevation={0} sx={{ borderRadius: 4, border: `1px solid ${isMe ? "rgba(226,232,240,0.5)" : st.border}`, background: isMe ? "linear-gradient(135deg, rgba(226,232,240,0.1) 0%, rgba(0,126,69,0.06) 100%)" : st.cardBg, p: 3, textAlign: "center", boxShadow: row.rank === 1 ? st.glow : "none", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: st.height, transition: "all 0.2s" }}>
-                      {isMe && <Box sx={{ position: "absolute", top: 10, right: 10, borderRadius: 50, bgcolor: "rgba(226,232,240,0.15)", border: "1px solid rgba(226,232,240,0.3)", px: 1, py: 0.15, fontSize: "9px", fontWeight: 700, color: "#E2E8F0" }}>YOU</Box>}
+                    <Paper key={row.user_id} elevation={0} sx={{ borderRadius: 4, border: `1px solid ${isMe ? "rgba(1, 214, 118,0.5)" : st.border}`, background: isMe ? "linear-gradient(135deg, rgba(1, 214, 118,0.1) 0%, rgba(0,126,69,0.06) 100%)" : st.cardBg, p: 3, textAlign: "center", boxShadow: row.rank === 1 ? st.glow : "none", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: st.height, transition: "all 0.2s" }}>
+                      {isMe && <Box sx={{ position: "absolute", top: 10, right: 10, borderRadius: 50, bgcolor: "rgba(1, 214, 118,0.15)", border: "1px solid rgba(1, 214, 118,0.3)", px: 1, py: 0.15, fontSize: "9px", fontWeight: 700, color: "#01D676" }}>YOU</Box>}
                       <Box sx={{ mb: 1, fontSize: { xs: "1.5rem", sm: row.rank === 1 ? "2rem" : "1.5rem" } }}>{st.emoji}</Box>
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: row.rank === 1 ? 60 : 48, height: row.rank === 1 ? 60 : 48, borderRadius: "50%", background: isMe ? "linear-gradient(135deg,#E2E8F0,#475569)" : st.avatarBg, fontWeight: 800, fontSize: row.rank === 1 ? "1.2rem" : "1rem", color: "#fff", mb: 1.5, boxShadow: row.rank === 1 ? "0 4px 16px rgba(251,191,36,0.3)" : "none" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: row.rank === 1 ? 60 : 48, height: row.rank === 1 ? 60 : 48, borderRadius: "50%", background: isMe ? "linear-gradient(135deg,#01D676,#475569)" : st.avatarBg, fontWeight: 800, fontSize: row.rank === 1 ? "1.2rem" : "1rem", color: "#fff", mb: 1.5, boxShadow: row.rank === 1 ? "0 4px 16px rgba(251,191,36,0.3)" : "none" }}>
                         {initials}
                       </Box>
-                      <Typography sx={{ fontWeight: 700, fontSize: row.rank === 1 ? "0.95rem" : "0.85rem", color: isMe ? "#E2E8F0" : "#fff", mb: 0.75, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: row.rank === 1 ? "0.95rem" : "0.85rem", color: isMe ? "#01D676" : "#fff", mb: 0.75, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {row.display_name}
                       </Typography>
-                      <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, borderRadius: 50, bgcolor: st.namePillBg, border: `1px solid ${st.namePillBorder}`, px: 1.5, py: 0.35, fontSize: "0.8rem", fontWeight: 800, color: isMe ? "#E2E8F0" : st.namePillColor }}>
+                      <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, borderRadius: 50, bgcolor: st.namePillBg, border: `1px solid ${st.namePillBorder}`, px: 1.5, py: 0.35, fontSize: "0.8rem", fontWeight: 800, color: isMe ? "#01D676" : st.namePillColor }}>
                         <Coins size={13} />
                         {(row.monthly_earnings || 0).toLocaleString()}
                       </Box>
@@ -153,17 +153,17 @@ export default function LeaderboardClient({ userId }: { userId: string }) {
           )}
 
           {myRank && myRank.rank > 3 && (
-            <Paper elevation={0} sx={{ mb: 3, borderRadius: 3, border: "1px solid rgba(226,232,240,0.35)", bgcolor: "rgba(226,232,240,0.06)", px: 3, py: 2, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+            <Paper elevation={0} sx={{ mb: 3, borderRadius: 3, border: "1px solid rgba(1, 214, 118,0.35)", bgcolor: "rgba(1, 214, 118,0.06)", px: 3, py: 2, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 2, bgcolor: "rgba(226,232,240,0.15)", border: "1px solid rgba(226,232,240,0.25)", fontWeight: 800, fontSize: "0.9rem", color: "#E2E8F0" }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 2, bgcolor: "rgba(1, 214, 118,0.15)", border: "1px solid rgba(1, 214, 118,0.25)", fontWeight: 800, fontSize: "0.9rem", color: "#01D676" }}>
                   #{myRank.rank}
                 </Box>
                 <Box>
-                  <Typography sx={{ fontWeight: 700, color: "#E2E8F0", fontSize: "0.9rem" }}>Your Current Rank</Typography>
+                  <Typography sx={{ fontWeight: 700, color: "#01D676", fontSize: "0.9rem" }}>Your Current Rank</Typography>
                   <Typography sx={{ fontSize: "0.72rem", color: colors.text.secondary }}>{myRank.display_name}</Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, borderRadius: 50, bgcolor: "rgba(226,232,240,0.1)", border: "1px solid rgba(226,232,240,0.2)", px: 1.75, py: 0.5, fontSize: "0.875rem", fontWeight: 700, color: "#E2E8F0" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, borderRadius: 50, bgcolor: "rgba(1, 214, 118,0.1)", border: "1px solid rgba(1, 214, 118,0.2)", px: 1.75, py: 0.5, fontSize: "0.875rem", fontWeight: 700, color: "#01D676" }}>
                 <Coins size={14} />
                 {(myRank.monthly_earnings || 0).toLocaleString()} coins this month
               </Box>
@@ -176,12 +176,12 @@ export default function LeaderboardClient({ userId }: { userId: string }) {
               {rest.map((row) => {
                 const isMe = userId === row.user_id;
                 return (
-                  <Box key={row.user_id} sx={{ display: "flex", alignItems: "center", gap: 1.5, borderRadius: 3, px: 2, py: 1.5, transition: "all 0.2s", border: `1px solid ${isMe ? "rgba(226,232,240,0.4)" : colors.divider}`, bgcolor: isMe ? "rgba(226,232,240,0.05)" : colors.background.secondary, ...(isMe ? { boxShadow: "0 4px 20px rgba(226,232,240,0.05)" } : { "&:hover": { bgcolor: colors.background.ternary } }) }}>
+                  <Box key={row.user_id} sx={{ display: "flex", alignItems: "center", gap: 1.5, borderRadius: 3, px: 2, py: 1.5, transition: "all 0.2s", border: `1px solid ${isMe ? "rgba(1, 214, 118,0.4)" : colors.divider}`, bgcolor: isMe ? "rgba(1, 214, 118,0.05)" : colors.background.secondary, ...(isMe ? { boxShadow: "0 4px 20px rgba(1, 214, 118,0.05)" } : { "&:hover": { bgcolor: colors.background.ternary } }) }}>
                     <RankBadge rank={row.rank} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: isMe ? "#E2E8F0" : "#fff" }}>{row.display_name}{isMe && <Box component="span" sx={{ ml: 1, borderRadius: 50, bgcolor: colors.background.ternary, border: "1px solid rgba(226,232,240,0.2)", px: 0.75, py: 0.15, fontSize: "9px", fontWeight: 700, textTransform: "uppercase", color: "#E2E8F0" }}>You</Box>}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: isMe ? "#01D676" : "#fff" }}>{row.display_name}{isMe && <Box component="span" sx={{ ml: 1, borderRadius: 50, bgcolor: colors.background.ternary, border: "1px solid rgba(1, 214, 118,0.2)", px: 0.75, py: 0.15, fontSize: "9px", fontWeight: 700, textTransform: "uppercase", color: "#01D676" }}>You</Box>}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, borderRadius: 50, bgcolor: "rgba(226,232,240,0.08)", border: "1px solid rgba(226,232,240,0.15)", px: 1.25, py: 0.35, fontSize: "0.8rem", fontWeight: 700, color: "#E2E8F0" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, borderRadius: 50, bgcolor: "rgba(1, 214, 118,0.08)", border: "1px solid rgba(1, 214, 118,0.15)", px: 1.25, py: 0.35, fontSize: "0.8rem", fontWeight: 700, color: "#01D676" }}>
                       <Coins size={12} />
                       {(row.monthly_earnings || 0).toLocaleString()}
                     </Box>
@@ -205,14 +205,14 @@ export default function LeaderboardClient({ userId }: { userId: string }) {
                 {rest.map((row, i) => {
                   const isMe = userId === row.user_id;
                   return (
-                    <TableRow key={row.user_id} sx={{ bgcolor: isMe ? "rgba(226,232,240,0.05)" : i % 2 === 0 ? "rgba(29,30,48,0.4)" : "rgba(29,30,48,0.25)", ...(!isMe && { "&:hover": { bgcolor: colors.background.ternary } }) }}>
+                    <TableRow key={row.user_id} sx={{ bgcolor: isMe ? "rgba(1, 214, 118,0.05)" : i % 2 === 0 ? "rgba(29,30,48,0.4)" : "rgba(29,30,48,0.25)", ...(!isMe && { "&:hover": { bgcolor: colors.background.ternary } }) }}>
                       <TableCell align="center" sx={{ borderColor: colors.divider }}><Box sx={{ display: "flex", justifyContent: "center" }}><RankBadge rank={row.rank} /></Box></TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: isMe ? "#E2E8F0" : "#fff", borderColor: colors.divider }}>
+                      <TableCell sx={{ fontWeight: 600, color: isMe ? "#01D676" : "#fff", borderColor: colors.divider }}>
                         {row.display_name}
-                        {isMe && <Box component="span" sx={{ ml: 1, borderRadius: 50, bgcolor: "rgba(226,232,240,0.1)", border: "1px solid rgba(226,232,240,0.2)", px: 0.75, py: 0.15, fontSize: "9px", fontWeight: 700, textTransform: "uppercase", color: "#E2E8F0" }}>You</Box>}
+                        {isMe && <Box component="span" sx={{ ml: 1, borderRadius: 50, bgcolor: "rgba(1, 214, 118,0.1)", border: "1px solid rgba(1, 214, 118,0.2)", px: 0.75, py: 0.15, fontSize: "9px", fontWeight: 700, textTransform: "uppercase", color: "#01D676" }}>You</Box>}
                       </TableCell>
                       <TableCell align="right" sx={{ borderColor: colors.divider }}>
-                        <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, borderRadius: 50, bgcolor: "rgba(226,232,240,0.08)", border: "1px solid rgba(226,232,240,0.15)", px: 1.25, py: 0.35, fontSize: "0.82rem", fontWeight: 700, color: "#E2E8F0" }}>
+                        <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, borderRadius: 50, bgcolor: "rgba(1, 214, 118,0.08)", border: "1px solid rgba(1, 214, 118,0.15)", px: 1.25, py: 0.35, fontSize: "0.82rem", fontWeight: 700, color: "#01D676" }}>
                           {(row.monthly_earnings || 0).toLocaleString()}
                         </Box>
                       </TableCell>

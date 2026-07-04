@@ -237,7 +237,7 @@ export default function ReferralsClient({
               py: 0.25,
               fontFamily: "monospace",
               fontWeight: 700,
-              color: "#E2E8F0",
+              color: "#01D676",
               letterSpacing: "0.05em",
             }}
           >
@@ -449,13 +449,13 @@ export default function ReferralsClient({
                         alignItems: "center",
                         gap: 0.5,
                         borderRadius: 50,
-                        bgcolor: "rgba(226,232,240,0.08)",
-                        border: "1px solid rgba(226,232,240,0.15)",
+                        bgcolor: "rgba(1, 214, 118,0.08)",
+                        border: "1px solid rgba(1, 214, 118,0.15)",
                         px: 1,
                         py: 0.15,
                         fontSize: "9px",
                         fontWeight: 700,
-                        color: "#E2E8F0",
+                        color: "#01D676",
                         textTransform: "uppercase",
                         mt: 0.25,
                       }}

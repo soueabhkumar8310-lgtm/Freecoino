@@ -229,7 +229,7 @@ export default function SurveysSection({ userId }: { userId: string }) {
                 "&:hover": {
                   bgcolor: "#1a1b2e",
                   transform: "translateY(-2px)",
-                  borderColor: "rgba(226, 232, 240, 0.3)",
+                  borderColor: "rgba(1, 214, 118, 0.3)",
                 },
               }}
             >
@@ -323,7 +323,7 @@ export default function SurveysSection({ userId }: { userId: string }) {
           }}
         >
           {loadingMore && (
-            <CircularProgress size={32} sx={{ color: "#E2E8F0" }} />
+            <CircularProgress size={32} sx={{ color: "#01D676" }} />
           )}
         </Box>
       )}

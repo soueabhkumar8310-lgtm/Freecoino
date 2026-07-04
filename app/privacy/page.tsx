@@ -5,7 +5,7 @@ import Typography from "@/components/ui/Typography";
 const colors = {
   bgPage: "#141523",
   bgCard: "#1d1e30",
-  accent: "#E2E8F0",
+  green: "#01D676",
   textPrimary: "#ffffff",
   textSecondary: "#a9a9ca",
   divider: "#2a2b43",
@@ -102,7 +102,7 @@ export default function PrivacyPage() {
           <Box
             component="a"
             href="mailto:support@freecoino.com"
-            sx={{ color: colors.accent, textDecoration: "none" }}
+            sx={{ color: colors.green, textDecoration: "none" }}
           >
             support@freecoino.com
           </Box>
@@ -133,7 +133,7 @@ export default function PrivacyPage() {
           <Box
             component="a"
             href="mailto:support@freecoino.com"
-            sx={{ color: colors.accent, textDecoration: "none" }}
+            sx={{ color: colors.green, textDecoration: "none" }}
           >
             support@freecoino.com
           </Box>

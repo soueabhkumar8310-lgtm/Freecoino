@@ -58,7 +58,7 @@ export default function BottomNavbar() {
                 flex: 1,
                 py: 1,
                 textDecoration: "none",
-                color: isActive ? "#E2E8F0" : colors.text.secondary,
+                color: isActive ? "#01D676" : colors.text.secondary,
                 transition: "all 0.2s ease",
                 borderRadius: 2,
                 "&:hover": {
@@ -77,7 +77,7 @@ export default function BottomNavbar() {
                   width: 40,
                   height: 40,
                   borderRadius: 2,
-                  bgcolor: isActive ? "rgba(226, 232, 240, 0.15)" : "transparent",
+                  bgcolor: isActive ? "rgba(1, 214, 118, 0.15)" : "transparent",
                   transition: "all 0.2s ease",
                 }}
               >

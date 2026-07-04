@@ -26,7 +26,7 @@ const Logo = ({ href = "/" }: { href?: string }) => {
         >
           {/* Background Circle */}
           <circle cx="32" cy="32" r="30" fill="url(#logoGradient)" />
-          <circle cx="32" cy="32" r="30" stroke="#E2E8F0" strokeWidth="2" />
+          <circle cx="32" cy="32" r="30" stroke="#01D676" strokeWidth="2" />
           
           {/* Letter F */}
           <path d="M24 18H40V23H29V28H38V33H29V46H24V18Z" fill="white"/>
@@ -37,7 +37,7 @@ const Logo = ({ href = "/" }: { href?: string }) => {
           {/* Gradient Definition */}
           <defs>
             <linearGradient id="logoGradient" x1="32" y1="2" x2="32" y2="62" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#E2E8F0" />
+              <stop stopColor="#01D676" />
               <stop offset="1" stopColor="#475569" />
             </linearGradient>
           </defs>
@@ -51,7 +51,7 @@ const Logo = ({ href = "/" }: { href?: string }) => {
           sx={{
             fontSize: "1.25rem",
             fontWeight: 700,
-            color: "#E2E8F0",
+            color: "#01D676",
             lineHeight: 1,
           }}
         >

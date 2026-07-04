@@ -20,7 +20,7 @@ const STAT_CARD_STYLE = {
   bgcolor: colors.primary,
   p: 3,
   transition: "all 0.2s",
-  "&:hover": { borderColor: "rgba(226,232,240,0.4)" },
+  "&:hover": { borderColor: "rgba(1, 214, 118,0.4)" },
 } as const;
 
 export default function AdminDashboardClient({
@@ -33,11 +33,11 @@ export default function AdminDashboardClient({
   const router = useRouter();
 
   const stats = [
-    { icon: <Users size={22} />, label: "Total Users", value: totalUsers.toLocaleString(), color: "#E2E8F0", route: "/admin/users" },
-    { icon: <Coins size={22} />, label: "Coins in Circulation", value: totalCoins.toLocaleString(), color: "#E2E8F0", route: null },
-    { icon: <Wallet size={22} />, label: "Pending Withdrawals", value: String(pendingWithdrawals), color: pendingWithdrawals > 0 ? "#facc15" : "#E2E8F0", route: "/admin/withdrawals" },
-    { icon: <CheckCircle size={22} />, label: "Total Completions", value: totalCompletions.toLocaleString(), color: "#E2E8F0", route: "/admin/withdrawals?tab=completed" },
-    { icon: <ShieldOff size={22} />, label: "Banned Users", value: String(bannedUsers), color: bannedUsers > 0 ? "#f87171" : "#E2E8F0", route: null },
+    { icon: <Users size={22} />, label: "Total Users", value: totalUsers.toLocaleString(), color: "#01D676", route: "/admin/users" },
+    { icon: <Coins size={22} />, label: "Coins in Circulation", value: totalCoins.toLocaleString(), color: "#01D676", route: null },
+    { icon: <Wallet size={22} />, label: "Pending Withdrawals", value: String(pendingWithdrawals), color: pendingWithdrawals > 0 ? "#facc15" : "#01D676", route: "/admin/withdrawals" },
+    { icon: <CheckCircle size={22} />, label: "Total Completions", value: totalCompletions.toLocaleString(), color: "#01D676", route: "/admin/withdrawals?tab=completed" },
+    { icon: <ShieldOff size={22} />, label: "Banned Users", value: String(bannedUsers), color: bannedUsers > 0 ? "#f87171" : "#01D676", route: null },
   ];
 
   return (
@@ -60,7 +60,7 @@ export default function AdminDashboardClient({
                 ...STAT_CARD_STYLE,
                 cursor: s.route ? "pointer" : "default",
                 "&:hover": {
-                  borderColor: s.route ? "rgba(226,232,240,0.4)" : `1px solid ${colors.divider}`,
+                  borderColor: s.route ? "rgba(1, 214, 118,0.4)" : `1px solid ${colors.divider}`,
                   transform: s.route ? "translateY(-2px)" : "none",
                 }
               }}

@@ -22,7 +22,7 @@ export default function AdminUsersClient({ users }: AdminUsersClientProps) {
   return (
     <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
       <Box sx={{ mb: 4, display: "flex", alignItems: "center", gap: 1.5 }}>
-        <Users size={28} color="#E2E8F0" />
+        <Users size={28} color="#01D676" />
         <Box>
           <Typography variant="h4" isBold>
             User Management
@@ -56,7 +56,7 @@ export default function AdminUsersClient({ users }: AdminUsersClientProps) {
                 <TableRow key={user.id} sx={{ "&:last-child td": { border: 0 } }}>
                   <TableCell sx={{ borderBottom: `1px solid ${colors.divider}` }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: "#E2E8F0", fontSize: "14px", fontWeight: "bold" }}>
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: "#01D676", fontSize: "14px", fontWeight: "bold" }}>
                         {user.displayName.charAt(0).toUpperCase()}
                       </Avatar>
                       <Box>
@@ -79,10 +79,10 @@ export default function AdminUsersClient({ users }: AdminUsersClientProps) {
                       label={`${user.coinsBalance.toLocaleString()} Coins`} 
                       size="small" 
                       sx={{ 
-                        bgcolor: "rgba(226,232,240,0.1)", 
-                        color: "#E2E8F0",
+                        bgcolor: "rgba(1, 214, 118,0.1)", 
+                        color: "#01D676",
                         fontWeight: "bold",
-                        border: "1px solid rgba(226,232,240,0.2)"
+                        border: "1px solid rgba(1, 214, 118,0.2)"
                       }} 
                     />
                   </TableCell>

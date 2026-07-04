@@ -122,7 +122,7 @@ export default function ShareContent({ referralCode: userReferralCode }: ShareCo
               width: "100%",
               maxWidth: { xs: 240, sm: 300 },
               borderRadius: 3,
-              border: "1px solid rgba(226, 232, 240, 0.15)",
+              border: "1px solid rgba(1, 214, 118, 0.15)",
             }}
           />
         </Box>
@@ -197,7 +197,7 @@ export default function ShareContent({ referralCode: userReferralCode }: ShareCo
                 gap: 2,
                 transition: "all 0.2s",
                 "&:hover": {
-                  borderColor: "rgba(226, 232, 240, 0.25)",
+                  borderColor: "rgba(1, 214, 118, 0.25)",
                   bgcolor: colors.background.ternary,
                 },
               }}
@@ -210,8 +210,8 @@ export default function ShareContent({ referralCode: userReferralCode }: ShareCo
                   width: 44,
                   height: 44,
                   borderRadius: 2.5,
-                  bgcolor: "rgba(226, 232, 240, 0.1)",
-                  border: "1px solid rgba(226, 232, 240, 0.15)",
+                  bgcolor: "rgba(1, 214, 118, 0.1)",
+                  border: "1px solid rgba(1, 214, 118, 0.15)",
                   color: colors.secondary,
                   flexShrink: 0,
                   fontSize: "1.25rem",
@@ -249,8 +249,8 @@ export default function ShareContent({ referralCode: userReferralCode }: ShareCo
           elevation={0}
           sx={{
             borderRadius: 3,
-            border: "1px solid rgba(226, 232, 240, 0.2)",
-            bgcolor: "rgba(226, 232, 240, 0.05)",
+            border: "1px solid rgba(1, 214, 118, 0.2)",
+            bgcolor: "rgba(1, 214, 118, 0.05)",
             p: { xs: 2.5, sm: 3 },
             textAlign: "center",
           }}
@@ -362,12 +362,12 @@ export default function ShareContent({ referralCode: userReferralCode }: ShareCo
                 ? {
                     bgcolor: colors.background.ternary,
                     color: colors.secondary,
-                    border: `1px solid rgba(226, 232, 240, 0.3)`,
+                    border: `1px solid rgba(1, 214, 118, 0.3)`,
                     "&:hover": { bgcolor: colors.background.ternary },
                   }
                 : {
-                    background: "linear-gradient(180deg,#E2E8F0,#475569)",
-                    boxShadow: "0 4px 14px rgba(226, 232, 240, 0.25)",
+                    background: "linear-gradient(180deg,#01D676,#475569)",
+                    boxShadow: "0 4px 14px rgba(1, 214, 118, 0.25)",
                     "&:hover": { filter: "brightness(1.1)" },
                   }),
             }}

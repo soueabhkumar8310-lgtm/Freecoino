@@ -180,6 +180,8 @@ const theme = createTheme({
         root: {
           backgroundColor: background.default,
           backgroundImage: "none",
+          borderRadius: 2,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
         },
       },
     },
