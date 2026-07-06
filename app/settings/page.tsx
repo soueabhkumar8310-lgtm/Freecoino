@@ -154,6 +154,16 @@ export default function SettingsPage() {
     </Paper>
   );
 
+  if (isLoading || !user) {
+    return (
+      <AppShell userName="" userId="">
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress size={32} sx={{ color: "#01D676" }} />
+        </Box>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell userName={user.name} userId={user.id}>
       <Box sx={{ maxWidth: 720, mx: "auto", px: { xs: 2, sm: 3, md: 4 }, py: 4, pb: { xs: 12, lg: 4 } }}>
