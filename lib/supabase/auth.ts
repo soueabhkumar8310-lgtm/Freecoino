@@ -7,6 +7,7 @@ export interface AuthUser {
   name: string
   avatar?: string
   coins_balance?: number
+  ltc_address?: string
 }
 
 // Sign up with email and password
