@@ -10,7 +10,8 @@ import {
 } from "@mui/material";
 import { Bell } from "lucide-react";
 import Typography from "@/components/ui/Typography";
-import colors from "@/theme/colors";
+import { useThemeMode } from "@/lib/contexts/ThemeContext";
+import { getColors } from "@/theme/colors";
 import { supabase } from "@/lib/supabase/client";
 
 interface Notification {
@@ -23,6 +24,8 @@ interface Notification {
 }
 
 export default function NotificationBell() {
+  const { mode } = useThemeMode();
+  const colors = getColors(mode);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);

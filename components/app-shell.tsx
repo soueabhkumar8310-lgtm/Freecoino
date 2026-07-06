@@ -38,6 +38,9 @@ import {
   ShoppingBag,
   Target,
   Star,
+  Settings,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import Icons from "@/components/icons";
@@ -46,7 +49,10 @@ import NotificationBell from "@/components/notification-bell";
 import BalanceDisplay from "@/components/balance-display";
 import BottomNavbar from "@/components/bottom-navbar";
 import CompletionToast from "@/components/completion-toast";
-import colors from "@/theme/colors";
+import LiveChatButton from "@/components/live-chat-button";
+import { useThemeMode } from "@/lib/contexts/ThemeContext";
+import { useI18n } from "@/lib/contexts/I18nContext";
+import { getColors } from "@/theme/colors";
 
 const NAV_ITEMS = [
   { label: "Earn", href: "/earn", Icon: Gift },
@@ -66,6 +72,7 @@ const ALL_NAV_ITEMS = [
   { label: "Referrals", href: "/referrals", Icon: Users },
   { label: "History", href: "/history", Icon: History },
   { label: "Feedback", href: "/submit-review", Icon: Star },
+  { label: "Settings", href: "/settings", Icon: Settings },
 ];
 
 const DROPDOWN_ITEMS = [
@@ -74,6 +81,7 @@ const DROPDOWN_ITEMS = [
   { label: "Referrals", href: "/referrals", Icon: Users },
   { label: "History", href: "/history", Icon: History },
   { label: "Profile", href: "/profile", Icon: User },
+  { label: "Settings", href: "/settings", Icon: Settings },
 ];
 
 const footerInfoList: { title: string; links: { text: string; url: string; isEmail?: boolean }[] }[] = [
@@ -126,6 +134,9 @@ export default function AppShell({ children, coins, userName = "User", userAvata
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const { logout } = useAuth();
+  const { mode, toggle: toggleTheme } = useThemeMode();
+  const { lang, setLang, t } = useI18n();
+  const colors = getColors(mode);
 
   async function handleLogout() {
     try {
@@ -430,8 +441,24 @@ export default function AppShell({ children, coins, userName = "User", userAvata
             })}
           </List>
 
-          {/* Logout Button */}
+          {/* Theme & Language Toggle */}
           <Box sx={{ p: 2, borderTop: `1px solid rgba(255, 255, 255, 0.05)` }}>
+            <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
+              <ListItemButton
+                onClick={() => toggleTheme()}
+                sx={{ borderRadius: 2, flex: 1, justifyContent: "center", gap: 1, color: colors.text.secondary, "&:hover": { bgcolor: "rgba(255,255,255,0.05)" } }}
+              >
+                {mode === "dark" ? <Moon size={18} /> : <Sun size={18} />}
+                <ListItemText primary={mode === "dark" ? "Dark" : "Light"} />
+              </ListItemButton>
+              <ListItemButton
+                onClick={() => setLang(lang === "en" ? "hi" : "en")}
+                sx={{ borderRadius: 2, flex: 1, justifyContent: "center", gap: 1, color: colors.text.secondary, "&:hover": { bgcolor: "rgba(255,255,255,0.05)" } }}
+              >
+                <ListItemText primary={lang === "en" ? "🇺🇸 EN" : "🇮🇳 HI"} />
+              </ListItemButton>
+            </Box>
+            {/* Logout Button */}
             <ListItemButton
               onClick={() => {
                 setMobileOpen(false);
@@ -470,6 +497,9 @@ export default function AppShell({ children, coins, userName = "User", userAvata
 
       {/* Completion Toast Notification */}
       <CompletionToast />
+
+      {/* Live Chat Floating Button */}
+      <LiveChatButton />
 
       {/* Bottom Navigation Bar - Mobile & Tablet Only */}
       <BottomNavbar />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Box, Dialog, DialogTitle, DialogContent, IconButton, Paper, CircularProgress, Button } from "@mui/material";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -1061,6 +1061,30 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
     </Box>
   );
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"payout_high" | "payout_low" | "name">("payout_high");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  const filteredSortedOffers = useMemo(() => {
+    let filtered = [...displayedOffers];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((o) => o.name.toLowerCase().includes(q));
+    }
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter((o) => {
+        const cats = Array.isArray(o.categories) ? o.categories : [o.categories];
+        return cats.some((c) => String(c).toLowerCase().includes(categoryFilter));
+      });
+    }
+    switch (sortBy) {
+      case "payout_high": filtered.sort((a, b) => Number(b.payout) - Number(a.payout)); break;
+      case "payout_low": filtered.sort((a, b) => Number(a.payout) - Number(b.payout)); break;
+      case "name": filtered.sort((a, b) => a.name.localeCompare(b.name)); break;
+    }
+    return filtered;
+  }, [displayedOffers, searchQuery, sortBy, categoryFilter]);
+
   return (
     <Box 
       sx={{ 
@@ -1138,6 +1162,64 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         </Box>
       </Box>
 
+      {/* Search & Filters */}
+      <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: 1.5, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5 }}>
+        <Box sx={{ position: "relative", flex: 1, maxWidth: { sm: 280 } }}>
+          <Box
+            component="input"
+            placeholder="Search offers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{
+              width: "100%", p: "8px 12px 8px 32px", borderRadius: 2,
+              bgcolor: "#1a1b2e", border: "1px solid rgba(255,255,255,0.08)",
+              color: "#fff", fontSize: "0.8125rem", outline: "none",
+              "&:focus": { borderColor: "#01D676" },
+              "&::placeholder": { color: "rgba(255,255,255,0.3)" },
+            }}
+          />
+          <Box sx={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", display: "flex" }}>
+            <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </Box>
+        </Box>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          {["all", "game", "survey", "app"].map((cat) => (
+            <Box
+              key={cat}
+              onClick={() => setCategoryFilter(cat)}
+              sx={{
+                px: 1.5, py: 0.5, borderRadius: 10, cursor: "pointer", fontSize: "0.75rem", fontWeight: 600,
+                bgcolor: categoryFilter === cat ? "rgba(1, 214, 118, 0.15)" : "#1a1b2e",
+                border: `1px solid ${categoryFilter === cat ? "rgba(1, 214, 118, 0.3)" : "rgba(255,255,255,0.08)"}`,
+                color: categoryFilter === cat ? "#01D676" : "rgba(255,255,255,0.6)",
+                transition: "all 0.2s",
+                "&:hover": { borderColor: "rgba(1, 214, 118, 0.3)" },
+              }}
+            >
+              {cat === "all" ? "All" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ display: "flex", gap: 1, ml: { sm: "auto" } }}>
+          {(["payout_high", "payout_low", "name"] as const).map((s) => (
+            <Box
+              key={s}
+              onClick={() => setSortBy(s)}
+              sx={{
+                px: 1.5, py: 0.5, borderRadius: 10, cursor: "pointer", fontSize: "0.7rem", fontWeight: 600, whiteSpace: "nowrap",
+                bgcolor: sortBy === s ? "rgba(99, 102, 241, 0.15)" : "#1a1b2e",
+                border: `1px solid ${sortBy === s ? "rgba(99, 102, 241, 0.3)" : "rgba(255,255,255,0.08)"}`,
+                color: sortBy === s ? "#6366F1" : "rgba(255,255,255,0.6)",
+                transition: "all 0.2s",
+                "&:hover": { borderColor: "rgba(99, 102, 241, 0.3)" },
+              }}
+            >
+              {s === "payout_high" ? "💰 High" : s === "payout_low" ? "💰 Low" : "A-Z"}
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
       <Box
         ref={scrollContainerRef}
         onScroll={onScroll}
@@ -1163,7 +1245,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         ) : (
           // Show actual offers
           <>
-            {displayedOffers.map((offer, index) => (
+            {filteredSortedOffers.map((offer, index) => (
           <Box
             key={offer.offer_id}
             sx={{

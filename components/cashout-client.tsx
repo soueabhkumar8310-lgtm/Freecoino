@@ -34,7 +34,9 @@ import {
   MessageCircle,
 } from "lucide-react";
 import Typography from "@/components/ui/Typography";
-import colors from "@/theme/colors";
+import { useThemeMode } from "@/lib/contexts/ThemeContext";
+import { useI18n } from "@/lib/contexts/I18nContext";
+import { getColors } from "@/theme/colors";
 
 const MIN_COINS = 2000;
 const COINS_PER_USD = 1000;
@@ -80,11 +82,15 @@ export default function CashoutClient({
   fraudNotification = null,
   savedCryptoAddress = "",
 }: CashoutClientProps) {
+  const { mode } = useThemeMode();
+  const { t, lang } = useI18n();
+  const colors = getColors(mode);
   const router = useRouter();
   const { refreshUser } = useAuth();
   const [coins, setCoins] = useState(initialCoins);
   const [address, setAddress] = useState(savedCryptoAddress);
   const [amountCoins, setAmountCoins] = useState<number | "">(initialCoins >= MIN_COINS ? initialCoins : "");
+  const [method, setMethod] = useState<"USDT" | "PayPal" | "Payoneer">("USDT");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -164,8 +170,16 @@ export default function CashoutClient({
       setError(`You only have ${coins.toLocaleString()} coins available`);
       return;
     }
-    if (!address.trim() || address.trim().length < 10) {
-      setError("Enter a valid LTC wallet address");
+    if (!address.trim()) {
+      setError("Enter a valid wallet address or email");
+      return;
+    }
+    if (method === "USDT" && address.trim().length < 10) {
+      setError("Enter a valid USDT wallet address");
+      return;
+    }
+    if ((method === "PayPal" || method === "Payoneer") && !address.includes("@")) {
+      setError(`Enter a valid ${method} email address`);
       return;
     }
 
@@ -177,6 +191,7 @@ export default function CashoutClient({
         body: JSON.stringify({ 
           amount_coins: amountCoins, 
           address: address.trim(),
+          method: method,
           user_id: userId // Pass user ID from props
         }),
       });
@@ -296,7 +311,7 @@ export default function CashoutClient({
           Cash Out
         </Typography>
         <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
-          Withdraw your coins directly to your LTC wallet instantly
+          Withdraw your coins directly to your wallet instantly
         </Typography>
       </Box>
 
@@ -422,6 +437,34 @@ export default function CashoutClient({
 
             <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
 
+              {/* Method Selector */}
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1.5, fontWeight: 600, color: colors.text.secondary }}>
+                  Withdrawal Method
+                </Typography>
+                <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                  {(["USDT", "PayPal", "Payoneer"] as const).map((m) => (
+                    <Box
+                      key={m}
+                      onClick={() => setMethod(m)}
+                      sx={{
+                        flex: { xs: 1, sm: "unset" }, minWidth: 100,
+                        p: 1.5, borderRadius: 2, cursor: "pointer", textAlign: "center",
+                        border: `2px solid ${method === m ? colors.primary : colors.glass.border}`,
+                        bgcolor: method === m ? colors.greenTint : colors.background.glass,
+                        transition: "all 0.2s",
+                        "&:hover": { borderColor: colors.primary },
+                      }}
+                    >
+                      <Typography sx={{ fontSize: "1.2rem", mb: 0.25 }}>
+                        {m === "USDT" ? "₮" : m === "PayPal" ? "🅿" : "Ⓐ"}
+                      </Typography>
+                      <Typography sx={{ fontWeight: 600, fontSize: "0.8125rem" }}>{m}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
                 <Box>
                   <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: colors.text.secondary, display: "flex", justifyContent: "space-between" }}>
@@ -477,14 +520,14 @@ export default function CashoutClient({
 
                 <Box>
                   <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: colors.text.secondary }}>
-                    LTC Wallet Address
+                    {method === "USDT" ? "USDT Wallet Address" : `${method} Email`}
                   </Typography>
                   <TextField
                     fullWidth
                     required
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Your LTC wallet address"
+                    placeholder={method === "USDT" ? "Your USDT wallet address" : `Your ${method} email`}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         bgcolor: colors.background.ternary,

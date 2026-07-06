@@ -27,7 +27,8 @@ import {
   Star,
 } from "lucide-react";
 import Typography from "@/components/ui/Typography";
-import colors from "@/theme/colors";
+import { useThemeMode } from "@/lib/contexts/ThemeContext";
+import { getColors } from "@/theme/colors";
 
 const PAGE_SIZE = 5;
 
@@ -86,6 +87,8 @@ export default function HistoryClient({
   initialCompletions,
   initialTotal,
 }: HistoryClientProps) {
+  const { mode } = useThemeMode();
+  const colors = getColors(mode);
   const [completions, setCompletions] = useState<Completion[]>(initialCompletions);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(0);

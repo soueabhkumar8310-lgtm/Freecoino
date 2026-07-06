@@ -5,7 +5,8 @@ import { supabase } from "@/lib/supabase/client";
 import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { Trophy, Coins } from "lucide-react";
 import Typography from "@/components/ui/Typography";
-import colors from "@/theme/colors";
+import { useThemeMode } from "@/lib/contexts/ThemeContext";
+import { getColors } from "@/theme/colors";
 
 interface LeaderboardEntry {
   rank: number;
@@ -37,6 +38,8 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 export default function LeaderboardClient({ userId }: { userId: string }) {
+  const { mode } = useThemeMode();
+  const colors = getColors(mode);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

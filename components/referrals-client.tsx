@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { Box, Button, Paper, TextField, CircularProgress } from "@mui/material";
 import { Users, Coins, Copy, Check, Link2, UserPlus, Gift, ArrowRight, Gift as GiftIcon, TrendingUp } from "lucide-react";
 import Typography from "@/components/ui/Typography";
-import colors from "@/theme/colors";
+import { useThemeMode } from "@/lib/contexts/ThemeContext";
+import { getColors } from "@/theme/colors";
+import { QRCodeSVG } from "qrcode.react";
 
 interface Referral {
   id: string;
@@ -28,8 +30,11 @@ export default function ReferralsClient({
   referrals,
   pendingEarnings,
 }: ReferralsClientProps) {
+  const { mode } = useThemeMode();
+  const colors = getColors(mode);
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
   const [visibleCount, setVisibleCount] = useState(5);
@@ -243,6 +248,26 @@ export default function ReferralsClient({
           >
             {referralCode}
           </Box>
+        </Box>
+
+        {/* QR Code */}
+        <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <Button
+            variant="outlined"
+            onClick={() => setShowQR(!showQR)}
+            startIcon={<svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h-2v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>}
+            sx={{ borderRadius: 2, textTransform: "none", fontSize: "0.85rem", fontWeight: 600 }}
+          >
+            {showQR ? "Hide QR" : "Share via QR"}
+          </Button>
+          {showQR && (
+            <Box sx={{
+              bgcolor: "#fff", p: 2, borderRadius: 2, display: "inline-flex",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+            }}>
+              <QRCodeSVG value={referralLink} size={160} level="H" includeMargin />
+            </Box>
+          )}
         </Box>
       </Paper>
 

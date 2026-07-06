@@ -1,49 +1,49 @@
-/* Minimal global styles - MUI CssBaseline handles resets and scrollbar */
 html {
   scroll-behavior: smooth;
 }
-
-/* Prevent horizontal overflow on mobile */
 body {
   overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
 }
-
-/* Safe area insets for notched phones */
 body {
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
-
-/* Prevent tap highlight on mobile */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Animations */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.15); }
   50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.3); }
 }
-
 @keyframes glass-shimmer {
   0% { background-position: -1000px 0; }
   100% { background-position: 1000px 0; }
 }
-
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-8px); }
 }
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
 
-/* Glassmorphic card hover effect */
 .glass-card {
   background: rgba(43, 53, 68, 0.6);
   backdrop-filter: blur(20px);
@@ -51,32 +51,23 @@ body {
   border-radius: 8px;
   transition: all 0.3s ease;
 }
-
 .glass-card:hover {
   background: rgba(43, 53, 68, 0.75);
   border-color: rgba(99, 102, 241, 0.3);
   box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
 }
-
-/* Gradient text */
 .gradient-text {
   background: linear-gradient(135deg, #d9e3f6 0%, #6366F1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-
-/* Text glow effect */
 .text-glow-green {
   text-shadow: 0 0 10px rgba(1, 214, 118, 0.3);
 }
-
-/* Smooth transitions */
 * {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-
-/* Hero gradient background for auth pages */
 .hero-gradient {
   background: radial-gradient(
     ellipse 80% 50% at 50% -20%,
@@ -84,7 +75,6 @@ body {
     transparent
   );
 }
-
 @media (max-width: 640px) {
   .hero-gradient {
     background: radial-gradient(
@@ -92,5 +82,32 @@ body {
       rgba(1, 214, 118, 0.12),
       transparent
     );
+  }
+}
+
+/* Page transitions */
+.page-enter {
+  animation: fadeInUp 0.3s ease-out;
+}
+.page-slide {
+  animation: slideDown 0.25s ease-out;
+}
+.scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* bottom sheet */
+@media (max-width: 600px) {
+  .MuiDialog-paperFullScreen {
+    border-radius: 16px 16px 0 0 !important;
+    margin-top: auto !important;
+    max-height: 92vh !important;
+    animation: slideUp 0.3s ease-out;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .text-glow-green {
+    text-shadow: 0 0 10px rgba(5, 150, 105, 0.2);
   }
 }

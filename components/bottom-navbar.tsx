@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Box, Paper } from "@mui/material";
 import { Gift, Wallet, CalendarCheck, ShoppingBag, Target } from "lucide-react";
 import Typography from "@/components/ui/Typography";
-import colors from "@/theme/colors";
+import { useThemeMode } from "@/lib/contexts/ThemeContext";
+import { getColors } from "@/theme/colors";
 
 const NAV_ITEMS = [
   { label: "Earn", href: "/earn", Icon: Gift },
@@ -16,6 +17,8 @@ const NAV_ITEMS = [
 
 export default function BottomNavbar() {
   const pathname = usePathname();
+  const { mode } = useThemeMode();
+  const colors = getColors(mode);
 
   return (
     <Paper

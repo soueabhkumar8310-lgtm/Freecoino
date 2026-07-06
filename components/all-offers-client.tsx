@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Box, CircularProgress, Dialog, IconButton } from "@mui/material";
+import { Box, CircularProgress, Dialog, IconButton, Skeleton } from "@mui/material";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import { Monitor, Smartphone, Gamepad2 } from "lucide-react";
@@ -1013,8 +1013,28 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       {/* All Offers Grid */}
       <Box sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
         {loading && displayedOffers.length === 0 ? (
-          <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
-            <CircularProgress size={48} sx={{ color: "#01D676" }} />
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(3, 1fr)",
+                sm: "repeat(4, 1fr)",
+                md: "repeat(6, 1fr)",
+                lg: "repeat(7, 1fr)",
+                xl: "repeat(8, 1fr)",
+              },
+              gap: { xs: 0.75, sm: 1, md: 1 },
+              columnGap: { xs: 0.5, sm: 0.75, md: 0.75 },
+              px: { xs: 2, sm: 3, md: 4 },
+            }}
+          >
+            {Array.from({ length: 16 }).map((_, i) => (
+              <Box key={i}>
+                <Skeleton variant="rounded" sx={{ width: "100%", aspectRatio: "3/4", borderRadius: 2, mb: 0.75 }} />
+                <Skeleton variant="text" sx={{ width: "60%", height: 14 }} />
+                <Skeleton variant="text" sx={{ width: "40%", height: 12 }} />
+              </Box>
+            ))}
           </Box>
         ) : displayedOffers.length === 0 ? (
           <Box sx={{ py: 8, textAlign: "center" }}>
