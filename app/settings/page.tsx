@@ -348,7 +348,7 @@ export default function SettingsPage() {
               variant="outlined"
               onClick={() => {
                 if (permission === "granted") {
-                  sendNotification("Test Notification", "Hello from Freecoino!");
+                  sendNotification("Test Notification", { body: "Hello from Freecoino!" });
                 } else {
                   requestPermission();
                 }
