@@ -47,9 +47,19 @@ export async function GET(request: NextRequest) {
     }
 
     if (!response || !response.ok) {
+      // Return a fallback offer card linking to the Revtoo offerwall
       return NextResponse.json({
         success: true,
-        offers: [],
+        offers: [{
+          offer_id: "revtoo_offerwall",
+          name: "Visit Revtoo Offerwall",
+          description1: "Complete offers directly on Revtoo",
+          image_url: "https://revtoo.com/favicon.ico",
+          payout: 1,
+          click_url: `https://revtoo.com/offerwall/${apiKey}/${userId}`,
+          provider: "Revtoo",
+          trackingType: "CPA",
+        }],
         iframeUrl: `https://revtoo.com/offerwall/${apiKey}/${userId}`,
       });
     }
@@ -60,7 +70,16 @@ export async function GET(request: NextRequest) {
     } catch {
       return NextResponse.json({
         success: true,
-        offers: [],
+        offers: [{
+          offer_id: "revtoo_offerwall",
+          name: "Visit Revtoo Offerwall",
+          description1: "Complete offers directly on Revtoo",
+          image_url: "https://revtoo.com/favicon.ico",
+          payout: 1,
+          click_url: `https://revtoo.com/offerwall/${apiKey}/${userId}`,
+          provider: "Revtoo",
+          trackingType: "CPA",
+        }],
         iframeUrl: `https://revtoo.com/offerwall/${apiKey}/${userId}`,
       });
     }
