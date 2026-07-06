@@ -1064,6 +1064,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"payout_high" | "payout_low" | "name">("payout_high");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
 
   const filteredSortedOffers = useMemo(() => {
     let filtered = [...displayedOffers];
@@ -1131,33 +1132,65 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
             </Typography>
           </Link>
           <Box sx={{ display: "flex", gap: 1 }}>
+            {/* View toggle */}
             <IconButton
-              onClick={() => handleScroll('left')}
+              onClick={() => setViewMode(viewMode === "card" ? "list" : "card")}
               sx={{
-                width: 32,
-                height: 32,
-                bgcolor: "#242537",
+                width: 32, height: 32,
+                bgcolor: viewMode === "list" ? "rgba(1,214,118,0.15)" : "#242537",
                 borderRadius: 1.5,
-                color: "#01D676",
-                opacity: 0.4,
-                "&:hover": { bgcolor: "#2a2b45", opacity: 1 },
-              }}
-            >
-              <ChevronLeft size={16} />
-            </IconButton>
-            <IconButton
-              onClick={() => handleScroll('right')}
-              sx={{
-                width: 32,
-                height: 32,
-                bgcolor: "#242537",
-                borderRadius: 1.5,
-                color: "#01D676",
+                color: viewMode === "list" ? "#01D676" : "rgba(255,255,255,0.5)",
+                border: viewMode === "list" ? "1px solid rgba(1,214,118,0.3)" : "none",
                 "&:hover": { bgcolor: "#2a2b45" },
               }}
             >
-              <ChevronRight size={16} />
+              <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                {viewMode === "card" ? (
+                  <>
+                    <line x1="8" y1="6" x2="21" y2="6" />
+                    <line x1="8" y1="12" x2="21" y2="12" />
+                    <line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                  </>
+                ) : (
+                  <>
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                  </>
+                )}
+              </svg>
             </IconButton>
+            {/* Scroll buttons (card view only) */}
+            {viewMode === "card" && (
+              <>
+                <IconButton
+                  onClick={() => handleScroll('left')}
+                  sx={{
+                    width: 32, height: 32,
+                    bgcolor: "#242537", borderRadius: 1.5,
+                    color: "#01D676", opacity: 0.4,
+                    "&:hover": { bgcolor: "#2a2b45", opacity: 1 },
+                  }}
+                >
+                  <ChevronLeft size={16} />
+                </IconButton>
+                <IconButton
+                  onClick={() => handleScroll('right')}
+                  sx={{
+                    width: 32, height: 32,
+                    bgcolor: "#242537", borderRadius: 1.5,
+                    color: "#01D676",
+                    "&:hover": { bgcolor: "#2a2b45" },
+                  }}
+                >
+                  <ChevronRight size={16} />
+                </IconButton>
+              </>
+            )}
           </Box>
         </Box>
       </Box>
@@ -1220,136 +1253,185 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         </Box>
       </Box>
 
-      <Box
-        ref={scrollContainerRef}
-        onScroll={onScroll}
-        id="gaming-offers-scroll"
-        sx={{
-          px: { xs: 1.5, sm: 2 },
-          pb: { xs: 2, sm: 2.5 },
-          display: "flex",
-          gap: { xs: 1, sm: 1.5 },
-          overflowX: "auto",
-          overflowY: "hidden",
-          "&::-webkit-scrollbar": { display: "none" },
-          scrollbarWidth: "none",
-        }}
-      >
-        {loading ? (
-          // Show skeleton loaders while loading
-          <>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <SkeletonOffer key={i} />
-            ))}
-          </>
-        ) : (
-          // Show actual offers
-          <>
-            {filteredSortedOffers.map((offer, index) => (
-          <Box
-            key={offer.offer_id}
-            sx={{
-              minWidth: { xs: 100, sm: 140 },
-              maxWidth: { xs: 100, sm: 140 },
-              flexShrink: 0,
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              setSelectedOffer(offer);
-              setModalOpen(true);
-            }}
-          >
+      {viewMode === "card" ? (
+        <Box
+          ref={scrollContainerRef}
+          onScroll={onScroll}
+          id="gaming-offers-scroll"
+          sx={{
+            px: { xs: 1.5, sm: 2 },
+            pb: { xs: 2, sm: 2.5 },
+            display: "flex",
+            gap: { xs: 1, sm: 1.5 },
+            overflowX: "auto",
+            overflowY: "hidden",
+            "&::-webkit-scrollbar": { display: "none" },
+            scrollbarWidth: "none",
+          }}
+        >
+          {loading ? (
+            <>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <SkeletonOffer key={i} />
+              ))}
+            </>
+          ) : (
+            <>
+              {filteredSortedOffers.map((offer, index) => (
             <Box
+              key={offer.offer_id}
               sx={{
-                bgcolor: "#222339",
-                p: { xs: 0.75, sm: 1.5 },
-                borderRadius: { xs: 1.5, sm: 2.5 },
-                transition: "all 0.2s",
-                border: index === 0 ? "2px solid #01D676" : "1px solid rgba(255, 255, 255, 0.05)",
-                "&:hover": {
-                  bgcolor: "#2a2b45",
-                },
+                minWidth: { xs: 100, sm: 140 },
+                maxWidth: { xs: 100, sm: 140 },
+                flexShrink: 0,
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                setSelectedOffer(offer);
+                setModalOpen(true);
               }}
             >
-              <Box sx={{ position: "relative", mb: { xs: 1, sm: 1.5 } }}>
-                <Box
-                  sx={{
-                    width: "100%",
-                    aspectRatio: "1",
-                    borderRadius: { xs: 1, sm: 1.5 },
-                    overflow: "hidden",
-                    bgcolor: "#1a1b2e",
-                    backgroundImage: offer.image_url ? `url(${offer.image_url})` : "none",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                />
-                {offer.categories && (
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      top: { xs: 4, sm: 8 },
-                      right: { xs: 4, sm: 8 },
-                      bgcolor: "rgba(30, 30, 46, 0.6)",
-                      px: { xs: 0.5, sm: 1 },
-                      py: { xs: 0.25, sm: 0.5 },
-                      borderRadius: 10,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
-                    }}
-                  >
-                    <Gamepad2 size={8} color="#fff" />
-                  </Box>
-                )}
-              </Box>
-
-              <Box sx={{ height: 40, overflow: "hidden", mb: 0.5 }}>
-                <Typography
-                  sx={{
-                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                    fontWeight: 500,
-                    lineHeight: 1.3,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {offer.name}
-                </Typography>
-              </Box>
-
-              <Typography
+              <Box
                 sx={{
-                  fontSize: { xs: "0.6rem", sm: "0.6875rem" },
-                  color: colors.text.secondary,
-                  opacity: 0.6,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  fontWeight: 600,
-                  mb: { xs: 0.5, sm: 1 },
+                  bgcolor: "#222339",
+                  p: { xs: 0.75, sm: 1.5 },
+                  borderRadius: { xs: 1.5, sm: 2.5 },
+                  transition: "all 0.2s",
+                  border: index === 0 ? "2px solid #01D676" : "1px solid rgba(255, 255, 255, 0.05)",
+                  "&:hover": { bgcolor: "#2a2b45" },
                 }}
               >
-                Game
-              </Typography>
-
-              <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600 }}>
-                {offer.payout} coins
-              </Typography>
+                <Box sx={{ position: "relative", mb: { xs: 1, sm: 1.5 } }}>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      aspectRatio: "1",
+                      borderRadius: { xs: 1, sm: 1.5 },
+                      overflow: "hidden",
+                      bgcolor: "#1a1b2e",
+                      backgroundImage: offer.image_url ? `url(${offer.image_url})` : "none",
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
+                  {offer.categories && (
+                    <Box
+                      sx={{
+                        position: "absolute", top: { xs: 4, sm: 8 }, right: { xs: 4, sm: 8 },
+                        bgcolor: "rgba(30, 30, 46, 0.6)", px: { xs: 0.5, sm: 1 }, py: { xs: 0.25, sm: 0.5 },
+                        borderRadius: 10, display: "flex", alignItems: "center", gap: 0.5,
+                      }}
+                    >
+                      <Gamepad2 size={8} color="#fff" />
+                    </Box>
+                  )}
+                </Box>
+                <Box sx={{ height: 40, overflow: "hidden", mb: 0.5 }}>
+                  <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 500, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    {offer.name}
+                  </Typography>
+                </Box>
+                <Typography sx={{ fontSize: { xs: "0.6rem", sm: "0.6875rem" }, color: colors.text.secondary, opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600, mb: { xs: 0.5, sm: 1 } }}>
+                  Game
+                </Typography>
+                <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600 }}>
+                  {offer.payout} coins
+                </Typography>
+              </Box>
             </Box>
-          </Box>
-        ))}
-        
-        {/* Loading indicator when fetching more */}
-        {loadingMore && (
-          <Box sx={{ minWidth: 140, maxWidth: 140, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <CircularProgress size={24} sx={{ color: "#01D676" }} />
-          </Box>
-        )}
-        </>
-        )}
-      </Box>
+          ))}
+          {loadingMore && (
+            <Box sx={{ minWidth: 140, maxWidth: 140, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <CircularProgress size={24} sx={{ color: "#01D676" }} />
+            </Box>
+          )}
+          </>
+          )}
+        </Box>
+      ) : (
+        /* List / Top View */
+        <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 2, sm: 2.5 } }}>
+          {loading ? (
+            <>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <SkeletonOffer key={i} />
+              ))}
+            </>
+          ) : filteredSortedOffers.length === 0 ? (
+            <Box sx={{ py: 4, textAlign: "center" }}>
+              <Typography sx={{ color: colors.text.secondary }}>No offers found</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {filteredSortedOffers.map((offer, index) => (
+                <Box
+                  key={offer.offer_id}
+                  onClick={() => { setSelectedOffer(offer); setModalOpen(true); }}
+                  sx={{
+                    display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 },
+                    p: { xs: 1, sm: 1.5 },
+                    bgcolor: "#222339",
+                    borderRadius: 2,
+                    border: index === 0 && sortBy === "payout_high" ? "1px solid rgba(1,214,118,0.3)" : "1px solid rgba(255,255,255,0.05)",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    "&:hover": { bgcolor: "#2a2b45" },
+                  }}
+                >
+                  {/* Rank */}
+                  <Box sx={{ width: 28, textAlign: "center", flexShrink: 0 }}>
+                    <Typography sx={{ fontSize: "0.875rem", fontWeight: 700, color: index === 0 ? "#01D676" : index < 3 ? "#fbbf24" : colors.text.secondary }}>
+                      {index + 1}
+                    </Typography>
+                  </Box>
+                  {/* Icon */}
+                  <Box
+                    sx={{
+                      width: { xs: 36, sm: 44 }, height: { xs: 36, sm: 44 }, borderRadius: 1.5, flexShrink: 0,
+                      bgcolor: "#1a1b2e",
+                      backgroundImage: offer.image_url ? `url(${offer.image_url})` : "none",
+                      backgroundSize: "cover", backgroundPosition: "center",
+                    }}
+                  />
+                  {/* Info */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontSize: { xs: "0.8rem", sm: "0.9rem" }, fontWeight: 600, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {offer.name}
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.7rem", color: colors.text.secondary, opacity: 0.6 }}>
+                      {offer.provider || "Offer"} · {Array.isArray(offer.categories) ? offer.categories.join(", ") : offer.categories || "General"}
+                    </Typography>
+                  </Box>
+                  {/* Payout */}
+                  <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+                    <Typography sx={{ fontSize: { xs: "0.8rem", sm: "0.9rem" }, fontWeight: 700, color: "#01D676" }}>
+                      {Number(offer.payout) >= 1000 ? `${(Number(offer.payout) / 1000).toFixed(1)}K` : offer.payout}
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.6rem", color: colors.text.secondary, opacity: 0.5 }}>
+                      coins
+                    </Typography>
+                  </Box>
+                  {/* Action */}
+                  <Box
+                    sx={{
+                      px: { xs: 1.5, sm: 2 }, py: 0.75, borderRadius: 2, flexShrink: 0,
+                      bgcolor: "rgba(1,214,118,0.1)", color: "#01D676",
+                      fontSize: { xs: "0.7rem", sm: "0.8rem" }, fontWeight: 600,
+                    }}
+                  >
+                    Start
+                  </Box>
+                </Box>
+              ))}
+              {loadingMore && (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+                  <CircularProgress size={24} sx={{ color: "#01D676" }} />
+                </Box>
+              )}
+            </Box>
+          )}
+        </Box>
+      )}
 
       {/* Offer Details Modal */}
       <OfferDetailsModal offer={selectedOffer} open={modalOpen} onClose={() => setModalOpen(false)} userId={userId} />
