@@ -31,7 +31,7 @@ function RankBadge({ rank }: { rank: number }) {
     );
   }
   return (
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, fontSize: "0.875rem", fontWeight: 600, color: rank <= 10 ? "#01D676" : colors.text.secondary }}>
+    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, fontSize: "0.875rem", fontWeight: 600, color: rank <= 10 ? "#01D676" : "rgba(255,255,255,0.4)" }}>
       {rank}
     </Box>
   );
