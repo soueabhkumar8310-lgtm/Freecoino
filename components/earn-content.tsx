@@ -730,13 +730,14 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       setLoading(true);
       const primaryOS = deviceOS.length > 0 ? deviceOS[0] : 'android';
       
-      // Fetch from all offerwalls: Gemiad, Notik, Vortex, KLink, and Revtoo
+      // Fetch from all offerwalls: Gemiad, Notik, Vortex, KLink, Revtoo, and Taskwall
       const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
-      const [gemiadResponse, vortexResponse, klinkResponse, revtooResponse] = await Promise.all([
+      const [gemiadResponse, vortexResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}`),
         fetch(`/api/vortex-offers?user_id=${userId}`),
         fetch(`/api/klink-offers?user_id=${userId}`),
         fetch(`/api/revtoo-offers?user_id=${userId}`),
+        fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}`),
       ]);
       
       let gemiadOffers: NotikOffer[] = [];
@@ -744,6 +745,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       let vortexOffers: NotikOffer[] = [];
       let klinkOffers: NotikOffer[] = [];
       let revtooOffers: NotikOffer[] = [];
+      let taskwallOffers: NotikOffer[] = [];
       
       // Process Gemiad offers (Priority 1)
       if (gemiadResponse.ok) {
@@ -824,10 +826,19 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         }
       }
       
-      // Combine offers with priority: Gemiad > Notik > Vortex > Klink > Revtoo
+      // Process Taskwall offers (Priority 6)
+      if (taskwallResponse.ok) {
+        const taskwallData = await taskwallResponse.json();
+        if (taskwallData.success && taskwallData.offers && Array.isArray(taskwallData.offers)) {
+          taskwallOffers = taskwallData.offers;
+          console.log(`Taskwall offers loaded: ${taskwallOffers.length}`);
+        }
+      }
+      
+      // Combine offers with priority: Gemiad > Notik > Vortex > Klink > Revtoo > Taskwall
       // Mix them in a round-robin fashion for better distribution
       const combinedOffers: NotikOffer[] = [];
-      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length, revtooOffers.length);
+      const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length, revtooOffers.length, taskwallOffers.length);
       
       for (let i = 0; i < maxProviderLength; i++) {
         if (i < gemiadOffers.length) combinedOffers.push(gemiadOffers[i]);
@@ -835,6 +846,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         if (i < vortexOffers.length) combinedOffers.push(vortexOffers[i]);
         if (i < klinkOffers.length) combinedOffers.push(klinkOffers[i]);
         if (i < revtooOffers.length) combinedOffers.push(revtooOffers[i]);
+        if (i < taskwallOffers.length) combinedOffers.push(taskwallOffers[i]);
       }
       
       console.log(`Total combined offers: ${combinedOffers.length}`);
@@ -1314,6 +1326,41 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
                       backgroundPosition: "center",
                     }}
                   />
+                  {/* Provider Badge */}
+                  {offer.provider && (
+                    <Box
+                      sx={{
+                        position: "absolute", bottom: { xs: 4, sm: 6 }, left: { xs: 4, sm: 6 },
+                        bgcolor: offer.provider === "Taskwall" ? "rgba(16, 185, 129, 0.9)" : 
+                                offer.provider === "Revtoo" ? "rgba(139, 92, 246, 0.9)" :
+                                offer.provider === "Vortex" ? "rgba(59, 130, 246, 0.9)" :
+                                offer.provider === "Gemiad" ? "rgba(234, 88, 12, 0.9)" :
+                                offer.provider === "Notik" ? "rgba(236, 72, 153, 0.9)" :
+                                offer.provider === "Klink" ? "rgba(245, 158, 11, 0.9)" :
+                                "rgba(107, 114, 128, 0.9)",
+                        px: { xs: 0.5, sm: 0.75 }, 
+                        py: { xs: 0.25, sm: 0.375 },
+                        borderRadius: 0.75, 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: 0.5,
+                        backdropFilter: "blur(8px)",
+                      }}
+                    >
+                      <Typography 
+                        sx={{ 
+                          fontSize: { xs: "0.5rem", sm: "0.5625rem" }, 
+                          fontWeight: 700, 
+                          color: "#fff",
+                          lineHeight: 1,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.02em",
+                        }}
+                      >
+                        {offer.provider}
+                      </Typography>
+                    </Box>
+                  )}
                   {offer.categories && (
                     <Box
                       sx={{
@@ -1741,10 +1788,9 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
 
     // Taskwall - open in new window
     if (wall === "Taskwall") {
-      const taskwallUrl = process.env.NEXT_PUBLIC_TASKWALL_URL;
-      if (taskwallUrl) {
-        window.open(taskwallUrl, '_blank', 'noopener,noreferrer');
-      }
+      const apiKey = process.env.NEXT_PUBLIC_TASKWALL_API_KEY || "cdc9bb0a7d0537bab7f68b94e632cdda";
+      const taskwallUrl = `https://wall.taskwall.io/?app_id=${apiKey}&userid=${userId}`;
+      window.open(taskwallUrl, '_blank', 'noopener,noreferrer');
       return;
     }
 

@@ -18,7 +18,7 @@ const protectedRoutes = [
 // Pages that should redirect to /earn if user is already logged in  
 const authRoutes = ['/auth/login', '/auth/signup']
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Check if current route is protected
