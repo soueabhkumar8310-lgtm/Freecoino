@@ -852,19 +852,32 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       setHasMore(true);
       
       const primaryOS = selectedPlatforms.length > 0 ? selectedPlatforms[0] : 'android';
+
+      let country = 'IN';
+      try {
+        const geoRes = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          if (geoData.country_code) country = geoData.country_code;
+        }
+      } catch {}
       
       // Fetch from Gemiad and Vortex APIs via server, Notik directly from browser (bypass Cloudflare)
       const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
-      const [gemiadResponse, vortexResponse, klinkResponse] = await Promise.all([
-        fetch(`/api/gemiad-offers?user_id=${userId}`),
-        fetch(`/api/vortex-offers?user_id=${userId}`),
-        fetch(`/api/klink-offers?user_id=${userId}`),
+      const [gemiadResponse, vortexResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
+        fetch(`/api/gemiad-offers?user_id=${userId}&country=${country}`),
+        fetch(`/api/vortex-offers?user_id=${userId}&country=${country}`),
+        fetch(`/api/klink-offers?user_id=${userId}&country=${country}`),
+        fetch(`/api/revtoo-offers?user_id=${userId}&country=${country}`),
+        fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}&country=${country}`),
       ]);
       
       let gemiadOffers: any[] = [];
       let notikOffers: any[] = [];
       let vortexOffers: any[] = [];
       let klinkOffers: any[] = [];
+      let revtooOffers: any[] = [];
+      let taskwallOffers: any[] = [];
       
       // Process Gemiad offers (Priority 1)
       if (gemiadResponse.ok) {
@@ -930,16 +943,36 @@ export default function AllOffersClient({ userId }: { userId: string }) {
         }
       }
       
-      // Combine offers with priority: Gemiad > Notik > Vortex > Klink
+      // Process Revtoo offers (Priority 5)
+      if (revtooResponse.ok) {
+        const revtooData = await revtooResponse.json();
+        if (revtooData.success && revtooData.offers && Array.isArray(revtooData.offers)) {
+          revtooOffers = revtooData.offers;
+          console.log(`All Offers - Revtoo: ${revtooOffers.length}`);
+        }
+      }
+      
+      // Process Taskwall offers (Priority 6)
+      if (taskwallResponse.ok) {
+        const taskwallData = await taskwallResponse.json();
+        if (taskwallData.success && taskwallData.offers && Array.isArray(taskwallData.offers)) {
+          taskwallOffers = taskwallData.offers;
+          console.log(`All Offers - Taskwall: ${taskwallOffers.length}`);
+        }
+      }
+      
+      // Combine offers with priority: Gemiad > Notik > Vortex > Klink > Revtoo > Taskwall
       // Mix them in a round-robin fashion for better distribution
       const allOffersData: any[] = [];
-      const maxLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length);
+      const maxLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length, revtooOffers.length, taskwallOffers.length);
       
       for (let i = 0; i < maxLength; i++) {
         if (i < gemiadOffers.length) allOffersData.push(gemiadOffers[i]);
         if (i < notikOffers.length) allOffersData.push(notikOffers[i]);
         if (i < vortexOffers.length) allOffersData.push(vortexOffers[i]);
         if (i < klinkOffers.length) allOffersData.push(klinkOffers[i]);
+        if (i < revtooOffers.length) allOffersData.push(revtooOffers[i]);
+        if (i < taskwallOffers.length) allOffersData.push(taskwallOffers[i]);
       }
       
       console.log(`All Offers - Total combined: ${allOffersData.length}`);
