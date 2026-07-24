@@ -729,15 +729,24 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
     try {
       setLoading(true);
       const primaryOS = deviceOS.length > 0 ? deviceOS[0] : 'android';
+
+      let country = 'IN';
+      try {
+        const geoRes = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          if (geoData.country_code) country = geoData.country_code;
+        }
+      } catch {}
       
       // Fetch from all offerwalls: Gemiad, Notik, Vortex, KLink, Revtoo, and Taskwall
       const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
       const [gemiadResponse, vortexResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
-        fetch(`/api/gemiad-offers?user_id=${userId}`),
-        fetch(`/api/vortex-offers?user_id=${userId}`),
-        fetch(`/api/klink-offers?user_id=${userId}`),
-        fetch(`/api/revtoo-offers?user_id=${userId}`),
-        fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}`),
+        fetch(`/api/gemiad-offers?user_id=${userId}&country=${country}`),
+        fetch(`/api/vortex-offers?user_id=${userId}&country=${country}`),
+        fetch(`/api/klink-offers?user_id=${userId}&country=${country}`),
+        fetch(`/api/revtoo-offers?user_id=${userId}&country=${country}`),
+        fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}&country=${country}`),
       ]);
       
       let gemiadOffers: NotikOffer[] = [];

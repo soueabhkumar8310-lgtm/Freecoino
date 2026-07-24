@@ -4,6 +4,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
+    const country = searchParams.get('country') || 'IN';
 
     if (!userId) {
       return NextResponse.json(

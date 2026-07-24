@@ -22,10 +22,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const country = searchParams.get("country") || "IN";
+
     // Official Revtoo API endpoint from dashboard documentation
     const endpoints = [
-      `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}`,
-      `https://api.revtoo.com/v1/offers?apiKey=${apiKey}&userId=${userId}`,
+      `https://revtoo.com/api/offers?api_key=${apiKey}&user_id=${userId}&country=${country}`,
+      `https://api.revtoo.com/v1/offers?apiKey=${apiKey}&userId=${userId}&country=${country}`,
     ];
 
     let response;

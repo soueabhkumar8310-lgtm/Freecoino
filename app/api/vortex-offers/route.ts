@@ -4,6 +4,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
+    const country = searchParams.get('country') || 'IN';
 
     if (!userId) {
       return NextResponse.json(
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // Vortex REST API endpoint (per official documentation)
     // https://api.vortexwall.com/api/v1/offers/static?placementId={placementId}&apiKey={apiKey}
-    const apiUrl = `https://api.vortexwall.com/api/v1/offers/static?placementId=${placementId}&apiKey=${apiKey}`;
+    const apiUrl = `https://api.vortexwall.com/api/v1/offers/static?placementId=${placementId}&apiKey=${apiKey}&country=${country}`;
 
     console.log('🔄 Fetching from Vortex API...');
     

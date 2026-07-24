@@ -4,6 +4,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
+    const country = searchParams.get('country') || 'IN';
 
     if (!userId) {
       return NextResponse.json(
@@ -27,9 +28,9 @@ export async function GET(request: NextRequest) {
 
     // Gemiad API endpoint - Try multiple possible endpoints
     const possibleEndpoints = [
-      `https://api.gemiad.com/v1/offers?api_key=${apiKey}&user_id=${userId}`,
-      `https://gemiad.com/api/offers?apiKey=${apiKey}&userId=${userId}`,
-      `https://offers.gemiad.com/api/v1/offers?key=${apiKey}&uid=${userId}`,
+      `https://api.gemiad.com/v1/offers?api_key=${apiKey}&user_id=${userId}&country=${country}`,
+      `https://gemiad.com/api/offers?apiKey=${apiKey}&userId=${userId}&country=${country}`,
+      `https://offers.gemiad.com/api/v1/offers?key=${apiKey}&uid=${userId}&country=${country}`,
     ];
 
     console.log('🔄 Trying Gemiad API endpoints...');
