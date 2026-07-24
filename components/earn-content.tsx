@@ -765,47 +765,16 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         }
       }
       
-      // Process Notik offers (Priority 2) - direct browser fetch to bypass Cloudflare
-      try {
-        const notikDirectResponse = await fetch(
-          `https://notik.me/api/offers?api_key=${notikApiKey}&user_id=${userId}&device=${primaryOS}`,
-          { credentials: "include", mode: "cors" }
-        );
-        if (notikDirectResponse.ok) {
-          const notikData = await notikDirectResponse.json();
-          const rawOffers = notikData.offers || notikData.data || [];
-          if (Array.isArray(rawOffers)) {
-            notikOffers = rawOffers.map((offer: any) => ({
-              offer_id: offer.id || offer.offerId || offer.offer_id,
-              name: offer.name || offer.title || offer.offer_name,
-              description1: offer.description || offer.instructions || "",
-              image_url: offer.image || offer.icon || "https://via.placeholder.com/150",
-              payout: parseFloat(offer.payout || offer.reward || offer.amount || 0),
-              click_url: offer.link || offer.tracking_link || offer.click_url,
-              categories: Array.isArray(offer.categories) ? offer.categories : offer.category ? [offer.category] : [],
-              events: (offer.conversions || offer.events || []).map((e: any) => ({
-                id: e.event_id || e.id || e.name || `evt_${Math.random().toString(36).slice(2,8)}`,
-                name: e.event_title || e.name || e.title || "Complete",
-                payout: parseFloat(e.event_payout || e.payout || e.reward || 0),
-              })).filter((e: any) => e.payout > 0),
-              provider: "Notik",
-              trackingType: offer.conversion_type || offer.type || "CPA",
-            })).filter((o: any) => o.name && o.payout > 0);
-            console.log(`Notik offers loaded (direct): ${notikOffers.length}`);
+      // Process Notik offers (Priority 2)
+      {
+        const notikResp = await fetch(`/api/notik-offers?user_id=${userId}&device_os=${primaryOS}`);
+        if (notikResp.ok) {
+          const notikData = await notikResp.json();
+          if (notikData.success && notikData.offers && Array.isArray(notikData.offers)) {
+            notikOffers = notikData.offers;
+            console.log(`Notik offers loaded: ${notikOffers.length}`);
           }
         }
-      } catch (e) {
-        console.log("Notik direct fetch failed, trying server route...", e);
-        try {
-          const notikFallback = await fetch(`/api/notik-offers?user_id=${userId}&device_os=${primaryOS}`);
-          if (notikFallback.ok) {
-            const fbData = await notikFallback.json();
-            if (fbData.success && fbData.offers?.length) {
-              notikOffers = fbData.offers;
-              console.log(`Notik offers loaded (fallback): ${notikOffers.length}`);
-            }
-          }
-        } catch {}
       }
       
       // Process Vortex offers (Priority 3)
@@ -1811,24 +1780,6 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return;
     }
 
-    // Notik doesn't support iframe embedding, open in new window
-    if (wall === "Notik") {
-      const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
-      const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "uuGH0N";
-      const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "WI24gd7OaJ";
-      const notikUrl = `https://notik.me/coins?api_key=${apiKey}&pub_id=${pubId}&app_id=${appId}&user_id=${userId}`;
-      window.open(notikUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    // Klink - open in new window
-    if (wall === "Klink") {
-      const pubId = process.env.NEXT_PUBLIC_KLINK_PUBLISHER_ID || "489cbf22-91da-4cea-9b75-06488105d4e7";
-      const klinkUrl = `https://offerwall.klinkfinance.com/wall?pub_id=${pubId}&user_id=${userId}`;
-      window.open(klinkUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
     setActiveWall(wall);
     setIframeLoading(true);
     setIframeError(false);
@@ -1852,14 +1803,10 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return `https://vortexwall.com/ow/${placementId}/${userId}`;
     }
     if (activeWall === "Notik") {
-      // Notik iframe integration (API blocked by Cloudflare - iframe only)
-      // Correct URL format from Notik documentation
       const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
-      const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "WI24gd7OaJ";
       const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "uuGH0N";
-      
-      // Notik requires all parameters in query string
-      return `https://notik.me/coins?api_key=${apiKey}&pub_id=${pubId}&app_id=${appId}&user_id=${userId}`;
+      const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "WI24gd7OaJ";
+      return `https://notik.me/offerwall?api_key=${apiKey}&pub_id=${pubId}&app_id=${appId}&user_id=${userId}`;
     }
     if (activeWall === "GemiAd") {
       const placementId = process.env.NEXT_PUBLIC_GEMIAD_PLACEMENT_ID || "your_placement_id_here";
@@ -1897,8 +1844,9 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
     }
     if (activeWall === "Klink") {
+      const apiKey = process.env.NEXT_PUBLIC_KLINK_API_KEY || "";
       const pubId = process.env.NEXT_PUBLIC_KLINK_PUBLISHER_ID || "489cbf22-91da-4cea-9b75-06488105d4e7";
-      return `https://offerwall.klinkfinance.com/wall?pub_id=${pubId}&user_id=${userId}`;
+      return `https://klink-quest.klink.finance/offerwall?apiKey=${apiKey}&publisherId=${pubId}&userId=${userId}`;
     }
     return "";
   };
