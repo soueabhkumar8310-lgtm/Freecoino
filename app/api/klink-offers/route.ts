@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         success: true,
         offers: [],
         message: 'Klink is iframe-based. Use embedded offerwall instead.',
-        iframeUrl: `https://klink-quest.klink.finance/offerwall?apiKey=${apiKey}&userId=${userId}`,
+        iframeUrl: `https://offerwall.klinkfinance.com/wall?pub_id=${process.env.KLINK_PUBLISHER_ID || '489cbf22-91da-4cea-9b75-06488105d4e7'}&user_id=${userId}`,
       });
     }
 

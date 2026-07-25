@@ -271,7 +271,7 @@ function OfferDetailsModal({
                     color: "#01D676",
                   }}
                 >
-                  {offer.payout} coins
+                  ${(Number(offer.payout) / 1000).toFixed(2)}
                 </Typography>
                 <Box
                   sx={{
@@ -339,7 +339,7 @@ function OfferDetailsModal({
                   fill="currentColor"
                 />
               </svg>
-              Play and Earn {offer.payout} coins
+              Play and Earn ${(Number(offer.payout) / 1000).toFixed(2)}
             </Box>
           </Box>
         </Box>
@@ -458,7 +458,7 @@ function OfferDetailsModal({
                       fontWeight: 700,
                     }}
                   >
-                    {event.payout} coins
+                    ${(Number(event.payout) / 1000).toFixed(2)}
                   </Typography>
                   <Box
                     sx={{
@@ -813,14 +813,14 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         }
       }
       
-      // Combine offers with priority: Gemiad > Notik > Vortex > Klink > Revtoo > Taskwall
+      // Combine offers with priority: Notik > Gemiad > Vortex > Klink > Revtoo > Taskwall
       // Mix them in a round-robin fashion for better distribution
       const combinedOffers: NotikOffer[] = [];
       const maxProviderLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length, revtooOffers.length, taskwallOffers.length);
       
       for (let i = 0; i < maxProviderLength; i++) {
-        if (i < gemiadOffers.length) combinedOffers.push(gemiadOffers[i]);
         if (i < notikOffers.length) combinedOffers.push(notikOffers[i]);
+        if (i < gemiadOffers.length) combinedOffers.push(gemiadOffers[i]);
         if (i < vortexOffers.length) combinedOffers.push(vortexOffers[i]);
         if (i < klinkOffers.length) combinedOffers.push(klinkOffers[i]);
         if (i < revtooOffers.length) combinedOffers.push(revtooOffers[i]);
@@ -1359,8 +1359,8 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
                 <Typography sx={{ fontSize: { xs: "0.6rem", sm: "0.6875rem" }, color: colors.text.secondary, opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600, mb: { xs: 0.5, sm: 1 } }}>
                   Game
                 </Typography>
-                <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600 }}>
-                  {offer.payout} coins
+                <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600, color: "#01D676" }}>
+                  ${(Number(offer.payout) / 1000).toFixed(2)}
                 </Typography>
               </Box>
             </Box>
@@ -1430,10 +1430,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
                   {/* Payout */}
                   <Box sx={{ textAlign: "right", flexShrink: 0 }}>
                     <Typography sx={{ fontSize: { xs: "0.8rem", sm: "0.9rem" }, fontWeight: 700, color: "#01D676" }}>
-                      {Number(offer.payout) >= 1000 ? `${(Number(offer.payout) / 1000).toFixed(1)}K` : offer.payout}
-                    </Typography>
-                    <Typography sx={{ fontSize: "0.6rem", color: colors.text.secondary, opacity: 0.5 }}>
-                      coins
+                      ${(Number(offer.payout) / 1000).toFixed(2)}
                     </Typography>
                   </Box>
                   {/* Action */}
@@ -1846,7 +1843,7 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
     if (activeWall === "Klink") {
       const apiKey = process.env.NEXT_PUBLIC_KLINK_API_KEY || "";
       const pubId = process.env.NEXT_PUBLIC_KLINK_PUBLISHER_ID || "489cbf22-91da-4cea-9b75-06488105d4e7";
-      return `https://klink-quest.klink.finance/offerwall?apiKey=${apiKey}&publisherId=${pubId}&userId=${userId}`;
+      return `https://offerwall.klinkfinance.com/wall?pub_id=${pubId}&user_id=${userId}`;
     }
     return "";
   };
