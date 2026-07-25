@@ -3118,8 +3118,8 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
                 setIframeError(true);
               }}
               title={`${activeWall}`}
-              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation allow-top-navigation-by-user-activation"
-              allow="clipboard-write"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation"
+              allow="clipboard-write; autoplay; encrypted-media; fullscreen"
               sx={{ 
                 width: "100%", height: "100%", border: "none", 
                 bgcolor: colors.background.default,
