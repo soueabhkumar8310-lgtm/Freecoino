@@ -1803,7 +1803,8 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
       const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "uuGH0N";
       const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "WI24gd7OaJ";
-      return `https://notik.me/offerwall?api_key=${apiKey}&pub_id=${pubId}&app_id=${appId}&user_id=${userId}`;
+      // Try Notik's direct offerwall URL format (without /offerwall path)
+      return `https://notik.me/coins?api_key=${apiKey}&pub_id=${pubId}&app_id=${appId}&user_id=${userId}`;
     }
     if (activeWall === "GemiAd") {
       const placementId = process.env.NEXT_PUBLIC_GEMIAD_PLACEMENT_ID || "your_placement_id_here";
