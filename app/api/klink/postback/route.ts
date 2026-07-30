@@ -11,6 +11,31 @@ export async function POST(req: NextRequest) {
 
 async function handlePostback(request: NextRequest) {
   try {
+    // IP Whitelist validation (Klink Labs official IPs - updated August 2024)
+    const KLINK_IPS = [
+      '74.220.53.15',   // New IP (added Aug 2024)
+      '74.220.53.234',  // New IP (added Aug 2024)
+      '74.220.53.235',  // New IP (added Aug 2024)
+      // Add old IPs here if you know them
+    ];
+
+    const clientIP = 
+      request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
+    console.log("🔔 Klink Postback received from IP:", clientIP);
+
+    // Validate IP (allow in development, strict in production)
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                         request.url.includes('localhost') ||
+                         request.url.includes('127.0.0.1');
+    
+    if (!isDevelopment && !KLINK_IPS.includes(clientIP)) {
+      console.error("❌ Unauthorized IP:", clientIP);
+      return new NextResponse("Unauthorized", { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const userId =
       searchParams.get("user_id") ||
@@ -26,7 +51,7 @@ async function handlePostback(request: NextRequest) {
       searchParams.get("payout") ||
       searchParams.get("reward");
 
-    console.log("🔔 Klink Postback received:", { userId, transactionId, amountStr });
+    console.log("🔔 Klink Postback params:", { userId, transactionId, amountStr });
 
     if (!userId || !transactionId || !amountStr) {
       console.error("❌ Missing required parameters");
