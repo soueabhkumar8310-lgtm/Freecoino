@@ -231,10 +231,10 @@ function OfferDetailsModal({
                 Available on:
               </Typography>
               <Box sx={{ display: "flex", gap: 0.75 }}>
-                {offer.device.map((platform, platformIndex) => {
-                  const platformLower = platform.toLowerCase();
+                {(Array.isArray(offer.device) ? offer.device : [offer.device]).map((platform, platformIndex) => {
+                  const platformLower = (platform || '').toString().toLowerCase();
                   let icon = null;
-                  let label = platform;
+                  let label = platform || 'All';
 
                   if (platformLower === 'android') {
                     icon = (
