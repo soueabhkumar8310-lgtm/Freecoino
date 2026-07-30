@@ -96,14 +96,14 @@ export async function GET(request: NextRequest) {
         description1: getName(offer.description) || getName(offer.instructions) || '',
         description2: getName(offer.requirements) || getName(offer.objective) || '',
         description3: getName(offer.terms) || '',
-        image_url: offer.previewUrl || offer.icon || offer.image || 'https://via.placeholder.com/150',
-        payout: Math.round((parseFloat(offer.reward || offer.payout || 0) * 1000)), // Convert to coins
+        image_url: offer.images?.logo || offer.previewUrl || offer.icon || offer.image || 'https://via.placeholder.com/150',
+        payout: Math.round((parseFloat(offer.totalPayout || offer.payout || 0) * 1000)), // Convert USD to coins (×1000)
         click_url: offer.trackingUrl || offer.link || offer.url || '#',
         categories: offer.categories || offer.category ? (Array.isArray(offer.category) ? offer.category : [offer.category]) : [],
-        events: (offer.conversions || offer.events || []).map((e: any) => ({
-          id: String(e.id || e.uuid || ''),
-          name: getName(e.name) || getName(e.description) || 'Event',
-          payout: Math.round((parseFloat(e.reward || e.payout || 0) * 1000)),
+        events: (offer.activities || offer.conversions || offer.events || []).map((e: any) => ({
+          id: String(e.eventId || e.id || e.uuid || ''),
+          name: getName(e.name) || getName(e.description) || getName(e.eventName) || 'Event',
+          payout: Math.round((parseFloat(e.payout || e.reward || 0) * 1000)), // Convert USD to coins
         })),
         provider: 'Klink',
         trackingType: offer.conversionType || offer.type || 'CPA',
