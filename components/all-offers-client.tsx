@@ -330,7 +330,7 @@ function OfferDetailsModal({
                     color: "#01D676",
                   }}
                 >
-                  ${offer.payout}
+                  ${(Number(offer.payout) / 1000).toFixed(2)}
                 </Typography>
                 <Box
                   sx={{
@@ -398,7 +398,7 @@ function OfferDetailsModal({
                   fill="currentColor"
                 />
               </svg>
-              Play and Earn ${offer.payout}
+              Play and Earn ${(Number(offer.payout) / 1000).toFixed(2)}
             </Box>
           </Box>
         </Box>
@@ -517,7 +517,7 @@ function OfferDetailsModal({
                       fontWeight: 700,
                     }}
                   >
-                    ${event.payout}
+                    ${(Number(event.payout) / 1000).toFixed(2)}
                   </Typography>
                   <Box
                     sx={{
@@ -1180,7 +1180,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
                     </Typography>
 
                     <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600 }}>
-                      ${offer.payout}
+                      ${(Number(offer.payout) / 1000).toFixed(2)}
                     </Typography>
                   </Box>
                 </Box>
