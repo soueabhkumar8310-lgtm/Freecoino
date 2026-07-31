@@ -837,6 +837,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       console.log(`Using offers (showing all): ${filteredOffers.length}`);
       
       // Separate offers by tracking type for priority sorting
+      // Priority: CPE (engagement) > CPI (install) > Others > CPA (purchase/payment) - last because requires money
       const cpeOffers = filteredOffers.filter(o => o.trackingType?.toUpperCase() === 'CPE');
       const cpiOffers = filteredOffers.filter(o => o.trackingType?.toUpperCase() === 'CPI');
       const cpaOffers = filteredOffers.filter(o => o.trackingType?.toUpperCase() === 'CPA');
@@ -847,16 +848,19 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       
       console.log(`Tracking type distribution - CPE: ${cpeOffers.length}, CPI: ${cpiOffers.length}, CPA: ${cpaOffers.length}, Others: ${otherOffers.length}`);
       
-      // Mix offers with priority: CPE > CPI > CPA > Others (round-robin within each priority)
+      // Mix offers with priority: CPE > CPI > Others > CPA (CPA at end because they require payment)
       const sortedOffers: NotikOffer[] = [];
-      const maxLength = Math.max(cpeOffers.length, cpiOffers.length, cpaOffers.length, otherOffers.length);
+      const maxLength = Math.max(cpeOffers.length, cpiOffers.length, otherOffers.length);
       
+      // Add CPE, CPI, and Others first (round-robin)
       for (let i = 0; i < maxLength; i++) {
         if (i < cpeOffers.length) sortedOffers.push(cpeOffers[i]);
         if (i < cpiOffers.length) sortedOffers.push(cpiOffers[i]);
-        if (i < cpaOffers.length) sortedOffers.push(cpaOffers[i]);
         if (i < otherOffers.length) sortedOffers.push(otherOffers[i]);
       }
+      
+      // Add CPA offers at the end (require payment, less user-friendly)
+      sortedOffers.push(...cpaOffers);
       
       console.log(`Sorted gaming offers: ${sortedOffers.length}`);
       
