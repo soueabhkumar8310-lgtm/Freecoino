@@ -98,7 +98,9 @@ export async function GET(request: NextRequest) {
         description3: getName(offer.terms) || '',
         image_url: offer.images?.logo || offer.previewUrl || offer.icon || offer.image || 'https://via.placeholder.com/150',
         payout: Math.round((parseFloat(offer.totalPayout || offer.payout || 0) * 1000)), // Convert USD to coins (×1000)
-        click_url: offer.trackingUrl || offer.link || offer.url || '#',
+        // Klink API doesn't provide individual offer click URLs
+        // Redirect to Klink offerwall iframe with user_id as tracking
+        click_url: `https://offerwall.klinkfinance.com/wall?pub_id=${publisherId}&user_id=${userId}&offer_id=${offer.offerId || offer.id}`,
         categories: offer.categories || offer.category ? (Array.isArray(offer.category) ? offer.category : [offer.category]) : [],
         events: (offer.activities || offer.conversions || offer.events || []).map((e: any) => ({
           id: String(e.eventId || e.id || e.uuid || ''),
