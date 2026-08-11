@@ -1,9 +1,9 @@
 -- =============================================
--- REWARDOXY-LOGIC MIGRATION
+-- REWARDOXY-LOGIC MIGRATION (data-preserving)
 -- Migrates freecoino to the production schema used by rewardoxy:
---   users (replaces profiles usage), completions (replaces offer_completions),
---   new withdrawals shape, notifications extras, and supporting tables + RPCs.
--- Run this in the Supabase SQL Editor.
+--   users (backfilled from profiles), completions (backfilled from offer_completions),
+--   new withdrawals shape, notifications, and supporting tables + RPCs.
+-- NO existing table, row, or policy is deleted. Legacy tables stay intact.
 -- =============================================
 
 -- =============================================
@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS public.users (
   is_banned BOOLEAN NOT NULL DEFAULT FALSE,
   ban_reason TEXT,
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-  fraud_status TEXT NOT NULL DEFAULT 'clean' CHECK (fraud_status IN ('clean', 'flagged', 'suspended')),
+  fraud_status TEXT NOT NULL DEFAULT 'clean' CHECK (fraud_status IN ('clean', 'flagged', 'suspended', 'cashout_blocked')),
+  fraud_flags JSONB NOT NULL DEFAULT '[]'::jsonb,
   vpn_detected_count INTEGER NOT NULL DEFAULT 0,
   mismatch_count INTEGER NOT NULL DEFAULT 0,
   signup_country TEXT,
@@ -40,7 +41,6 @@ CREATE TABLE IF NOT EXISTS public.users (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 CREATE INDEX IF NOT EXISTS idx_users_referral_code ON public.users(referral_code);
 CREATE INDEX IF NOT EXISTS idx_users_referred_by ON public.users(referred_by);
 CREATE INDEX IF NOT EXISTS idx_users_is_banned ON public.users(is_banned);
@@ -49,8 +49,45 @@ CREATE INDEX IF NOT EXISTS idx_users_created_at ON public.users(created_at DESC)
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own user row" ON public.users FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update own user row" ON public.users FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can view own user row or their referrals" ON public.users;
+CREATE POLICY "Users can view own user row or their referrals" ON public.users
+  FOR SELECT USING (auth.uid() = id OR referred_by = auth.uid() OR this_month_earnings > 0);
+
+DROP POLICY IF EXISTS "Users can update own user row" ON public.users;
+CREATE POLICY "Users can update own user row" ON public.users
+  FOR UPDATE USING (auth.uid() = id);
+
+-- Backfill: one users row per auth.users (profiles fields mapped; email falls back to auth email)
+INSERT INTO public.users (id, email, display_name, avatar_url, coins_balance, total_earned,
+  this_month_earnings, pending_referral_earnings, streak_count, crypto_address, referral_code,
+  email_verified, is_banned, ban_reason, signup_source, created_at, updated_at)
+SELECT
+  au.id,
+  COALESCE(p.email, au.email),
+  COALESCE(p.display_name, ''),
+  p.avatar_url,
+  COALESCE(p.coins_balance, 0),
+  COALESCE(p.total_earned, 0),
+  0,
+  0,
+  COALESCE(p.streak_count, 0),
+  p.crypto_address,
+  p.referral_code,
+  COALESCE(p.email_verified, FALSE),
+  COALESCE(p.is_banned, FALSE),
+  p.ban_reason,
+  'web',
+  COALESCE(p.created_at, NOW()),
+  NOW()
+FROM auth.users au
+LEFT JOIN public.profiles p ON p.id = au.id
+ON CONFLICT (id) DO NOTHING;
+
+-- Two-step: link referred_by after all rows exist (self-referencing FK)
+UPDATE public.users u
+SET referred_by = p.referred_by
+FROM public.profiles p
+WHERE p.id = u.id AND p.referred_by IS NOT NULL AND u.referred_by IS NULL;
 
 -- =============================================
 -- 2. COMPLETIONS TABLE (replaces offer_completions)
@@ -65,6 +102,7 @@ CREATE TABLE IF NOT EXISTS public.completions (
   source TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'completed',
   tx_id TEXT,
+  transaction_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -74,50 +112,88 @@ CREATE INDEX IF NOT EXISTS idx_completions_source_tx ON public.completions(sourc
 
 ALTER TABLE public.completions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own completions" ON public.completions FOR SELECT USING (auth.uid() = player_id);
+DROP POLICY IF EXISTS "Users can view own completions" ON public.completions;
+CREATE POLICY "Users can view own completions" ON public.completions
+  FOR SELECT USING (auth.uid() = player_id);
+
+-- Backfill from legacy offer_completions (payout_potential was stored in coin-scale; /1000 = USD)
+INSERT INTO public.completions (id, player_id, program_id, offer_name, payout_decimal,
+  coins_awarded, source, status, created_at)
+SELECT
+  oc.id,
+  oc.user_id,
+  oc.offer_id,
+  oc.offer_name,
+  CASE WHEN oc.payout_potential > 0 THEN ROUND(oc.payout_potential::numeric / 1000, 2) ELSE NULL END,
+  COALESCE(oc.coins_awarded, 0),
+  oc.offer_provider,
+  oc.status,
+  COALESCE(oc.completed_at, NOW())
+FROM public.offer_completions oc
+ON CONFLICT (id) DO NOTHING;
 
 -- =============================================
--- 3. WITHDRAWALS (new shape: coins, amount_usd, crypto_address, status, tx_hash, requested_at)
+-- 3. WITHDRAWALS (new shape; legacy rows preserved)
 -- =============================================
 ALTER TABLE public.withdrawals
-  ADD COLUMN IF NOT EXISTS coins INTEGER NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS amount_usd NUMERIC(12,2) NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+  ADD COLUMN IF NOT EXISTS coins INTEGER,
+  ADD COLUMN IF NOT EXISTS amount_usd NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS requested_at TIMESTAMPTZ;
 
--- Backfill coins from legacy amount and requested_at from created_at
-UPDATE public.withdrawals SET coins = amount WHERE coins = 0 AND amount IS NOT NULL;
-UPDATE public.withdrawals SET requested_at = created_at WHERE requested_at IS NULL;
+UPDATE public.withdrawals
+SET coins = amount,
+    amount_usd = ROUND(amount::numeric / 1000, 2),
+    requested_at = created_at
+WHERE requested_at IS NULL AND amount IS NOT NULL;
 
--- Migrate legacy statuses to the new set
+-- Drop old status CHECK first, map legacy statuses, then add the new CHECK
+ALTER TABLE public.withdrawals DROP CONSTRAINT IF EXISTS withdrawals_status_check;
+
 UPDATE public.withdrawals SET status = 'paid' WHERE status IN ('completed', 'approved');
 UPDATE public.withdrawals SET status = 'failed' WHERE status = 'rejected';
 
--- Replace status constraint
-ALTER TABLE public.withdrawals DROP CONSTRAINT IF EXISTS withdrawals_status_check;
 ALTER TABLE public.withdrawals ADD CONSTRAINT withdrawals_status_check
   CHECK (status IN ('pending', 'processing', 'paid', 'failed'));
+
+-- New inserts no longer write method/amount
+ALTER TABLE public.withdrawals DROP CONSTRAINT IF EXISTS withdrawals_method_check;
+ALTER TABLE public.withdrawals ALTER COLUMN method DROP NOT NULL;
+ALTER TABLE public.withdrawals ALTER COLUMN amount DROP NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_withdrawals_requested_at ON public.withdrawals(requested_at DESC);
 CREATE INDEX IF NOT EXISTS idx_withdrawals_status ON public.withdrawals(status);
 
 -- =============================================
--- 4. NOTIFICATIONS (extras: admin_sent, is_broadcast, is_dismissed, read)
+-- 4. NOTIFICATIONS (did not exist; user_id nullable for broadcasts)
 -- =============================================
--- user_id must be nullable for broadcasts
-ALTER TABLE public.notifications ALTER COLUMN user_id DROP NOT NULL;
-ALTER TABLE public.notifications
-  ADD COLUMN IF NOT EXISTS read BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS is_dismissed BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS is_broadcast BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS admin_sent BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT DEFAULT 'general',
+  read BOOLEAN NOT NULL DEFAULT FALSE,
+  is_dismissed BOOLEAN NOT NULL DEFAULT FALSE,
+  is_broadcast BOOLEAN NOT NULL DEFAULT FALSE,
+  admin_sent BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
--- Backfill new read column from legacy is_read
-UPDATE public.notifications SET read = is_read WHERE is_read IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON public.notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_broadcast ON public.notifications(is_broadcast, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_notifications_admin_sent ON public.notifications(admin_sent, created_at DESC);
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own or broadcast notifications" ON public.notifications;
+CREATE POLICY "Users can view own or broadcast notifications" ON public.notifications
+  FOR SELECT USING (auth.uid() = user_id OR is_broadcast = TRUE);
+
+DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
+CREATE POLICY "Users can update own notifications" ON public.notifications
+  FOR UPDATE USING (auth.uid() = user_id);
 
 -- =============================================
--- 5. DAILY BONUS CLAIMS (new table; daily_bonuses stays as legacy)
+-- 5. DAILY BONUS CLAIMS (backfilled from daily_bonuses)
 -- =============================================
 CREATE TABLE IF NOT EXISTS public.daily_bonus_claims (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -131,8 +207,17 @@ CREATE INDEX IF NOT EXISTS idx_daily_bonus_claims_user ON public.daily_bonus_cla
 
 ALTER TABLE public.daily_bonus_claims ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own bonus claims" ON public.daily_bonus_claims FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can claim own bonus" ON public.daily_bonus_claims FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can view own bonus claims" ON public.daily_bonus_claims;
+CREATE POLICY "Users can view own bonus claims" ON public.daily_bonus_claims
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can claim own bonus" ON public.daily_bonus_claims;
+CREATE POLICY "Users can claim own bonus" ON public.daily_bonus_claims
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+INSERT INTO public.daily_bonus_claims (user_id, coins_awarded, streak_day, claimed_at)
+SELECT user_id, COALESCE(amount, 0), day_number, COALESCE(claimed_at, NOW())
+FROM public.daily_bonuses;
 
 -- =============================================
 -- 6. USER OFFER INTERACTIONS
@@ -146,6 +231,7 @@ CREATE TABLE IF NOT EXISTS public.user_offer_interactions (
   click_url TEXT,
   image_url TEXT,
   payout NUMERIC(12,2),
+  tracking_type TEXT,
   status TEXT NOT NULL DEFAULT 'started' CHECK (status IN ('started', 'in_progress', 'completed', 'reversed')),
   events_json JSONB NOT NULL DEFAULT '[]'::jsonb,
   clicked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -156,7 +242,9 @@ CREATE INDEX IF NOT EXISTS idx_offer_interactions_offer ON public.user_offer_int
 
 ALTER TABLE public.user_offer_interactions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own offer interactions" ON public.user_offer_interactions FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can view own offer interactions" ON public.user_offer_interactions;
+CREATE POLICY "Users can view own offer interactions" ON public.user_offer_interactions
+  FOR SELECT USING (auth.uid() = user_id);
 
 -- =============================================
 -- 7. MILESTONE PROGRESS (CPE multi-event offers)
@@ -177,13 +265,13 @@ CREATE INDEX IF NOT EXISTS idx_milestone_progress_user ON public.milestone_progr
 
 ALTER TABLE public.milestone_progress ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own milestone progress" ON public.milestone_progress FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can view own milestone progress" ON public.milestone_progress;
+CREATE POLICY "Users can view own milestone progress" ON public.milestone_progress
+  FOR SELECT USING (auth.uid() = user_id);
 
 -- =============================================
--- 8. REFERRALS (new shape: referrer_uid / referee_uid / lifetime_coins_earned)
+-- 8. REFERRALS + ANCESTORS (backfilled from users.referred_by)
 -- =============================================
-DROP TABLE IF EXISTS public.referrals;
-
 CREATE TABLE IF NOT EXISTS public.referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   referrer_uid UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -197,9 +285,16 @@ CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON public.referrals(referrer_u
 
 ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own referrals" ON public.referrals FOR SELECT USING (auth.uid() = referrer_uid OR auth.uid() = referee_uid);
+DROP POLICY IF EXISTS "Users can view own referrals" ON public.referrals;
+CREATE POLICY "Users can view own referrals" ON public.referrals
+  FOR SELECT USING (auth.uid() = referrer_uid OR auth.uid() = referee_uid);
 
--- Referral ancestors (populated by populate_referral_ancestors)
+INSERT INTO public.referrals (referrer_uid, referee_uid, lifetime_coins_earned, created_at)
+SELECT u.referred_by, u.id, 0, u.created_at
+FROM public.users u
+WHERE u.referred_by IS NOT NULL
+ON CONFLICT (referrer_uid, referee_uid) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS public.referral_ancestors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ancestor_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -225,7 +320,9 @@ CREATE INDEX IF NOT EXISTS idx_leaderboard_rank ON public.leaderboard_cache(rank
 
 ALTER TABLE public.leaderboard_cache ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can view leaderboard" ON public.leaderboard_cache FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Anyone can view leaderboard" ON public.leaderboard_cache;
+CREATE POLICY "Anyone can view leaderboard" ON public.leaderboard_cache
+  FOR SELECT USING (true);
 
 -- =============================================
 -- 10. FRAUD LOG
@@ -255,6 +352,20 @@ CREATE TABLE IF NOT EXISTS public.notification_reads (
   read_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(notification_id, user_id)
 );
+
+ALTER TABLE public.notification_reads ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can read own notification reads" ON public.notification_reads;
+CREATE POLICY "Users can read own notification reads" ON public.notification_reads
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own notification reads" ON public.notification_reads;
+CREATE POLICY "Users can insert own notification reads" ON public.notification_reads
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own notification reads" ON public.notification_reads;
+CREATE POLICY "Users can update own notification reads" ON public.notification_reads
+  FOR UPDATE USING (auth.uid() = user_id);
 
 -- =============================================
 -- 12. COMMISSION QUEUE (referral commissions)
@@ -347,12 +458,16 @@ BEGIN
 END;
 $$;
 
--- Increment coins by an amount (admin refunds). Amount may be negative.
+-- Increment coins by an amount (daily bonus). Amount may be negative.
+-- Bound to the calling user: only the signed-in user may increment their own balance.
 CREATE OR REPLACE FUNCTION public.increment_coins(uid UUID, amount INTEGER)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
+  IF uid <> auth.uid() THEN
+    RETURN;
+  END IF;
   UPDATE public.users
   SET coins_balance = coins_balance + amount
   WHERE id = uid;
@@ -392,8 +507,7 @@ BEGIN
     FROM public.users u WHERE u.id = rec.earner_id;
 
     IF referrer_id IS NOT NULL THEN
-      SELECT email_verified INTO commission FROM public.users WHERE id = rec.earner_id;
-      IF commission THEN
+      IF EXISTS (SELECT 1 FROM public.users WHERE id = rec.earner_id AND email_verified) THEN
         commission := FLOOR(rec.amount * 0.05);
         IF commission > 0 THEN
           UPDATE public.users
@@ -509,3 +623,55 @@ $$;
 ALTER TABLE public.reviews DROP CONSTRAINT IF EXISTS reviews_user_id_fkey;
 ALTER TABLE public.reviews
   ADD CONSTRAINT reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+-- Backfill referral ancestors for all existing referral links
+DO $$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN SELECT id, referred_by FROM public.users WHERE referred_by IS NOT NULL LOOP
+    PERFORM public.populate_referral_ancestors(r.id, r.referred_by);
+  END LOOP;
+END;
+$$;
+
+-- =============================================
+-- 17. HARDENING
+-- =============================================
+
+-- Server-only RPCs: remove PUBLIC and anon/authenticated EXECUTE, keep service_role.
+-- increment_coins and update_streak stay client-callable (daily bonus / streak flows
+-- run under the signed-in user's session).
+REVOKE EXECUTE ON FUNCTION public.credit_postback(UUID, INTEGER) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.deduct_user_points(UUID, INTEGER) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.enqueue_commissions(UUID, INTEGER, TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.process_commission_queue(INTEGER) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.populate_referral_ancestors(UUID, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.refresh_leaderboard_cache() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.delete_user_account(UUID) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.add_coins(UUID, INTEGER, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.process_withdrawal(UUID, INTEGER, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.increment_coins(UUID, INTEGER) FROM anon;
+
+GRANT EXECUTE ON FUNCTION public.credit_postback(UUID, INTEGER) TO service_role;
+GRANT EXECUTE ON FUNCTION public.deduct_user_points(UUID, INTEGER) TO service_role;
+GRANT EXECUTE ON FUNCTION public.enqueue_commissions(UUID, INTEGER, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION public.process_commission_queue(INTEGER) TO service_role;
+GRANT EXECUTE ON FUNCTION public.populate_referral_ancestors(UUID, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.refresh_leaderboard_cache() TO service_role;
+GRANT EXECUTE ON FUNCTION public.delete_user_account(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.add_coins(UUID, INTEGER, TEXT, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION public.process_withdrawal(UUID, INTEGER, TEXT, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO service_role;
+
+-- Internal tables: no client access needed; ENABLE RLS with no policies = deny all
+-- for anon/authenticated. service_role and SECURITY DEFINER functions bypass RLS.
+ALTER TABLE public.referral_ancestors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fraud_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.commission_queue ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_verification_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_otps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.password_reset_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.account_deletion_tokens ENABLE ROW LEVEL SECURITY;

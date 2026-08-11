@@ -173,6 +173,7 @@ async function handleAdgemPostback(request: NextRequest) {
       .insert({
         player_id,
         program_id: transaction_id,
+        transaction_id,
         payout_decimal: payoutNum,
         coins_awarded: coinsToCredit,
         source: 'adgem',
