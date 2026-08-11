@@ -1,64 +1,33 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/admin-auth";
 import AdminShell from "@/components/admin-shell";
 import AdminUsersClient from "@/components/admin-users-client";
 
-export default async function AdminUsersPage() {
-  const supabase = await createClient();
+export const dynamic = "force-dynamic";
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+const PAGE_SIZE = 20;
 
-  if (!user) {
-    redirect("/auth/login");
+export default async function AdminUsersPage({ searchParams }: { searchParams: Promise<{ source?: string }> }) {
+  const { adminSupabase } = await requireAdmin();
+  const params = await searchParams;
+  const source = params.source || "";
+
+  let query = adminSupabase
+    .from("users")
+    .select("id, email, coins_balance, total_earned, role, is_banned, created_at, signup_country, last_seen_country, fraud_status, vpn_detected_count, mismatch_count, signup_source", {
+      count: "exact",
+    })
+    .order("created_at", { ascending: false })
+    .range(0, PAGE_SIZE - 1);
+
+  if (source === "web" || source === "app") {
+    query = query.eq("signup_source", source);
   }
 
-  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'soueabhkumar8310@gmail.com';
-  if (user.email !== ADMIN_EMAIL) {
-    redirect("/");
-  }
-
-  // Create admin client to fetch all auth users
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  // Fetch all profiles
-  const { data: profiles, error: profilesError } = await supabaseAdmin
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (profilesError) {
-    console.error("Error fetching profiles:", profilesError);
-  }
-
-  // Fetch all auth users to get emails
-  const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-  
-  if (authError) {
-    console.error("Error fetching auth users:", authError);
-  }
-
-  // Merge profile data with auth email
-  const mergedUsers = (profiles || []).map((profile) => {
-    const authUser = authUsers?.users?.find((u) => u.id === profile.id);
-    return {
-      id: profile.id,
-      email: authUser?.email || "Unknown Email",
-      displayName: profile.display_name || "Unknown User",
-      coinsBalance: profile.coins_balance || 0,
-      referralCode: profile.referral_code || "N/A",
-      createdAt: profile.created_at,
-    };
-  });
+  const { data: users, count } = await query;
 
   return (
     <AdminShell>
-      <AdminUsersClient users={mergedUsers} />
+      <AdminUsersClient initialUsers={users ?? []} initialTotal={count ?? 0} source={source} />
     </AdminShell>
   );
 }

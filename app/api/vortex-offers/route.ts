@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getUserCountry } from '@/lib/get-user-country';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
-    const country = searchParams.get('country') || 'IN';
+    const country = await getUserCountry(request, {
+      overrideCountry: searchParams.get('country') || searchParams.get('country_code'),
+    });
 
     if (!userId) {
       return NextResponse.json(

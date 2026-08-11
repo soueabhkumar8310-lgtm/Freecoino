@@ -1,86 +1,107 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
+    const searchParams = request.nextUrl.searchParams;
+    const userId = searchParams.get("user_id");
 
     if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'user_id is required' },
+        { success: false, error: "Missing user_id parameter", surveys: [], count: 0 },
         { status: 400 }
       );
     }
 
-    const publisherId = process.env.CPX_PUBLISHER_ID;
-    const apiKey = process.env.CPX_API_KEY;
-
-    if (!publisherId || !apiKey) {
-      console.error('❌ CPX Research Publisher ID or API key not configured');
-      return NextResponse.json({
-        success: false,
-        error: 'CPX Research not configured',
-        surveys: [],
-      });
+    const appId = "32037";
+    const secureHashKey = process.env.CPX_SECURE_HASH || "";
+    
+    if (!secureHashKey) {
+      console.error("CPX_SECURE_HASH not configured");
+      return NextResponse.json(
+        { success: false, error: "CPX configuration missing", surveys: [], count: 0 },
+        { status: 500 }
+      );
     }
 
-    console.log('✅ CPX API Key loaded, first 10 chars:', apiKey.substring(0, 10));
+    // Generate MD5 hash as per CPX documentation: md5(ext_user_id + '-' + secure_hash)
+    const secureHash = crypto
+      .createHash("md5")
+      .update(`${userId}-${secureHashKey}`)
+      .digest("hex");
 
-    // CPX Research API endpoint
-    const apiUrl = `https://offers.cpx-research.com/api/get-surveys.php?app_id=${publisherId}&ext_user_id=${userId}&secure_hash=${apiKey}`;
+    // Get user's IP from request headers
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const realIp = request.headers.get("x-real-ip");
+    const userIp = forwardedFor?.split(",")[0] || realIp || "0.0.0.0";
 
-    console.log('🔄 Fetching CPX Research surveys...');
+    // Get user agent
+    const userAgent = request.headers.get("user-agent") || "Mozilla/5.0";
 
-    const response = await fetch(apiUrl, {
-      method: 'GET',
+    // Build CPX API URL according to documentation
+    const cpxUrl = new URL("https://live-api.cpx-research.com/api/get-surveys.php");
+    cpxUrl.searchParams.set("app_id", appId);
+    cpxUrl.searchParams.set("ext_user_id", userId);
+    cpxUrl.searchParams.set("email", "");
+    cpxUrl.searchParams.set("subid_1", "");
+    cpxUrl.searchParams.set("subid_2", "");
+    cpxUrl.searchParams.set("output_method", "api");
+    cpxUrl.searchParams.set("ip_user", userIp);
+    cpxUrl.searchParams.set("user_agent", encodeURIComponent(userAgent));
+    cpxUrl.searchParams.set("limit", "12");
+    cpxUrl.searchParams.set("secure_hash", secureHash);
+
+    console.log("Fetching CPX surveys for user:", userId);
+    console.log("CPX API URL:", cpxUrl.toString());
+
+    const response = await fetch(cpxUrl.toString(), {
+      method: "GET",
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Freecoino/1.0',
+        "User-Agent": userAgent,
       },
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ CPX Research API error: ${response.status} - ${errorText}`);
-      return NextResponse.json({
-        success: false,
-        error: `CPX Research API returned ${response.status}`,
-        surveys: [],
-      });
+      console.error("CPX API error:", response.status, response.statusText);
+      return NextResponse.json(
+        { success: false, error: "Failed to fetch surveys from CPX", surveys: [], count: 0 },
+        { status: 200 }
+      );
     }
 
     const data = await response.json();
     
-    // Transform CPX surveys to our standard format
-    const surveys = (data.surveys || []).map((survey: any) => ({
-      id: survey.id || survey.survey_id,
-      loi: parseInt(survey.loi || survey.length_of_interview || 0),
-      payout_usd: parseFloat(survey.payout || survey.reward_usd || 0),
-      conversion_rate: parseInt(survey.conversion_rate || 50),
-      link: survey.link || survey.survey_link,
-      score: survey.score || 0,
-      type: survey.type || 'survey',
-      rating_count: survey.rating_count || 0,
-      rating_avg: survey.rating_avg || 0,
-    }));
+    console.log("CPX API response status:", data.status);
+    console.log("CPX surveys count:", data.count_returned_surveys || 0);
 
-    console.log(`✅ CPX Research surveys loaded: ${surveys.length}`);
+    // Transform CPX response to our format
+    const surveys = Array.isArray(data.surveys) 
+      ? data.surveys.map((survey: any) => ({
+          id: survey.id,
+          loi: parseInt(survey.loi) || 0,
+          payout_usd: parseFloat(survey.payout_publisher_usd) || 0,
+          conversion_rate: parseFloat(survey.conversion_rate) || 0,
+          link: survey.href || "",
+          score: parseFloat(survey.score) || 0,
+          type: survey.type || "",
+          rating_count: parseInt(survey.statistics_rating_count) || 0,
+          rating_avg: parseFloat(survey.statistics_rating_avg) || 0,
+        }))
+      : [];
 
     return NextResponse.json({
-      success: true,
-      surveys,
-      count: surveys.length,
+      success: data.status === "success",
+      surveys: surveys,
+      count: data.count_returned_surveys || 0,
+      total_available: data.count_available_surveys || 0,
     });
-
   } catch (error) {
-    console.error('❌ CPX Research API error:', error);
+    console.error("Error fetching CPX surveys:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch CPX Research surveys',
-        surveys: [],
-      },
-      { status: 500 }
+      { success: false, error: "Internal server error", surveys: [], count: 0 },
+      { status: 200 }
     );
   }
 }

@@ -7,7 +7,7 @@ export interface AuthUser {
   name: string
   avatar?: string
   coins_balance?: number
-  ltc_address?: string
+  crypto_address?: string
 }
 
 // Sign up with email and password
@@ -83,8 +83,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
     // Try to fetch profile data including coins_balance
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('coins_balance')
+      .from('users')
+      .select('coins_balance, crypto_address')
       .eq('id', user.id)
       .single()
 
@@ -98,6 +98,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       name: user.user_metadata?.display_name || user.email!.split('@')[0],
       avatar: user.user_metadata?.avatar_url,
       coins_balance: profile?.coins_balance || 0,
+      crypto_address: profile?.crypto_address,
     };
 
     // Cache the result
@@ -122,8 +123,8 @@ export function onAuthStateChange(callback: (user: AuthUser | null) => void) {
       try {
         // Try to fetch profile data including coins_balance
         const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('coins_balance')
+          .from('users')
+          .select('coins_balance, crypto_address')
           .eq('id', session.user.id)
           .single()
 
@@ -137,6 +138,7 @@ export function onAuthStateChange(callback: (user: AuthUser | null) => void) {
           name: session.user.user_metadata?.display_name || session.user.email!.split('@')[0],
           avatar: session.user.user_metadata?.avatar_url,
           coins_balance: profile?.coins_balance || 0,
+          crypto_address: profile?.crypto_address,
         }
         callback(authUser)
       } catch (error) {

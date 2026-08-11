@@ -1,79 +1,58 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-// Service role client for admin operations
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdminApi } from "@/lib/admin-auth";
 
 const PAGE_SIZE = 20;
 
 export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '0');
-    const status = searchParams.get('status');
+  const result = await requireAdminApi();
+  if ("error" in result) return result.error;
+  const { adminSupabase } = result;
 
-    // Build query
-    let query = supabaseAdmin
-      .from('withdrawals')
-      .select(`
-        id,
-        user_id,
-        amount,
-        method,
-        wallet_address,
-        status,
-        created_at
-      `, { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get("page") ?? "0", 10);
+  const status = searchParams.get("status") ?? "";
+  const from = page * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
 
-    // Apply status filter if provided and not "all"
-    if (status && status !== 'all') {
-      query = query.eq('status', status);
-    }
+  let query = adminSupabase
+    .from("withdrawals")
+    .select(
+      "id, user_id, coins, amount_usd, crypto_address, status, tx_hash, requested_at",
+      { count: "exact" }
+    )
+    .order("requested_at", { ascending: false });
 
-    const { data, error, count } = await query;
-
-    if (error) {
-      console.error('Error fetching withdrawals:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch withdrawals' },
-        { status: 500 }
-      );
-    }
-
-    // Fetch auth users to get emails
-    const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
-    const usersList = authData?.users || [];
-
-    // Transform data to match expected format
-    const withdrawals = data?.map((w: any) => {
-      const user = usersList.find(u => u.id === w.user_id);
-      return {
-        id: w.id,
-        user_id: w.user_id,
-        coins: w.amount,
-        amount_usd: w.amount / 1000, // 1000 coins = $1
-        crypto_address: w.wallet_address,
-        status: w.status,
-        tx_hash: null,
-        requested_at: w.created_at,
-        user_email: user?.email || 'Unknown User',
-      };
-    }) || [];
-
-    return NextResponse.json({
-      withdrawals,
-      total: count || 0,
-    });
-  } catch (error) {
-    console.error('Admin withdrawal search error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  if (status && status !== "all") {
+    query = query.eq("status", status);
   }
+
+  const { data, count, error } = await query.range(from, to);
+
+  if (error) {
+    return NextResponse.json({ error: "Fetch failed" }, { status: 500 });
+  }
+
+  const withdrawals = data ?? [];
+
+  // Fetch user emails for all unique user_ids
+  const userIds = [...new Set(withdrawals.map((w) => w.user_id))];
+  const emailMap: Record<string, string> = {};
+
+  if (userIds.length > 0) {
+    const { data: users } = await adminSupabase
+      .from("users")
+      .select("id, email")
+      .in("id", userIds);
+
+    for (const u of users ?? []) {
+      emailMap[u.id] = u.email;
+    }
+  }
+
+  const enriched = withdrawals.map((w) => ({
+    ...w,
+    user_email: emailMap[w.user_id] ?? "Unknown",
+  }));
+
+  return NextResponse.json({ withdrawals: enriched, total: count ?? 0 });
 }

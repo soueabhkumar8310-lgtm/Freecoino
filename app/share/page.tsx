@@ -23,13 +23,13 @@ export default async function SharePage() {
 
   let referralCode: string | null = null;
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
+    const { data: userData } = await supabase
+      .from("users")
       .select("referral_code")
       .eq("id", user.id)
       .single();
-    if (profile?.referral_code) {
-      referralCode = profile.referral_code;
+    if (userData?.referral_code) {
+      referralCode = userData.referral_code;
     }
   }
 

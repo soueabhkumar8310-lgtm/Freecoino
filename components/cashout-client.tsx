@@ -38,7 +38,6 @@ import { useThemeMode } from "@/lib/contexts/ThemeContext";
 import { useI18n } from "@/lib/contexts/I18nContext";
 import { getColors } from "@/theme/colors";
 
-const MIN_COINS = 2000;
 const COINS_PER_USD = 1000;
 const PAGE_SIZE = 5;
 const EXPLORER_URL = "https://litecoin.info/tx/";
@@ -46,8 +45,8 @@ const EXPLORER_URL = "https://litecoin.info/tx/";
 const STATUS_COLORS: Record<string, { bg: string; color: string; border: string }> = {
   pending: { bg: "rgba(245,158,11,0.1)", color: "#fbbf24", border: "rgba(245,158,11,0.2)" },
   processing: { bg: "rgba(56,189,248,0.1)", color: "#38bdf8", border: "rgba(56,189,248,0.2)" },
-  completed: { bg: "rgba(34,197,94,0.1)", color: "#22c55e", border: "rgba(34,197,94,0.2)" },
-  rejected: { bg: "rgba(239,68,68,0.1)", color: "#f87171", border: "rgba(239,68,68,0.2)" },
+  paid: { bg: "rgba(34,197,94,0.1)", color: "#22c55e", border: "rgba(34,197,94,0.2)" },
+  failed: { bg: "rgba(239,68,68,0.1)", color: "#f87171", border: "rgba(239,68,68,0.2)" },
 };
 
 interface Withdrawal {
@@ -69,6 +68,7 @@ interface CashoutClientProps {
   fraudStatus?: string;
   fraudNotification?: { id: string; message: string } | null;
   savedCryptoAddress?: string;
+  minCoins?: number;
 }
 
 export default function CashoutClient({
@@ -81,6 +81,7 @@ export default function CashoutClient({
   fraudStatus = "clean",
   fraudNotification = null,
   savedCryptoAddress = "",
+  minCoins = 2000,
 }: CashoutClientProps) {
   const { mode } = useThemeMode();
   const { t, lang } = useI18n();
@@ -89,8 +90,7 @@ export default function CashoutClient({
   const { refreshUser } = useAuth();
   const [coins, setCoins] = useState(initialCoins);
   const [address, setAddress] = useState(savedCryptoAddress);
-  const [amountCoins, setAmountCoins] = useState<number | "">(initialCoins >= MIN_COINS ? initialCoins : "");
-  const [method, setMethod] = useState<"USDT" | "PayPal" | "Payoneer">("USDT");
+  const [amountCoins, setAmountCoins] = useState<number | "">(initialCoins >= minCoins ? initialCoins : "");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -162,24 +162,16 @@ export default function CashoutClient({
     setError(null);
     setSuccess(null);
 
-    if (typeof amountCoins !== "number" || amountCoins < MIN_COINS) {
-      setError(`Minimum withdrawal is ${MIN_COINS.toLocaleString()} coins`);
+    if (typeof amountCoins !== "number" || amountCoins < minCoins) {
+      setError(`Minimum withdrawal is ${minCoins.toLocaleString()} coins`);
       return;
     }
     if (amountCoins > coins) {
       setError(`You only have ${coins.toLocaleString()} coins available`);
       return;
     }
-    if (!address.trim()) {
-      setError("Enter a valid wallet address or email");
-      return;
-    }
-    if (method === "USDT" && address.trim().length < 10) {
-      setError("Enter a valid USDT wallet address");
-      return;
-    }
-    if ((method === "PayPal" || method === "Payoneer") && !address.includes("@")) {
-      setError(`Enter a valid ${method} email address`);
+    if (!address.trim() || address.trim().length < 10) {
+      setError("Enter a valid LTC wallet address");
       return;
     }
 
@@ -191,8 +183,6 @@ export default function CashoutClient({
         body: JSON.stringify({ 
           amount_coins: amountCoins, 
           address: address.trim(),
-          method: method,
-          user_id: userId // Pass user ID from props
         }),
       });
       
@@ -367,7 +357,7 @@ export default function CashoutClient({
 
           <Box sx={{ ml: { sm: "auto" }, display: "flex", flexDirection: "column", gap: 0.75, pl: { sm: 3 }, borderLeft: { sm: `1px solid ${colors.glass.border}` } }}>
             {[
-              { label: "Minimum", value: `${MIN_COINS.toLocaleString()} coins` },
+              { label: "Minimum", value: `${minCoins.toLocaleString()} coins` },
               { label: "Rate", value: "1,000 = $1 USD" },
             ].map((row) => (
               <Box key={row.label} sx={{ display: "flex", gap: 1, fontSize: "0.75rem" }}>
@@ -437,34 +427,6 @@ export default function CashoutClient({
 
             <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
 
-              {/* Method Selector */}
-              <Box>
-                <Typography variant="body2" sx={{ mb: 1.5, fontWeight: 600, color: colors.text.secondary }}>
-                  Withdrawal Method
-                </Typography>
-                <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
-                  {(["USDT", "PayPal", "Payoneer"] as const).map((m) => (
-                    <Box
-                      key={m}
-                      onClick={() => setMethod(m)}
-                      sx={{
-                        flex: { xs: 1, sm: "unset" }, minWidth: 100,
-                        p: 1.5, borderRadius: 2, cursor: "pointer", textAlign: "center",
-                        border: `2px solid ${method === m ? colors.primary : colors.glass.border}`,
-                        bgcolor: method === m ? colors.greenTint : colors.background.glass,
-                        transition: "all 0.2s",
-                        "&:hover": { borderColor: colors.primary },
-                      }}
-                    >
-                      <Typography sx={{ fontSize: "1.2rem", mb: 0.25 }}>
-                        {m === "USDT" ? "₮" : m === "PayPal" ? "🅿" : "Ⓐ"}
-                      </Typography>
-                      <Typography sx={{ fontWeight: 600, fontSize: "0.8125rem" }}>{m}</Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
                 <Box>
                   <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: colors.text.secondary, display: "flex", justifyContent: "space-between" }}>
@@ -493,7 +455,7 @@ export default function CashoutClient({
                         setAmountCoins(num);
                       }
                     }}
-                    placeholder={`Min. ${MIN_COINS.toLocaleString()}`}
+                    placeholder={`Min. ${minCoins.toLocaleString()}`}
                     slotProps={{
                       input: {
                         startAdornment: (
@@ -520,14 +482,14 @@ export default function CashoutClient({
 
                 <Box>
                   <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: colors.text.secondary }}>
-                    {method === "USDT" ? "USDT Wallet Address" : `${method} Email`}
+                    LTC Wallet Address
                   </Typography>
                   <TextField
                     fullWidth
                     required
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder={method === "USDT" ? "Your USDT wallet address" : `Your ${method} email`}
+                    placeholder="Your LTC wallet address"
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         bgcolor: colors.background.ternary,
@@ -577,9 +539,9 @@ export default function CashoutClient({
                     <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, color: row.accent ? colors.primary : "#fff" }}>{row.value}</Typography>
                   </Box>
                 ))}
-                {coins < MIN_COINS ? (
+                {coins < minCoins ? (
                   <Box sx={{ mt: 1.5, borderRadius: 2, bgcolor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", px: 2, py: 1, fontSize: "0.75rem", color: "#f87171" }}>
-                    ⚠ You need at least {MIN_COINS.toLocaleString()} coins (${(MIN_COINS / COINS_PER_USD).toFixed(2)}) to withdraw
+                    ⚠ You need at least {minCoins.toLocaleString()} coins (${(minCoins / COINS_PER_USD).toFixed(2)}) to withdraw
                   </Box>
                 ) : (typeof amountCoins === "number" && amountCoins > coins) ? (
                   <Box sx={{ mt: 1.5, borderRadius: 2, bgcolor: "rgba(255, 68, 68, 0.08)", border: "1px solid rgba(255, 68, 68, 0.2)", px: 2, py: 1, fontSize: "0.75rem", color: colors.status.error }}>
@@ -603,7 +565,7 @@ export default function CashoutClient({
                 type="submit"
                 variant="contained"
                 fullWidth
-                disabled={loading || coins < MIN_COINS || (typeof amountCoins !== "number") || (amountCoins > coins) || (amountCoins < MIN_COINS)}
+                disabled={loading || coins < minCoins || (typeof amountCoins !== "number") || (amountCoins > coins) || (amountCoins < minCoins)}
                 endIcon={!loading ? <ArrowRight size={16} /> : undefined}
                 sx={{
                   py: 1.5,
@@ -617,7 +579,7 @@ export default function CashoutClient({
                   "&.Mui-disabled": { opacity: 0.4, color: "#fff" },
                 }}
               >
-                {loading ? <CircularProgress size={20} color="inherit" /> : `Withdraw ${typeof amountCoins === "number" && amountCoins >= MIN_COINS ? `$${withdrawUsd.toFixed(2)}` : "Now"}`}
+                {loading ? <CircularProgress size={20} color="inherit" /> : `Withdraw ${typeof amountCoins === "number" && amountCoins >= minCoins ? `$${withdrawUsd.toFixed(2)}` : "Now"}`}
               </Button>
             </Box>
           </Paper>

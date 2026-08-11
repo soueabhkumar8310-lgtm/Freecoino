@@ -1,142 +1,152 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
+/**
+ * Daily Bonus System
+ * 
+ * Requirements:
+ * 1. User must earn at least 1000 coins in one day (from any offerwall or mixed)
+ * 2. Streak continues only if user claims bonus on consecutive days
+ * 3. Streak resets to day 1 after completing day 7 or missing any day
+ * 4. Can only claim once per day (UTC timezone)
+ * 
+ * Rewards by streak day:
+ * - Day 1: 10 coins
+ * - Day 2: 20 coins
+ * - Day 3: 30 coins
+ * - Day 4: 40 coins
+ * - Day 5: 50 coins
+ * - Day 6: 75 coins
+ * - Day 7: 100 coins
+ * - Day 8+: Resets to Day 1 (10 coins)
+ */
+
+// Streak-based bonus: day 1 = 10, day 2 = 20, ..., day 7 = 100
 const STREAK_REWARDS = [0, 10, 20, 30, 40, 50, 75, 100];
 
-export async function POST(req: Request) {
-  try {
-    const supabase = await createServerClient();
+function getReward(streakDay: number): number {
+  return STREAK_REWARDS[Math.min(streakDay, 7)];
+}
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+export async function POST() {
+  const supabase = await createClient();
 
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    // Use admin client to bypass RLS for inserts/updates
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check if already claimed today (UTC)
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+
+  const { data: existingClaim } = await supabase
+    .from("daily_bonus_claims")
+    .select("id")
+    .eq("user_id", user.id)
+    .gte("claimed_at", todayStart.toISOString())
+    .limit(1)
+    .maybeSingle();
+
+  if (existingClaim) {
+    return NextResponse.json({ error: "Already claimed today" }, { status: 400 });
+  }
+
+  // Check if user earned at least 1000 coins ($1) today (from all completions)
+  const { data: todayCompletions } = await supabase
+    .from("completions")
+    .select("coins_awarded")
+    .eq("player_id", user.id)
+    .gte("created_at", todayStart.toISOString());
+
+  const todayCoinsEarned = todayCompletions?.reduce(
+    (sum, c) => sum + (c.coins_awarded || 0),
+    0
+  ) || 0;
+
+  if (todayCoinsEarned < 1000) {
+    return NextResponse.json(
+      { error: `Earn at least 1000 coins ($1) today to claim bonus. You have earned ${todayCoinsEarned} coins today.` },
+      { status: 400 }
     );
+  }
 
-    // 1. Check if user has earned 1000 coins today
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+  // Get last claim to check streak
+  const { data: lastClaim } = await supabase
+    .from("daily_bonus_claims")
+    .select("streak_day, claimed_at")
+    .eq("user_id", user.id)
+    .order("claimed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-    const { data: transactions } = await supabaseAdmin
-      .from("transactions")
-      .select("amount")
-      .eq("user_id", user.id)
-      .gte("created_at", todayStart.toISOString());
+  let streakDay = 1;
 
-    const todayCoinsEarned =
-      transactions?.reduce((sum, tx) => (tx.amount > 0 ? sum + tx.amount : sum), 0) || 0;
+  if (lastClaim) {
+    const lastDate = new Date(lastClaim.claimed_at);
+    lastDate.setUTCHours(0, 0, 0, 0);
+    
+    const yesterday = new Date();
+    yesterday.setUTCHours(0, 0, 0, 0);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
 
-    if (todayCoinsEarned < 1000) {
-      return NextResponse.json(
-        { error: "You need to earn 1000 coins today to unlock the daily bonus!" },
-        { status: 400 }
-      );
-    }
-
-    // 2. Fetch last bonus to check streak and if already claimed
-    const { data: bonuses } = await supabaseAdmin
-      .from("daily_bonuses")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("claimed_at", { ascending: false })
-      .limit(1);
-
-    let nextDay = 1;
-
-    if (bonuses && bonuses.length > 0) {
-      const lastClaim = bonuses[0];
-      const lastClaimDate = new Date(lastClaim.claimed_at);
-      const today = new Date();
-      
-      const lastClaimDay = new Date(lastClaimDate.getFullYear(), lastClaimDate.getMonth(), lastClaimDate.getDate());
-      const currentDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      
-      const diffTime = Math.abs(currentDay.getTime() - lastClaimDay.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays === 0) {
-        return NextResponse.json(
-          { error: "You have already claimed your daily bonus today!" },
-          { status: 400 }
-        );
-      } else if (diffDays === 1) {
-        // Continue streak, or reset if completed 7 days
-        nextDay = lastClaim.day_number === 7 ? 1 : lastClaim.day_number + 1;
-      } else {
-        // Streak broken
-        nextDay = 1;
+    // If claimed yesterday, continue streak
+    if (lastDate.getTime() === yesterday.getTime()) {
+      streakDay = lastClaim.streak_day + 1;
+      // After day 7, reset to day 1 (7-day cycle)
+      if (streakDay > 7) {
+        streakDay = 1;
       }
     }
+    // Otherwise streak resets to 1 (missed a day or more)
+  }
 
-    const rewardAmount = STREAK_REWARDS[nextDay] || 10;
+  const reward = getReward(streakDay);
 
-    // 3. Insert into daily_bonuses
-    const { error: bonusError } = await supabaseAdmin
-      .from("daily_bonuses")
-      .insert({
-        user_id: user.id,
-        day_number: nextDay,
-        amount: rewardAmount,
-      });
+  // Insert claim
+  const { error: insertError } = await supabase
+    .from("daily_bonus_claims")
+    .insert({
+      user_id: user.id,
+      coins_awarded: reward,
+      streak_day: streakDay,
+    });
 
-    if (bonusError) {
-      console.error("Daily bonus insert error:", bonusError);
-      return NextResponse.json({ error: "Failed to claim bonus" }, { status: 500 });
-    }
+  if (insertError) {
+    return NextResponse.json({ error: "Failed to claim bonus" }, { status: 500 });
+  }
 
-    // 4. Insert transaction
-    const { error: txError } = await supabaseAdmin
-      .from("transactions")
-      .insert({
-        user_id: user.id,
-        type: "daily_bonus",
-        amount: rewardAmount,
-        description: `Daily Bonus Day ${nextDay}`,
-      });
+  // Credit coins
+  const { error: updateError } = await supabase.rpc("increment_coins", {
+    uid: user.id,
+    amount: reward,
+  });
 
-    if (txError) {
-      console.error("Transaction insert error:", txError);
-      return NextResponse.json({ error: "Failed to record transaction" }, { status: 500 });
-    }
-
-    // 5. Fetch current balance
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
+  if (updateError) {
+    // Fallback: direct update
+    const { data: current } = await supabase
+      .from("users")
       .select("coins_balance")
       .eq("id", user.id)
       .single();
 
-    const currentBalance = profile?.coins_balance || 0;
-
-    // 6. Update profile balance
-    const { error: updateError } = await supabaseAdmin
-      .from("profiles")
-      .update({ coins_balance: currentBalance + rewardAmount })
+    await supabase
+      .from("users")
+      .update({
+        coins_balance: (current?.coins_balance ?? 0) + reward,
+        streak_count: streakDay,
+      })
       .eq("id", user.id);
-
-    if (updateError) {
-      console.error("Profile update error:", updateError);
-      return NextResponse.json({ error: "Failed to update balance" }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      reward: rewardAmount,
-      streakDay: nextDay,
-    });
-  } catch (error) {
-    console.error("Daily bonus catch error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  } else {
+    // Update streak count
+    await supabase
+      .from("users")
+      .update({ streak_count: streakDay })
+      .eq("id", user.id);
   }
+
+  return NextResponse.json({ streakDay, reward });
 }

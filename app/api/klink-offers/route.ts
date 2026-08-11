@@ -1,135 +1,94 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getUserCountry } from '@/lib/get-user-country';
+
+const KLINK_PUB_ID = 'd317e5b6-8977-4e79-9df3-66ff86e77645';
+const KLINK_API_KEY = '86fb70a41761b1ba2835da8f7ac9b481345363d8e8e123da0679ec63dadf9339';
+
+function formatDisplayPayout(value: number): number {
+  if (value <= 0) return 0;
+  if (value >= 0.01) return parseFloat(value.toFixed(2));
+  const str = value.toFixed(10);
+  const dec = str.split('.')[1] || '';
+  let firstNonZero = -1;
+  for (let i = 0; i < dec.length; i++) {
+    if (dec[i] !== '0') { firstNonZero = i + 1; break; }
+  }
+  return firstNonZero > 0 ? parseFloat(value.toFixed(firstNonZero)) : 0;
+}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
-    const country = searchParams.get('country') || 'IN';
+    const user_id = searchParams.get('user_id');
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'user_id is required' },
-        { status: 400 }
-      );
+    if (!user_id) {
+      return NextResponse.json({ success: false, error: 'user_id is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.KLINK_API_KEY;
-    const publisherId = process.env.KLINK_PUBLISHER_ID || '489cbf22-91da-4cea-9b75-06488105d4e7';
-
-    if (!apiKey || !publisherId) {
-      console.error('❌ Klink API key or Publisher ID not configured');
-      return NextResponse.json({
-        success: false,
-        error: 'Klink API key not configured',
-        offers: [],
-      });
-    }
-
-    // Klink requires "pubId:apiKey" format for authorization
-    const authToken = `${publisherId}:${apiKey}`;
-    console.log('✅ Klink Auth Token format: pubId:apiKey');
-
-    const endpoint = 'https://klink-quest.klink.finance/api/v1/publisher/offers';
-    const params = new URLSearchParams({
-      limit: '100',
-      country: country,
+    const country = await getUserCountry(request, {
+      overrideCountry: searchParams.get('country_code'),
+      fallback: '',
     });
+    const categoryFilter = searchParams.get('category');
 
-    console.log('🔄 Fetching Klink offers...');
+    const fetchOffers = async () => {
+      const apiUrl = new URL('https://klink-quest.klink.finance/api/v1/publisher/offers');
+      if (country) apiUrl.searchParams.append('country', country);
+      apiUrl.searchParams.append('sort_by', 'epc');
+      apiUrl.searchParams.append('page', '1');
+      apiUrl.searchParams.append('limit', '2000');
 
-    let response;
-    try {
-      response = await fetch(`${endpoint}?${params.toString()}`, {
-        method: 'GET',
+      const response = await fetch(apiUrl.toString(), {
         headers: {
+          'Authorization': `Bearer ${KLINK_PUB_ID}:${KLINK_API_KEY}`,
           'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(30000),
       });
-    } catch (fetchError) {
-      console.error('❌ Klink API fetch error:', fetchError);
-      return NextResponse.json({
-        success: true,
-        offers: [],
-        message: 'Klink API timeout or network error',
-      });
-    }
 
-    if (!response || !response.ok) {
-      const errorText = await response?.text();
-      console.error(`❌ Klink API failed: ${response?.status} - ${errorText?.substring(0, 200)}`);
-      return NextResponse.json({
-        success: true,
-        offers: [],
-        message: 'Klink API error. Use embedded offerwall instead.',
-        iframeUrl: `https://offerwall.klinkfinance.com/wall?pub_id=${publisherId}&user_id=${userId}`,
-      });
-    }
+      if (!response.ok) {
+        console.error(`[klink-offers] API returned ${response.status}`);
+        return [];
+      }
 
-    const data = await response.json();
+      const data = await response.json();
+      return Array.isArray(data.data) ? data.data : [];
+    };
 
-    // Klink API returns data.data array
-    const rawOffers = data.data || data.offers || [];
-    
-    if (!Array.isArray(rawOffers)) {
-      console.error('❌ Klink API response format unexpected:', typeof rawOffers);
-      return NextResponse.json({
-        success: true,
-        offers: [],
-        message: 'Unexpected Klink API response format',
-      });
-    }
+    const items = await fetchOffers();
 
-    // Transform Klink offers to our standard format
-    const offers = rawOffers.map((offer: any) => {
-      // Klink uses locale-based strings (e.g., name.en, description.en)
-      const getName = (obj: any) => {
-        if (typeof obj === 'string') return obj;
-        return obj?.en || obj?.default || Object.values(obj || {})[0] || '';
-      };
+    const seen = new Set<string>();
+    const offers: any[] = [];
 
-      return {
-        offer_id: String(offer.offerId || offer.id || ''),
-        name: getName(offer.name) || 'Klink Offer',
-        description1: getName(offer.description) || getName(offer.instructions) || '',
-        description2: getName(offer.requirements) || getName(offer.objective) || '',
-        description3: getName(offer.terms) || '',
-        image_url: offer.images?.logo || offer.previewUrl || offer.icon || offer.image || 'https://via.placeholder.com/150',
-        payout: Math.round((parseFloat(offer.totalPayout || offer.payout || 0) * 1000)), // Convert USD to coins (×1000)
-        // Klink API doesn't provide individual offer click URLs
-        // Redirect to Klink offerwall iframe with user_id as tracking
-        click_url: `https://offerwall.klinkfinance.com/wall?pub_id=${publisherId}&user_id=${userId}&offer_id=${offer.offerId || offer.id}`,
-        categories: offer.categories || offer.category ? (Array.isArray(offer.category) ? offer.category : [offer.category]) : [],
-        events: (offer.activities || offer.conversions || offer.events || []).map((e: any) => ({
-          id: String(e.eventId || e.id || e.uuid || ''),
-          name: getName(e.name) || getName(e.description) || getName(e.eventName) || 'Event',
-          payout: Math.round((parseFloat(e.payout || e.reward || 0) * 1000)), // Convert USD to coins
-        })),
+    for (const offer of items) {
+      if (offer.isActive === false) continue;
+      if (seen.has(offer.offerId)) continue;
+      seen.add(offer.offerId);
+
+      offers.push({
+        offer_id: offer.offerId,
+        name: offer.name?.en || offer.offerId,
+        description1: offer.description?.en || '',
+        image_url: offer.images?.logo || '',
+        payout: formatDisplayPayout((parseFloat(offer.totalPayout) || 0) * 0.70),
+        categories: Array.isArray(offer.categories) ? offer.categories : [],
         provider: 'Klink',
-        trackingType: offer.conversionType || offer.type || 'CPA',
-        device: offer.deviceName || offer.platform || 'all',
-      };
-    });
-
-    console.log(`✅ Klink offers loaded: ${offers.length}`);
-
-    return NextResponse.json({
-      success: true,
-      offers,
-      count: offers.length,
-    });
-
+        device: offer.deviceName ? [offer.deviceName] : ['desktop'],
+        trackingType: offer.activities?.length > 1 ? 'CPE' : 'CPA',
+        events: Array.isArray(offer.activities) && offer.activities.length > 0
+          ? offer.activities.map((a: any) => ({
+              id: a.eventId,
+              name: a.name,
+              payout: formatDisplayPayout((parseFloat(a.payout) || 0) * 0.70),
+            }))
+          : undefined,
+        click_url: `https://klink-quest.klink.finance/redirect?pubId=${KLINK_PUB_ID}&offerId=${offer.offerId}&userId=${user_id}`,
+      });
+    }
+    
+    return NextResponse.json({ success: true, offers, total: offers.length });
   } catch (error) {
-    console.error('❌ Klink API error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch Klink offers',
-        offers: [],
-      },
-      { status: 500 }
-    );
+    console.error('[klink-offers] Error:', error);
+    return NextResponse.json({ success: true, offers: [], total: 0 });
   }
 }

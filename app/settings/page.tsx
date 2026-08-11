@@ -44,7 +44,7 @@ export default function SettingsPage() {
     }
     if (user) {
       setDisplayName(user.name || "");
-      setLtcAddress(user.ltc_address || "");
+      setLtcAddress(user.crypto_address || "");
       setLoaded(true);
     }
   }, [user, isLoading, router]);
@@ -54,8 +54,8 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       const { error } = await supabase
-        .from("profiles")
-        .update({ display_name: displayName, ltc_address: ltcAddress })
+        .from("users")
+        .update({ display_name: displayName, crypto_address: ltcAddress })
         .eq("id", user.id);
       if (error) throw error;
       toast.success(t("settings.saved"));

@@ -50,9 +50,9 @@ export default function LeaderboardClient({ userId }: { userId: string }) {
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-        // Try leaderboard view/table first
+        // Try leaderboard cache table first
         const { data: lbData, error: lbError } = await supabase
-          .from("leaderboard")
+          .from("leaderboard_cache")
           .select("rank, user_id, display_name, monthly_earnings")
           .order("rank", { ascending: true })
           .limit(50);
@@ -60,20 +60,20 @@ export default function LeaderboardClient({ userId }: { userId: string }) {
         if (!lbError && lbData && lbData.length > 0) {
           setLeaderboard(lbData);
         } else {
-          // Fallback: compute from profiles monthly earnings
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, display_name, coins_balance")
-            .order("coins_balance", { ascending: false })
+          // Fallback: compute from users monthly earnings
+          const { data: users } = await supabase
+            .from("users")
+            .select("id, display_name, this_month_earnings")
+            .order("this_month_earnings", { ascending: false })
             .limit(50);
 
-          if (profiles) {
+          if (users) {
             setLeaderboard(
-              profiles.map((p, i) => ({
+              users.map((u, i) => ({
                 rank: i + 1,
-                user_id: p.id,
-                display_name: p.display_name || "Anonymous",
-                monthly_earnings: p.coins_balance || 0,
+                user_id: u.id,
+                display_name: u.display_name || "Anonymous",
+                monthly_earnings: u.this_month_earnings || 0,
               }))
             );
           }

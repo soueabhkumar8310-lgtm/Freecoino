@@ -1,32 +1,41 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
-export async function POST(req: Request) {
-  try {
-    const { notificationIds } = await req.json();
+export async function POST(request: NextRequest) {
+  const supabase = await createClient();
 
-    if (!notificationIds || !Array.isArray(notificationIds) || notificationIds.length === 0) {
-      return NextResponse.json({ success: true });
-    }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const { error } = await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .in('id', notificationIds);
-
-    if (error) {
-      console.error('Error marking notifications as read:', error);
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Notifications read API error:', error);
-    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { notificationIds } = (await request.json()) as {
+    notificationIds?: string[];
+  };
+
+  if (!notificationIds || !Array.isArray(notificationIds) || notificationIds.length === 0) {
+    return NextResponse.json({ error: "No notification IDs provided" }, { status: 400 });
+  }
+
+  // Mark targeted notifications as read
+  await supabase
+    .from("notifications")
+    .update({ read: true })
+    .eq("user_id", user.id)
+    .in("id", notificationIds);
+
+  // For broadcast notifications, insert into notification_reads (ignore conflicts)
+  const broadcastReads = notificationIds.map((nid) => ({
+    notification_id: nid,
+    user_id: user.id,
+  }));
+
+  await supabase
+    .from("notification_reads")
+    .upsert(broadcastReads, { onConflict: "notification_id,user_id", ignoreDuplicates: true });
+
+  return NextResponse.json({ success: true });
 }

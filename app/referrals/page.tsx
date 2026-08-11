@@ -2,6 +2,23 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import ReferralsClient from "@/components/referrals-client";
+import { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Referral Program — Earn from Friends",
+  description: "Invite friends to Freecoino and earn a percentage of their earnings as a bonus. Share your unique referral code and grow your passive income.",
+  alternates: {
+    canonical: "/referrals",
+  },
+};
+
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain || local.length <= 2) return `**@${domain ?? "***"}`;
+  return `${local.slice(0, 2)}${"*".repeat(Math.min(local.length - 2, 4))}@${domain}`;
+}
 
 export default async function ReferralsPage() {
   const supabase = await createClient();
@@ -14,55 +31,51 @@ export default async function ReferralsPage() {
     redirect("/auth/login");
   }
 
-  // Fetch current user's profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("coins_balance, display_name, avatar_url, referral_code")
-    .eq("id", user.id)
-    .single();
+  const [userResult, referredUsersResult] = await Promise.all([
+    supabase
+      .from("users")
+      .select("referral_code, coins_balance, total_earned, pending_referral_earnings, display_name")
+      .eq("id", user.id)
+      .single(),
 
-  if (!profile) {
-    redirect("/");
-  }
+    // Get users who were referred by this user (using referred_by field)
+    supabase
+      .from("users")
+      .select("id, email, created_at, total_earned, email_verified")
+      .eq("referred_by", user.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  // Fetch real referrals (users who used this user's ID as referred_by)
-  const { data: referredUsers } = await supabase
-    .from("profiles")
-    .select("id, display_name, created_at")
-    .eq("referred_by", user.id)
-    .order("created_at", { ascending: false });
+  const referralCode = userResult.data?.referral_code ?? "";
+  const coins = userResult.data?.coins_balance ?? 0;
+  const totalReferrals = referredUsersResult.data?.length ?? 0;
+  const pendingReferralEarnings = userResult.data?.pending_referral_earnings ?? 0;
 
-  // Fetch total earned from referrals
-  const { data: transactions } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("user_id", user.id)
-    .eq("type", "referral");
+  // Calculate total coins earned from referrals (5% of each verified referral's total_earned)
+  const totalCoins = (referredUsersResult.data ?? []).reduce(
+    (sum, row) => sum + (row.email_verified ? Math.round((row.total_earned ?? 0) * 0.05) : 0),
+    0
+  );
 
-  const totalEarned =
-    transactions?.reduce((sum, tx) => sum + tx.amount, 0) || 0;
-
-  // Format referrals for the client component
-  const formattedReferrals =
-    referredUsers?.map((u) => ({
-      id: u.id,
-      masked_email: u.display_name, // Using display name instead of masked email for privacy
-      created_at: u.created_at,
-    })) || [];
+  const referrals = (referredUsersResult.data ?? []).map((row) => ({
+    id: row.id,
+    masked_email: row.email ? maskEmail(row.email) : "***",
+    created_at: row.created_at,
+  }));
 
   return (
-    <AppShell
-      coins={profile.coins_balance}
+    <AppShell 
+      coins={coins}
       userId={user.id}
-      userName={profile.display_name}
-      userAvatar={profile.avatar_url}
+      userName={userResult.data?.display_name ?? "User"}
+      userAvatar={undefined}
     >
       <ReferralsClient
-        referralCode={profile.referral_code}
-        totalReferrals={formattedReferrals.length}
-        totalCoins={totalEarned}
-        referrals={formattedReferrals}
-        pendingEarnings={0}
+        referralCode={referralCode}
+        totalReferrals={totalReferrals}
+        totalCoins={totalCoins}
+        referrals={referrals}
+        pendingEarnings={pendingReferralEarnings}
       />
     </AppShell>
   );

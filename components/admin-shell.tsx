@@ -27,6 +27,7 @@ import {
   ArrowLeft,
   Settings,
   Star,
+  ShieldAlert,
 } from "lucide-react";
 
 import Icons from "@/components/icons";
@@ -38,6 +39,7 @@ const drawerWidth = 220;
 const ADMIN_NAV_ITEMS = [
   { label: "Dashboard", href: "/admin", Icon: LayoutDashboard },
   { label: "Users", href: "/admin/users", Icon: Users },
+  { label: "Flagged Users", href: "/admin/users/flagged", Icon: ShieldAlert },
   { label: "Withdrawals", href: "/admin/withdrawals", Icon: Wallet },
   { label: "Reviews", href: "/admin/reviews", Icon: Star },
   { label: "Notifications", href: "/admin/notifications", Icon: Bell },

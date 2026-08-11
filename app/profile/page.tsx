@@ -1,71 +1,90 @@
-"use client";
-
-import { useAuth } from "@/lib/contexts/AuthContext";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import ProfileClient from "@/components/profile-client";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Box, CircularProgress } from "@mui/material";
-import colors from "@/theme/colors";
 
-export default function ProfilePage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-  const [profileData, setProfileData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/auth/login");
-    } else if (user) {
-      // Fetch real profile data
-      // For now, using basic user data from auth
-      setProfileData({
-        totalCompletions: 0, // TODO: Fetch from database
-        totalWithdrawals: 0, // TODO: Fetch from database
-        monthEarned: 0, // TODO: Calculate from database
-        memberSince: new Date().toISOString(), // TODO: Get from user metadata
-      });
-      setLoading(false);
-    }
-  }, [user, isLoading, router]);
+export default async function ProfilePage() {
+  const supabase = await createClient();
 
-  if (isLoading || loading || !user) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          bgcolor: colors.background.default,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <CircularProgress size={40} sx={{ color: colors.secondary }} />
-      </Box>
-    );
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth/login");
   }
 
+  const { data: userData } = await supabase
+    .from("users")
+    .select("coins_balance, display_name, crypto_address, total_earned, streak_count, created_at, email_verified, referred_by")
+    .eq("id", user.id)
+    .single();
+
+  // Get referrer info if user was referred
+  let referrerInfo = null;
+  if (userData?.referred_by) {
+    const { data: referrer } = await supabase
+      .from("users")
+      .select("email, display_name, referral_code")
+      .eq("id", userData.referred_by)
+      .single();
+    if (referrer) {
+      referrerInfo = {
+        email: referrer.email,
+        displayName: referrer.display_name,
+        referralCode: referrer.referral_code
+      };
+    }
+  }
+
+  const { count: completionsCount } = await supabase
+    .from("completions")
+    .select("*", { count: "exact", head: true })
+    .eq("player_id", user.id);
+
+  const totalCompletions = completionsCount ?? 0;
+
+  const { count: withdrawalCount } = await supabase
+    .from("withdrawals")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  // Get this month's earnings
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  
+  const { data: monthlyData } = await supabase
+    .from("completions")
+    .select("coins_awarded")
+    .eq("player_id", user.id)
+    .gte("created_at", startOfMonth);
+
+  const monthEarned = monthlyData?.reduce((sum, c) => sum + Math.round(Number(c.coins_awarded || 0)), 0) || 0;
+
+  const coins = userData?.coins_balance ?? 0;
+
   return (
-    <AppShell
-      coins={user.coins_balance || 0}
+    <AppShell 
+      coins={coins} 
       userId={user.id}
-      userName={user.name}
-      userAvatar={user.avatar}
+      userName={userData?.display_name ?? "User"}
+      userAvatar={undefined}
     >
       <ProfileClient
         userId={user.id}
-        email={user.email}
-        displayName={user.name}
-        cryptoAddress="" // TODO: Get from database
-        totalEarned={user.coins_balance || 0}
-        streakCount={0} // TODO: Get from database
-        totalCompletions={profileData.totalCompletions}
-        totalWithdrawals={profileData.totalWithdrawals}
-        monthEarned={profileData.monthEarned}
-        memberSince={profileData.memberSince}
-        emailVerified={true} // Supabase users are email verified
-        referredBy={null} // TODO: Get from database
+        email={user.email ?? ""}
+        displayName={userData?.display_name ?? ""}
+        cryptoAddress={userData?.crypto_address ?? ""}
+        totalEarned={userData?.total_earned ?? 0}
+        streakCount={userData?.streak_count ?? 0}
+        totalCompletions={totalCompletions}
+        totalWithdrawals={withdrawalCount ?? 0}
+        monthEarned={monthEarned}
+        memberSince={userData?.created_at ?? user.created_at}
+        emailVerified={userData?.email_verified ?? false}
+        referredBy={referrerInfo}
       />
     </AppShell>
   );

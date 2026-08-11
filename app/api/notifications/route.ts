@@ -1,48 +1,73 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('user_id');
+export const dynamic = "force-dynamic";
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
+export async function GET() {
+  const supabase = await createClient();
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    const { data: notifications, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(50);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    if (error) {
-      console.error('Error fetching notifications:', error);
-      return NextResponse.json({ notifications: [], unread_count: 0 });
-    }
+  // Fetch targeted notifications for this user (exclude dismissed)
+  const { data: targeted } = await supabase
+    .from("notifications")
+    .select("id, title, message, read, created_at, type, is_dismissed")
+    .eq("user_id", user.id)
+    .eq("is_dismissed", false)
+    .order("created_at", { ascending: false })
+    .limit(30);
 
-    const unreadCount = notifications?.filter((n) => !n.is_read).length || 0;
-    const mapped = notifications?.map((n) => ({
+  // Fetch broadcast notifications
+  const { data: broadcasts } = await supabase
+    .from("notifications")
+    .select("id, title, message, created_at")
+    .eq("is_broadcast", true)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  // Fetch which broadcasts this user has read
+  const broadcastIds = (broadcasts ?? []).map((b) => b.id);
+  let readBroadcastIds: Set<string> = new Set();
+
+  if (broadcastIds.length > 0) {
+    const { data: reads } = await supabase
+      .from("notification_reads")
+      .select("notification_id")
+      .eq("user_id", user.id)
+      .in("notification_id", broadcastIds);
+
+    readBroadcastIds = new Set((reads ?? []).map((r) => r.notification_id));
+  }
+
+  // Merge and sort
+  const all = [
+    ...(targeted ?? []).map((n) => ({
       id: n.id,
       title: n.title,
       message: n.message,
-      read: n.is_read,
+      read: n.read,
       created_at: n.created_at,
       is_broadcast: false,
-    })) || [];
+      type: n.type || "general",
+    })),
+    ...(broadcasts ?? []).map((n) => ({
+      id: n.id,
+      title: n.title,
+      message: n.message,
+      read: readBroadcastIds.has(n.id),
+      created_at: n.created_at,
+      is_broadcast: true,
+    })),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 30);
 
-    return NextResponse.json({
-      notifications: mapped,
-      unread_count: unreadCount,
-    });
-  } catch (error) {
-    console.error('Notifications API error:', error);
-    return NextResponse.json({ notifications: [], unread_count: 0 });
-  }
+  const unreadCount = all.filter((n) => !n.read).length;
+
+  return NextResponse.json({ notifications: all, unreadCount });
 }

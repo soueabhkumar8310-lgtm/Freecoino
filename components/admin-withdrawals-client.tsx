@@ -49,11 +49,11 @@ const PAGE_SIZE = 20;
 const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   pending: { color: "#facc15", bg: "rgba(250,204,21,0.15)" },
   processing: { color: "#60a5fa", bg: "rgba(96,165,250,0.15)" },
-  completed: { color: "#01D676", bg: "rgba(1, 214, 118,0.15)" },
-  rejected: { color: "#f87171", bg: "rgba(239,68,68,0.15)" },
+  paid: { color: "#10B981", bg: "rgba(16,185,129,0.15)" },
+  failed: { color: "#f87171", bg: "rgba(239,68,68,0.15)" },
 };
 
-const TABS = ["all", "pending", "completed", "rejected"] as const;
+const TABS = ["all", "pending", "paid", "failed"] as const;
 
 export default function AdminWithdrawalsClient({ initialWithdrawals, initialTotal }: AdminWithdrawalsClientProps) {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>(initialWithdrawals);
@@ -63,9 +63,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [approveDialog, setApproveDialog] = useState<string | null>(null);
-  const [rejectDialog, setRejectDialog] = useState<string | null>(null);
   const [txHash, setTxHash] = useState("");
-  const [rejectionReason, setRejectionReason] = useState("");
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
@@ -111,7 +109,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
     });
     if (res.ok) {
       setWithdrawals((prev) =>
-        prev.map((w) => (w.id === approveDialog ? { ...w, status: "completed", tx_hash: txHash } : w))
+        prev.map((w) => (w.id === approveDialog ? { ...w, status: "paid", tx_hash: txHash } : w))
       );
       setToast({ open: true, message: "Withdrawal approved successfully.", severity: "success" });
     } else {
@@ -123,29 +121,22 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
     setActionLoading(null);
   }
 
-  async function handleReject() {
-    if (!rejectDialog) return;
-    
-    setActionLoading(rejectDialog);
+  async function handleReject(id: string) {
+    setActionLoading(id);
     const res = await fetch("/api/admin/withdrawals/reject", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        withdrawalId: rejectDialog,
-        reason: rejectionReason.trim() || 'No reason provided'
-      }),
+      body: JSON.stringify({ withdrawalId: id }),
     });
     if (res.ok) {
       setWithdrawals((prev) =>
-        prev.map((w) => (w.id === rejectDialog ? { ...w, status: "rejected" } : w))
+        prev.map((w) => (w.id === id ? { ...w, status: "failed" } : w))
       );
       setToast({ open: true, message: "Withdrawal rejected and coins refunded.", severity: "success" });
     } else {
       const data = await res.json();
       setToast({ open: true, message: data.error || "Failed to reject withdrawal.", severity: "error" });
     }
-    setRejectDialog(null);
-    setRejectionReason("");
     setActionLoading(null);
   }
 
@@ -153,7 +144,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
     <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, sm: 3, md: 4 }, py: 4, pb: { xs: 12, lg: 4 } }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" isBold sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Wallet size={24} color="#01D676" />
+          <Wallet size={24} color="#10B981" />
           Withdrawal Management
         </Typography>
         <Typography variant="body2" color="textSecondary">{total} total withdrawals</Typography>
@@ -189,7 +180,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
         {withdrawals.map((w) => {
           const sc = STATUS_COLORS[w.status] ?? STATUS_COLORS.pending;
           return (
-            <Paper key={w.id} sx={{ borderRadius: 3, border: `1px solid ${colors.divider}`, bgcolor: colors.primary, p: 2 }}>
+            <Paper key={w.id} sx={{ borderRadius: 3, border: `1px solid ${colors.divider}`, bgcolor: colors.background.primary, p: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.8rem" }} truncate>{w.user_email}</Typography>
                 <Box sx={{ borderRadius: 50, px: 1.25, py: 0.25, fontSize: "10px", fontWeight: 600, bgcolor: sc.bg, color: sc.color, textTransform: "capitalize" }}>
@@ -200,7 +191,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
                 <Typography sx={{ fontSize: "0.6rem", color: colors.text.secondary, fontFamily: "monospace" }}>
                   {w.user_id.slice(0, 8)}...{w.user_id.slice(-4)}
                 </Typography>
-                <IconButton size="small" onClick={() => copyText(w.user_id, "User ID")} sx={{ p: 0.25, bgcolor: "transparent" }}>
+                <IconButton size="small" onClick={() => copyText(w.user_id, "User ID")} sx={{ p: 0.5, bgcolor: "transparent" }}>
                   <Copy size={10} color={colors.text.secondary} />
                 </IconButton>
               </Box>
@@ -212,7 +203,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
               <Typography variant="body2" sx={{ fontWeight: 600 }}>{w.coins.toLocaleString()} coins (${w.amount_usd.toFixed(2)})</Typography>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
                 <Typography sx={{ fontSize: "0.7rem", color: colors.text.secondary, fontFamily: "monospace" }}>LTC: {w.crypto_address.slice(0, 6)}...{w.crypto_address.slice(-4)}</Typography>
-                <IconButton size="small" onClick={() => copyText(w.crypto_address, "Address")} sx={{ p: 0.25 }}>
+                <IconButton size="small" onClick={() => copyText(w.crypto_address, "Address")} sx={{ p: 0.5 }}>
                   <Copy size={12} color={colors.text.secondary} />
                 </IconButton>
               </Box>
@@ -220,10 +211,10 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
                 <Box sx={{ display: "flex", gap: 1, mt: 1.5 }}>
                   <Button size="small" onClick={() => { setApproveDialog(w.id); setTxHash(""); }} disabled={actionLoading === w.id}
                     startIcon={<CheckCircle size={14} />}
-                    sx={{ textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#01D676", bgcolor: "rgba(1, 214, 118,0.1)", borderRadius: 2, flex: 1 }}>
+                    sx={{ textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#10B981", bgcolor: "rgba(16,185,129,0.1)", borderRadius: 2, flex: 1 }}>
                     Approve
                   </Button>
-                  <Button size="small" onClick={() => { setRejectDialog(w.id); setRejectionReason(""); }} disabled={actionLoading === w.id}
+                  <Button size="small" onClick={() => handleReject(w.id)} disabled={actionLoading === w.id}
                     startIcon={<XCircle size={14} />}
                     sx={{ textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#f87171", bgcolor: "rgba(239,68,68,0.1)", borderRadius: 2, flex: 1 }}>
                     Reject
@@ -241,7 +232,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
           <TableHead>
             <TableRow>
               {["User", "Date", "Coins", "USD", "Address", "Status", "TX Hash", "Actions"].map((h) => (
-                <TableCell key={h} sx={{ color: colors.text.secondary, fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", borderColor: colors.divider, bgcolor: colors.primary }}>
+                <TableCell key={h} sx={{ color: colors.text.secondary, fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", borderColor: colors.divider, bgcolor: colors.background.secondary }}>
                   {h}
                 </TableCell>
               ))}
@@ -257,7 +248,7 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
                     <Tooltip title="Click to copy full UID" arrow>
                       <Box
                         onClick={() => copyText(w.user_id, "User ID")}
-                        sx={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 0.5, fontSize: "0.65rem", fontFamily: "monospace", color: colors.text.secondary, "&:hover": { color: "#01D676" } }}
+                        sx={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 0.5, fontSize: "0.65rem", fontFamily: "monospace", color: colors.text.secondary, "&:hover": { color: "#10B981" } }}
                       >
                         {w.user_id.slice(0, 8)}...
                         <Copy size={9} />
@@ -268,13 +259,13 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
                     {new Date(w.requested_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </TableCell>
                   <TableCell sx={{ borderColor: colors.divider, color: "#fff", fontWeight: 600 }}>{w.coins.toLocaleString()}</TableCell>
-                  <TableCell sx={{ borderColor: colors.divider, color: "#01D676", fontWeight: 600 }}>${w.amount_usd.toFixed(2)}</TableCell>
+                  <TableCell sx={{ borderColor: colors.divider, color: "#10B981", fontWeight: 600 }}>${w.amount_usd.toFixed(2)}</TableCell>
 
                   <TableCell sx={{ borderColor: colors.divider, color: colors.text.secondary, fontSize: "0.75rem", maxWidth: 160 }}>
                     <Tooltip title="Copy full address" arrow>
                       <Box
                         onClick={() => copyText(w.crypto_address, "Address")}
-                        sx={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 0.5, fontFamily: "monospace", "&:hover": { color: "#01D676" } }}
+                        sx={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 0.5, fontFamily: "monospace", "&:hover": { color: "#10B981" } }}
                       >
                         {w.crypto_address.slice(0, 10)}...{w.crypto_address.slice(-6)}
                         <Copy size={11} />
@@ -293,10 +284,10 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
                     {w.status === "pending" && (
                       <Box sx={{ display: "flex", gap: 0.5 }}>
                         <Button size="small" onClick={() => { setApproveDialog(w.id); setTxHash(""); }} disabled={actionLoading === w.id}
-                          sx={{ minWidth: 0, textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#01D676", bgcolor: "rgba(1, 214, 118,0.1)", borderRadius: 2, px: 1.5 }}>
+                          sx={{ minWidth: 0, textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#10B981", bgcolor: "rgba(16,185,129,0.1)", borderRadius: 2, px: 1.5 }}>
                           {actionLoading === w.id ? <CircularProgress size={14} color="inherit" /> : "Approve"}
                         </Button>
-                        <Button size="small" onClick={() => { setRejectDialog(w.id); setRejectionReason(""); }} disabled={actionLoading === w.id}
+                        <Button size="small" onClick={() => handleReject(w.id)} disabled={actionLoading === w.id}
                           sx={{ minWidth: 0, textTransform: "none", fontSize: "0.7rem", fontWeight: 600, color: "#f87171", bgcolor: "rgba(239,68,68,0.1)", borderRadius: 2, px: 1.5 }}>
                           Reject
                         </Button>
@@ -314,12 +305,12 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
       {totalPages > 1 && (
         <Box sx={{ mt: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Button size="small" onClick={() => fetchWithdrawals(page - 1, filter)} disabled={page === 0 || loading} startIcon={<ChevronLeft size={14} />}
-            sx={{ color: colors.text.secondary, bgcolor: colors.primary, border: `1px solid ${colors.divider}`, fontSize: "0.75rem", textTransform: "none" }}>
+            sx={{ color: colors.text.secondary, bgcolor: colors.background.primary, border: `1px solid ${colors.divider}`, fontSize: "0.75rem", textTransform: "none" }}>
             Prev
           </Button>
           <Typography sx={{ fontSize: "0.75rem", color: colors.text.secondary }}>Page {page + 1} of {totalPages}</Typography>
           <Button size="small" onClick={() => fetchWithdrawals(page + 1, filter)} disabled={page >= totalPages - 1 || loading} endIcon={<ChevronRight size={14} />}
-            sx={{ color: colors.text.secondary, bgcolor: colors.primary, border: `1px solid ${colors.divider}`, fontSize: "0.75rem", textTransform: "none" }}>
+            sx={{ color: colors.text.secondary, bgcolor: colors.background.primary, border: `1px solid ${colors.divider}`, fontSize: "0.75rem", textTransform: "none" }}>
             Next
           </Button>
         </Box>
@@ -329,13 +320,16 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
       <Dialog
         open={!!approveDialog}
         onClose={() => setApproveDialog(null)}
+        fullWidth
+        maxWidth="xs"
         slotProps={{
           paper: {
             sx: {
               bgcolor: colors.background.default,
               border: `1px solid ${colors.divider}`,
               borderRadius: 4,
-              minWidth: 400,
+              m: { xs: 2 },
+              width: { xs: "calc(100% - 32px)", sm: 400 },
             },
           },
         }}
@@ -369,55 +363,6 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
         </DialogActions>
       </Dialog>
 
-      {/* Reject Dialog */}
-      <Dialog
-        open={!!rejectDialog}
-        onClose={() => setRejectDialog(null)}
-        slotProps={{
-          paper: {
-            sx: {
-              bgcolor: colors.background.default,
-              border: `1px solid ${colors.divider}`,
-              borderRadius: 4,
-              minWidth: 400,
-            },
-          },
-        }}
-      >
-        <DialogTitle sx={{ borderBottom: `1px solid ${colors.divider}`, py: 1.5 }}>
-          <Typography variant="subtitle1" isBold>Reject Withdrawal</Typography>
-        </DialogTitle>
-        <DialogContent sx={{ pt: "16px !important" }}>
-          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-            Please provide a reason for rejecting this withdrawal. The user will receive this in their email notification.
-          </Typography>
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            placeholder="e.g., Invalid wallet address, Suspicious activity, etc."
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-            size="small"
-          />
-          <Typography variant="caption" sx={{ mt: 1, display: "block", color: colors.text.secondary }}>
-            Note: Coins will be automatically refunded to the user's account.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setRejectDialog(null)} sx={{ textTransform: "none", color: colors.text.secondary }}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleReject}
-            disabled={actionLoading !== null}
-            sx={{ textTransform: "none", fontWeight: 600, bgcolor: "rgba(239,68,68,0.15)", color: "#f87171", borderRadius: 2, px: 3, "&:hover": { bgcolor: "rgba(239,68,68,0.25)" } }}
-          >
-            {actionLoading ? <CircularProgress size={16} color="inherit" /> : "Confirm Rejection"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       {/* Toast Feedback */}
       <Snackbar
         open={toast.open}
@@ -429,10 +374,10 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
           onClose={handleCloseToast}
           severity={toast.severity}
           sx={{
-            bgcolor: toast.severity === "success" ? "rgba(1, 214, 118,0.1)" : "rgba(239,68,68,0.1)",
-            border: `1px solid ${toast.severity === "success" ? "rgba(1, 214, 118,0.3)" : "rgba(239,68,68,0.3)"}`,
-            color: toast.severity === "success" ? "#01D676" : "#f87171",
-            "& .MuiAlert-icon": { color: toast.severity === "success" ? "#01D676" : "#f87171" },
+            bgcolor: toast.severity === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+            border: `1px solid ${toast.severity === "success" ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
+            color: toast.severity === "success" ? "#10B981" : "#f87171",
+            "& .MuiAlert-icon": { color: toast.severity === "success" ? "#10B981" : "#f87171" },
           }}
         >
           {toast.message}

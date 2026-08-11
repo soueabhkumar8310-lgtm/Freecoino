@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const supabase = await createClient();
 
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("users")
       .select("email, display_name, coins_balance, total_earned")
       .eq("id", userId)
       .single();
@@ -27,9 +27,9 @@ export async function POST(req: Request) {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: weeklyCompletions } = await supabase
-      .from("offer_completions")
+      .from("completions")
       .select("coins_awarded, created_at")
-      .eq("user_id", userId)
+      .eq("player_id", userId)
       .gte("created_at", weekAgo);
 
     const weeklyEarned = (weeklyCompletions || []).reduce((sum, c) => sum + (c.coins_awarded || 0), 0);

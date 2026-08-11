@@ -15,22 +15,18 @@ export default async function LeaderboardPage() {
   }
 
   // Fetch user profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("coins_balance, display_name, avatar_url")
+  const { data: userData } = await supabase
+    .from("users")
+    .select("coins_balance, display_name")
     .eq("id", user.id)
     .single();
 
-  if (!profile) {
-    redirect("/");
-  }
-
   return (
     <AppShell
-      coins={profile.coins_balance}
+      coins={userData?.coins_balance ?? 0}
       userId={user.id}
-      userName={profile.display_name}
-      userAvatar={profile.avatar_url}
+      userName={userData?.display_name ?? "User"}
+      userAvatar={undefined}
     >
       <LeaderboardClient userId={user.id} />
     </AppShell>

@@ -1,100 +1,191 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getMinWithdrawalCoins } from "@/lib/get-min-withdrawal";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const COINS_PER_USD = 1000;
 
-// Service role client for admin operations (balance deduction)
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+async function sendTelegramNotification(details: {
+  userId: string;
+  email: string;
+  coins: number;
+  amount_usd: number;
+  address: string;
+}) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+
+  const text = [
+    "💸 *New Withdrawal Request*",
+    "",
+    `*User:* ${details.email}`,
+    `*User ID:* \`${details.userId}\``,
+    `*Coins:* ${details.coins.toLocaleString()}`,
+    `*Amount:* $${details.amount_usd.toFixed(2)}`,
+    `*Address (LTC):* \`${details.address}\``,
+  ].join("\n");
+
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "Markdown",
+      }),
+    });
+  } catch {
+    // Telegram notification is best-effort; don't block the withdrawal
+  }
+}
 
 export async function POST(request: NextRequest) {
-  try {
-    // Bug #1 Fix: Verify user session from cookies — never trust body user_id
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      supabaseUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          },
-        },
-      }
-    );
+  const supabase = await createClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized — please login again' },
-        { status: 401 }
-      );
-    }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    const body = await request.json();
-    const { amount_coins, address } = body;
-    // Bug #1 Fix: Use session user.id — ignore any user_id from body
-    const user_id = user.id;
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    // Validate input
-    if (!amount_coins || !address) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
+  const MIN_COINS = await getMinWithdrawalCoins();
 
-    if (amount_coins < 2000) {
-      return NextResponse.json(
-        { error: 'Minimum withdrawal is 2,000 coins' },
-        { status: 400 }
-      );
-    }
+  const body = await request.json();
+  const { amount_coins, address } = body as { amount_coins?: number; address?: string };
 
-    // Bug #4 Fix: Use DB-level atomic transaction via process_withdrawal RPC
-    // This prevents race conditions — balance check + deduction happen atomically
-    const { data: withdrawalId, error: rpcError } = await supabaseAdmin
-      .rpc('process_withdrawal', {
-        p_user_id: user_id,
-        p_amount: amount_coins,
-        p_method: 'litecoin',
-        p_wallet_address: address.trim(),
-      });
-
-    if (rpcError) {
-      console.error('process_withdrawal RPC error:', rpcError);
-      if (rpcError.message?.includes('Insufficient balance')) {
-        return NextResponse.json(
-          { error: 'Insufficient coins' },
-          { status: 400 }
-        );
-      }
-      return NextResponse.json(
-        { error: 'Failed to create withdrawal request' },
-        { status: 500 }
-      );
-    }
-
-    const amount_usd = amount_coins / 1000;
-
-    return NextResponse.json({
-      success: true,
-      withdrawal_id: withdrawalId,
-      coins: amount_coins,
-      amount_usd,
-      message: 'Withdrawal request submitted successfully',
-    });
-
-  } catch (error) {
-    console.error('Withdrawal API error:', error);
+  if (!address || typeof address !== "string" || address.trim().length < 10) {
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Please enter a valid LTC wallet address" },
+      { status: 400 }
     );
   }
+
+  if (!amount_coins || typeof amount_coins !== "number" || amount_coins < MIN_COINS) {
+    return NextResponse.json(
+      { error: `Minimum withdrawal is ${MIN_COINS} coins` },
+      { status: 400 }
+    );
+  }
+
+  // Get current balance
+  const { data: userData, error: userError } = await supabase
+    .from("users")
+    .select("coins_balance, is_banned, email_verified, fraud_status, vpn_detected_count, mismatch_count")
+    .eq("id", user.id)
+    .single();
+
+  if (userError || !userData) {
+    return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });
+  }
+
+  if (userData.is_banned) {
+    return NextResponse.json({ error: "Your account has been suspended" }, { status: 403 });
+  }
+
+  if (!userData.email_verified) {
+    return NextResponse.json({ error: "Please verify your email address to cash out" }, { status: 403 });
+  }
+
+  const hasExistingFraudHits =
+    (userData.vpn_detected_count || 0) > 0 ||
+    (userData.mismatch_count || 0) > 0;
+
+  if (hasExistingFraudHits && userData.fraud_status !== "cashout_blocked") {
+    const adminClient = createAdminClient();
+    await adminClient
+      .from("users")
+      .update({ fraud_status: "cashout_blocked" })
+      .eq("id", user.id);
+  }
+
+  // Fraud status check - block cashout if flagged
+  if (userData.fraud_status === "cashout_blocked" || userData.fraud_status === "suspended" || hasExistingFraudHits) {
+    // Insert notification for user (only if they don't already have an undismissed one)
+    const adminClient = createAdminClient();
+    const { data: existingNotif } = await adminClient
+      .from("notifications")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("type", "cashout_blocked")
+      .eq("is_dismissed", false)
+      .limit(1);
+
+    if (!existingNotif || existingNotif.length === 0) {
+      await adminClient.from("notifications").insert({
+        user_id: user.id,
+        title: "Cashouts Paused",
+        message:
+          "Hey! \uD83D\uDC4B We have noticed some unusual activity in your account. As a result, we've paused cashouts for now. If this doesn't seem right, please contact support so we can help clear it up.",
+        type: "cashout_blocked",
+        read: false,
+        is_dismissed: false,
+      });
+    }
+
+    return NextResponse.json(
+      { error: "cashout_blocked", fraud: true },
+      { status: 403 }
+    );
+  }
+
+  const { coins_balance: coins } = userData;
+
+  if (coins < amount_coins) {
+    return NextResponse.json(
+      { error: "Insufficient coin balance" },
+      { status: 400 }
+    );
+  }
+
+  const amount_usd = amount_coins / COINS_PER_USD;
+
+  // Deduct requested coins (gte guard prevents race conditions)
+  const { error: deductError } = await supabase
+    .from("users")
+    .update({ coins_balance: coins - amount_coins })
+    .eq("id", user.id)
+    .gte("coins_balance", amount_coins);
+
+  if (deductError) {
+    return NextResponse.json({ error: "Failed to deduct balance" }, { status: 500 });
+  }
+
+  const { error: insertError } = await supabase.from("withdrawals").insert({
+    user_id: user.id,
+    coins: amount_coins,
+    amount_usd,
+    crypto_address: address.trim(),
+    status: "pending",
+  });
+
+  if (insertError) {
+    // Attempt to restore coins on insert failure
+    await supabase
+      .from("users")
+      .update({ coins_balance: coins })
+      .eq("id", user.id);
+
+    return NextResponse.json({ error: "Failed to create withdrawal" }, { status: 500 });
+  }
+
+  // Update user's crypto address for future convenience if they want to
+  await supabase
+    .from("users")
+    .update({ crypto_address: address.trim() })
+    .eq("id", user.id);
+
+  // Best-effort Telegram notification
+  sendTelegramNotification({
+    userId: user.id,
+    email: user.email ?? "unknown",
+    coins: amount_coins,
+    amount_usd,
+    address: address.trim(),
+  });
+
+  return NextResponse.json({ success: true, amount_usd, coins: amount_coins });
 }

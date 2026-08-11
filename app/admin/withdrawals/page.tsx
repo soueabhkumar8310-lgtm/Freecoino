@@ -1,79 +1,50 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/admin-auth";
 import AdminShell from "@/components/admin-shell";
 import AdminWithdrawalsClient from "@/components/admin-withdrawals-client";
+
+export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
 
 export default async function AdminWithdrawalsPage() {
-  const supabase = await createClient();
-  
-  // Check authentication
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { adminSupabase } = await requireAdmin();
 
-  if (!user) {
-    redirect("/auth/login");
-  }
-
-  // Check admin access — Bug #7 Fix: env variable use karo
-  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'soueabhkumar8310@gmail.com';
-  if (user.email !== ADMIN_EMAIL) {
-    redirect("/");
-  }
-
-  // Create admin client to bypass RLS
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  // Fetch initial withdrawals data
-  const { data: withdrawals, count, error } = await supabaseAdmin
+  const { data: withdrawals, count } = await adminSupabase
     .from("withdrawals")
-    .select(`
-      id,
-      user_id,
-      amount,
-      method,
-      wallet_address,
-      status,
-      created_at
-    `, { count: 'exact' })
-    .order("created_at", { ascending: false })
+    .select(
+      "id, user_id, coins, amount_usd, crypto_address, status, tx_hash, requested_at",
+      { count: "exact" }
+    )
+    .order("requested_at", { ascending: false })
     .range(0, PAGE_SIZE - 1);
 
-  if (error) {
-    console.error("Error fetching withdrawals:", error);
+  const raw = withdrawals ?? [];
+
+  // Fetch user emails
+  const userIds = [...new Set(raw.map((w) => w.user_id))];
+  const emailMap: Record<string, string> = {};
+
+  if (userIds.length > 0) {
+    const { data: users } = await adminSupabase
+      .from("users")
+      .select("id, email")
+      .in("id", userIds);
+
+    for (const u of users ?? []) {
+      emailMap[u.id] = u.email;
+    }
   }
 
-  // Fetch auth users to get emails
-  const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
-  const usersList = authData?.users || [];
-
-  // Transform data to match expected format
-  const transformedWithdrawals = withdrawals?.map((w: any) => {
-    const authUser = usersList.find(u => u.id === w.user_id);
-    return {
-      id: w.id,
-      user_id: w.user_id,
-      coins: w.amount,
-      amount_usd: w.amount / 1000, // 1000 coins = $1
-      crypto_address: w.wallet_address,
-      status: w.status,
-      tx_hash: null,
-      requested_at: w.created_at,
-      user_email: authUser?.email || 'Unknown User',
-    };
-  }) || [];
+  const enriched = raw.map((w) => ({
+    ...w,
+    user_email: emailMap[w.user_id] ?? "Unknown",
+  }));
 
   return (
     <AdminShell>
       <AdminWithdrawalsClient
-        initialWithdrawals={transformedWithdrawals}
-        initialTotal={count || 0}
+        initialWithdrawals={enriched}
+        initialTotal={count ?? 0}
       />
     </AdminShell>
   );

@@ -1,69 +1,96 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/admin-auth";
 import AdminShell from "@/components/admin-shell";
 import AdminDashboardClient from "@/components/admin-dashboard-client";
 
-// Bug #7 Fix: Use env variable instead of hardcoded email
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "soueabhkumar8310@gmail.com";
+export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
-  const supabase = await createClient();
-
-  // Check authentication
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/auth/login");
-  }
-
-  // Check admin access
-  if (user.email !== ADMIN_EMAIL) {
-    redirect("/");
-  }
-
-  // Bug #11 Fix: Fetch real stats from DB instead of hardcoded zeros
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+export default async function AdminDashboardPage() {
+  const { adminSupabase } = await requireAdmin();
 
   const [
-    { count: totalUsers },
-    { data: coinsData },
-    { count: pendingWithdrawals },
-    { count: totalCompletions },
-    { count: bannedUsers },
+    usersResult,
+    pendingResult,
+    completionsCountResult,
+    coinsDataResult,
+    chargebackResult,
+    bannedResult,
+    recentResult,
   ] = await Promise.all([
-    supabaseAdmin.from("profiles").select("*", { count: "exact", head: true }),
-    supabaseAdmin.from("profiles").select("coins_balance"),
-    supabaseAdmin
+    adminSupabase.from("users").select("id", { count: "exact", head: true }),
+    adminSupabase
       .from("withdrawals")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("status", "pending"),
-    supabaseAdmin
-      .from("offer_completions")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "completed"),
-    supabaseAdmin
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-      .not("referred_by", "is", null), // use a flag column if available
+    adminSupabase
+      .from("completions")
+      .select("id", { count: "exact", head: true })
+      .gt("coins_awarded", 0),
+    adminSupabase
+      .from("completions")
+      .select("coins_awarded"),
+    adminSupabase
+      .from("completions")
+      .select("coins_awarded")
+      .lt("coins_awarded", 0),
+    adminSupabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .eq("is_banned", true),
+    adminSupabase
+      .from("completions")
+      .select("id, player_id, program_id, offer_name, payout_decimal, coins_awarded, source, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5),
   ]);
 
-  const totalCoins =
-    coinsData?.reduce((sum, p) => sum + (p.coins_balance || 0), 0) ?? 0;
+  const totalUsers = usersResult.count ?? 0;
+  const pendingWithdrawals = pendingResult.count ?? 0;
+  const totalCompletions = completionsCountResult.count ?? 0;
+  const bannedUsers = bannedResult.count ?? 0;
+
+  const allCoins = coinsDataResult.data ?? [];
+  const totalCoins = allCoins.reduce(
+    (sum: number, t: { coins_awarded: number }) => sum + (Math.max(t.coins_awarded ?? 0, 0)),
+    0
+  );
+  const netCoins = allCoins.reduce(
+    (sum: number, t: { coins_awarded: number }) => sum + (t.coins_awarded ?? 0),
+    0
+  );
+
+  const chargebackData = chargebackResult.data ?? [];
+  const totalChargebacks = chargebackData.length;
+  const totalChargebackCoins = chargebackData.reduce(
+    (sum: number, t: { coins_awarded: number }) => sum + Math.abs(t.coins_awarded ?? 0),
+    0
+  );
+
+  const recentCompletions = recentResult.data ?? [];
+  const userIds = [...new Set(recentCompletions.map(c => c.player_id))];
+  const userMap: Record<string, { email: string; display_name: string | null }> = {};
+  if (userIds.length > 0) {
+    const { data: usersData } = await adminSupabase
+      .from("users")
+      .select("id, email, display_name")
+      .in("id", userIds);
+    for (const u of (usersData ?? [])) {
+      userMap[u.id] = { email: u.email, display_name: u.display_name };
+    }
+  }
 
   return (
     <AdminShell>
       <AdminDashboardClient
-        totalUsers={totalUsers || 0}
+        totalUsers={totalUsers}
         totalCoins={totalCoins}
-        pendingWithdrawals={pendingWithdrawals || 0}
-        totalCompletions={totalCompletions || 0}
-        bannedUsers={bannedUsers || 0}
+        pendingWithdrawals={pendingWithdrawals}
+        totalCompletions={totalCompletions}
+        bannedUsers={bannedUsers}
+        totalChargebacks={totalChargebacks}
+        totalChargebackCoins={totalChargebackCoins}
+        netCoins={netCoins}
+        recentCompletions={recentCompletions}
+        userMap={userMap}
       />
     </AdminShell>
   );

@@ -1,36 +1,36 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import AppShell from "@/components/app-shell";
 import MyOffersClient from "@/components/my-offers-client";
 
+export const metadata = {
+  title: "My Offers - Freecoino",
+  description: "Track your offer progress and earnings",
+};
+
 export default async function MyOffersPage() {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/auth/login");
   }
 
-  // Fetch user profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("coins_balance, display_name, avatar_url")
+  // Get user data for AppShell
+  const { data: userData } = await supabase
+    .from("users")
+    .select("coins_balance, display_name")
     .eq("id", user.id)
     .single();
 
-  if (!profile) {
-    redirect("/");
-  }
+  const coins = userData?.coins_balance ?? 0;
 
   return (
-    <AppShell
-      coins={profile.coins_balance}
+    <AppShell 
+      coins={coins} 
       userId={user.id}
-      userName={profile.display_name}
-      userAvatar={profile.avatar_url}
+      userName={userData?.display_name ?? "User"}
+      userAvatar={undefined}
     >
       <MyOffersClient userId={user.id} />
     </AppShell>

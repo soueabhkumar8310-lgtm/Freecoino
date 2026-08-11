@@ -1,70 +1,103 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Track Offer Click API
+ * 
+ * Records when a user clicks on an offer to start tracking their progress.
+ * This endpoint is called when users click "Play and Earn" button in OfferDetailsModal.
+ */
 
-export async function POST(req: NextRequest) {
+import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Missing Supabase env vars');
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const { userId, offerId, offerName, provider, payout, clickUrl, events } = await req.json();
+    const body = await request.json();
+    const {
+      user_id,
+      offer_id,
+      offer_name,
+      provider,
+      click_url,
+      image_url,
+      payout,
+      tracking_type,
+      events
+    } = body;
 
-    if (!userId || !offerId || !provider) {
+    // Validate required fields
+    if (!user_id || !offer_id || !offer_name || !provider || !click_url || payout === undefined) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = getSupabase();
 
-    // Check if already exists
-    const { data: existing } = await supabaseAdmin
-      .from("offer_completions")
-      .select("id, status")
-      .eq("user_id", userId)
-      .eq("offer_id", offerId)
+    // Check if offer click already exists (within 24 hours)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: existing } = await supabase
+      .from('user_offer_interactions')
+      .select('id, clicked_at')
+      .eq('user_id', user_id)
+      .eq('offer_id', offer_id)
+      .eq('provider', provider)
+      .gte('clicked_at', twentyFourHoursAgo)
       .single();
 
     if (existing) {
-      return NextResponse.json({ success: true, data: existing });
+      return NextResponse.json({
+        success: true,
+        message: 'Offer click already tracked',
+        data: existing
+      });
     }
 
-    const eventsArray = Array.isArray(events) ? events : [];
-    const maxPayout = eventsArray.length > 0
-      ? Math.max(...eventsArray.map((e: any) => parseInt(e.payout) || 0), payout || 0)
-      : (payout || 0);
-
-    // Insert with pending status
-    const { data, error } = await supabaseAdmin
-      .from("offer_completions")
+    // Insert new offer interaction
+    const { data, error } = await supabase
+      .from('user_offer_interactions')
       .insert({
-        user_id: userId,
-        offer_id: offerId,
-        offer_name: offerName || "Unknown Offer",
-        offer_provider: provider,
-        amount_earned: 0,
-        payout_potential: maxPayout,
-        coins_awarded: 0,
-        click_url: clickUrl || null,
-        events_json: eventsArray,
-        status: "pending",
+        user_id,
+        offer_id,
+        offer_name,
+        provider: provider.toLowerCase(),
+        click_url,
+        image_url,
+        payout: parseFloat(payout),
+        tracking_type: tracking_type?.toUpperCase() || null,
+        status: 'started',
+        events_json: events || []
       })
       .select()
       .single();
 
     if (error) {
-      console.error("Track offer click error:", error);
+      console.error('[track-offer-click] Insert error:', error);
       return NextResponse.json(
-        { success: false, error: "Failed to track click" },
+        { success: false, error: error.message },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true, data });
-  } catch (error) {
-    console.error("Track offer click catch error:", error);
+    return NextResponse.json({
+      success: true,
+      message: 'Offer click tracked successfully',
+      data
+    });
+
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[track-offer-click] Error:', message);
     return NextResponse.json(
-      { success: false, error: "Internal Server Error" },
+      { success: false, error: message },
       { status: 500 }
     );
   }

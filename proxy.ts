@@ -15,7 +15,7 @@ const protectedRoutes = [
   '/offers',
 ]
 
-// Pages that should redirect to /earn if user is already logged in  
+// Pages that should redirect to /earn if user is already logged in
 const authRoutes = ['/auth/login', '/auth/signup']
 
 export async function proxy(request: NextRequest) {
@@ -52,11 +52,33 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Get session
-  const { data: { session } } = await supabase.auth.getSession()
+  // Get user (refreshes the auth token by contacting the Supabase Auth server)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // If user is banned, redirect to /banned (skip API routes)
+  if (
+    user &&
+    !pathname.startsWith('/api') &&
+    !pathname.startsWith('/auth') &&
+    !pathname.startsWith('/banned')
+  ) {
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('is_banned')
+      .eq('id', user.id)
+      .single()
+
+    if (userRecord?.is_banned) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/banned'
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
 
   // If user is not logged in and trying to access protected route
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !user) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/auth/login'
     redirectUrl.searchParams.set('redirectedFrom', pathname)
@@ -65,7 +87,7 @@ export async function proxy(request: NextRequest) {
 
   // If user is logged in and trying to access auth routes (only for GET requests)
   // Allow POST/PUT requests to pass through for logout/signup actions
-  if (isAuthRoute && session && request.method === 'GET') {
+  if (isAuthRoute && user && request.method === 'GET') {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/earn'
     return NextResponse.redirect(redirectUrl)
@@ -82,8 +104,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
-     * - api routes
+     * - static assets
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

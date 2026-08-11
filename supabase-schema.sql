@@ -8,12 +8,18 @@
 -- =====================================================
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
+  email TEXT,
   display_name TEXT NOT NULL,
   avatar_url TEXT,
   coins_balance INTEGER DEFAULT 0 CHECK (coins_balance >= 0),
+  total_earned INTEGER DEFAULT 0,
+  streak_count INTEGER DEFAULT 0,
+  crypto_address TEXT,
   referral_code TEXT UNIQUE NOT NULL,
   referred_by UUID REFERENCES auth.users(id),
   email_verified BOOLEAN DEFAULT FALSE,
+  is_banned BOOLEAN DEFAULT FALSE,
+  ban_reason TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -42,8 +48,9 @@ CREATE INDEX idx_profiles_referred_by ON public.profiles(referred_by);
 CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('earn', 'withdraw', 'referral', 'bonus', 'daily_bonus')),
+  type TEXT NOT NULL CHECK (type IN ('earn', 'withdraw', 'referral', 'bonus', 'daily_bonus', 'chargeback')),
   amount INTEGER NOT NULL,
+  balance_after INTEGER,
   description TEXT,
   metadata JSONB DEFAULT '{}',
   status TEXT DEFAULT 'completed' CHECK (status IN ('completed', 'pending', 'failed', 'cancelled')),
@@ -137,8 +144,12 @@ CREATE TABLE IF NOT EXISTS public.offer_completions (
   offer_id TEXT NOT NULL,
   offer_name TEXT NOT NULL,
   offer_provider TEXT NOT NULL,
-  amount_earned INTEGER NOT NULL,
+  amount_earned INTEGER NOT NULL DEFAULT 0,
+  coins_awarded INTEGER NOT NULL DEFAULT 0,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'rejected')),
+  click_url TEXT,
+  events_json JSONB DEFAULT '[]'::jsonb,
+  payout_potential INTEGER DEFAULT 0,
   completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, offer_id)
 );
@@ -193,9 +204,10 @@ CREATE INDEX idx_notifications_created_at ON public.notifications(created_at DES
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, display_name, avatar_url, referral_code, email_verified)
+  INSERT INTO public.profiles (id, email, display_name, avatar_url, referral_code, email_verified)
   VALUES (
     NEW.id,
+    NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1)),
     NEW.raw_user_meta_data->>'avatar_url',
     substring(md5(random()::text || NEW.id::text) from 1 for 8),
@@ -286,9 +298,9 @@ BEGIN
   VALUES (p_user_id, p_amount, p_method, p_wallet_address, 'pending')
   RETURNING id INTO v_withdrawal_id;
   
-  -- Record transaction
-  INSERT INTO public.transactions (user_id, type, amount, balance_after, description)
-  VALUES (p_user_id, 'withdraw', -p_amount, v_current_balance - p_amount, 'Withdrawal request');
+  -- Record transaction with withdrawal_id in metadata
+  INSERT INTO public.transactions (user_id, type, amount, balance_after, description, metadata)
+  VALUES (p_user_id, 'withdraw', -p_amount, v_current_balance - p_amount, 'Withdrawal request', jsonb_build_object('withdrawal_id', v_withdrawal_id));
   
   RETURN v_withdrawal_id;
 END;
