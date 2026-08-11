@@ -1793,7 +1793,7 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return `${myLeadBaseUrl}${myLeadBaseUrl.includes("?") ? "&" : "?"}uid=${userId}`;
     }
     if (activeWall === "CPX Research") {
-      const appId = "32037";
+      const appId = "3528";
       const cpxHash = process.env.NEXT_PUBLIC_CPX_SECURE_HASH || "";
       const encodedName = encodeURIComponent(userName || "");
       const encodedEmail = encodeURIComponent(userEmail || "");
