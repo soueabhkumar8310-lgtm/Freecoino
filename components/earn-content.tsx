@@ -11,6 +11,7 @@ import Typography from "@/components/ui/Typography";
 import colors from "@/theme/colors";
 import CheckIcon from "@mui/icons-material/Check";
 import { QRCodeSVG } from "qrcode.react";
+import { formatPayout } from "@/lib/format-coins";
 
 type EarnContentProps = {
   userId: string;
@@ -271,7 +272,7 @@ function OfferDetailsModal({
                     color: "#01D676",
                   }}
                 >
-                  ${(Number(offer.payout) / 1000).toFixed(2)}
+                  ${formatPayout(offer.payout)}
                 </Typography>
                 <Box
                   sx={{
@@ -339,7 +340,7 @@ function OfferDetailsModal({
                   fill="currentColor"
                 />
               </svg>
-              Play and Earn ${(Number(offer.payout) / 1000).toFixed(2)}
+              Play and Earn ${formatPayout(offer.payout)}
             </Box>
           </Box>
         </Box>
@@ -458,7 +459,7 @@ function OfferDetailsModal({
                       fontWeight: 700,
                     }}
                   >
-                    ${(Number(event.payout) / 1000).toFixed(2)}
+                    ${formatPayout(event.payout)}
                   </Typography>
                   <Box
                     sx={{
@@ -1364,7 +1365,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
                   Game
                 </Typography>
                 <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600, color: "#01D676" }}>
-                  ${(Number(offer.payout) / 1000).toFixed(2)}
+                  ${formatPayout(offer.payout)}
                 </Typography>
               </Box>
             </Box>
@@ -1434,8 +1435,8 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
                   {/* Payout */}
                   <Box sx={{ textAlign: "right", flexShrink: 0 }}>
                     <Typography sx={{ fontSize: { xs: "0.8rem", sm: "0.9rem" }, fontWeight: 700, color: "#01D676" }}>
-                      ${(Number(offer.payout) / 1000).toFixed(2)}
-                    </Typography>
+                  ${formatPayout(offer.payout)}
+                </Typography>
                   </Box>
                   {/* Action */}
                   <Box

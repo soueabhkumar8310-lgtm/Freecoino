@@ -10,6 +10,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Typography from "@/components/ui/Typography";
 import colors from "@/theme/colors";
+import { formatPayout } from "@/lib/format-coins";
 import { QRCodeSVG } from "qrcode.react";
 
 type DeviceOS = "android" | "ios" | "windows";
@@ -330,7 +331,7 @@ function OfferDetailsModal({
                     color: "#01D676",
                   }}
                 >
-                  ${(Number(offer.payout) / 1000).toFixed(2)}
+                  ${formatPayout(offer.payout)}
                 </Typography>
                 <Box
                   sx={{
@@ -398,7 +399,7 @@ function OfferDetailsModal({
                   fill="currentColor"
                 />
               </svg>
-              Play and Earn ${(Number(offer.payout) / 1000).toFixed(2)}
+              Play and Earn ${formatPayout(offer.payout)}
             </Box>
           </Box>
         </Box>
@@ -517,7 +518,7 @@ function OfferDetailsModal({
                       fontWeight: 700,
                     }}
                   >
-                    ${(Number(event.payout) / 1000).toFixed(2)}
+                    ${formatPayout(event.payout)}
                   </Typography>
                   <Box
                     sx={{
@@ -903,7 +904,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
               name: offer.name || offer.title || offer.offer_name,
               description1: offer.description || offer.instructions || "",
               image_url: offer.image || offer.icon || "https://via.placeholder.com/150",
-              payout: parseFloat(offer.payout || offer.reward || offer.amount || 0),
+              payout: Math.round((parseFloat(offer.payout || offer.reward || offer.amount || 0) / 1000) * 100) / 100,
               click_url: offer.link || offer.tracking_link || offer.click_url,
               provider: "Notik",
               trackingType: offer.conversion_type || offer.type || "CPA",
@@ -1180,7 +1181,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
                     </Typography>
 
                     <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600 }}>
-                      ${(Number(offer.payout) / 1000).toFixed(2)}
+                      ${formatPayout(offer.payout)}
                     </Typography>
                   </Box>
                 </Box>
