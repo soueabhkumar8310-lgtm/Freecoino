@@ -1776,7 +1776,7 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
 
     // Timewall - open in new window (game downloads don't work in iframe)
     if (wall === "Timewall") {
-      const placementId = "ba72f7d1dde24922";
+      const placementId = process.env.NEXT_PUBLIC_TIMEWALL_PLACEMENT_ID || "";
       const timewallUrl = `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
       window.open(timewallUrl, '_blank', 'noopener,noreferrer');
       return;
@@ -1843,7 +1843,7 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return apiKey ? `https://wall.taskwall.net/v1/${apiKey}/show/${userId}` : "";
     }
     if (activeWall === "Timewall") {
-      const placementId = "ba72f7d1dde24922";
+      const placementId = process.env.NEXT_PUBLIC_TIMEWALL_PLACEMENT_ID || "";
       return `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
     }
     if (activeWall === "Klink") {
