@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserCountry } from '@/lib/get-user-country';
 
-const KLINK_PUB_ID = 'd317e5b6-8977-4e79-9df3-66ff86e77645';
-const KLINK_API_KEY = '86fb70a41761b1ba2835da8f7ac9b481345363d8e8e123da0679ec63dadf9339';
+const KLINK_PUB_ID = process.env.KLINK_PUBLISHER_ID || '';
+const KLINK_API_KEY = process.env.KLINK_API_KEY || '';
 
 function formatDisplayPayout(value: number): number {
   if (value <= 0) return 0;

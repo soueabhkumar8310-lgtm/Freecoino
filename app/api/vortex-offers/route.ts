@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     const apiKey = process.env.VORTEX_API_KEY;
-    const placementId = process.env.VORTEX_PLACEMENT_ID || '69dfafd0a982f180b5caa54c';
+    const placementId = process.env.VORTEX_PLACEMENT_ID || '';
 
     if (!apiKey) {
       console.error('❌ Vortex API key not configured');

@@ -741,7 +741,7 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       } catch {}
       
       // Fetch from all offerwalls: Gemiad, Notik, Vortex, KLink, Revtoo, and Taskwall
-      const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
+      const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "";
       const [gemiadResponse, vortexResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}&country=${country}`),
         fetch(`/api/vortex-offers?user_id=${userId}&country=${country}`),
@@ -1768,7 +1768,7 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
 
     // Taskwall - open in new window
     if (wall === "Taskwall") {
-      const apiKey = process.env.NEXT_PUBLIC_TASKWALL_API_KEY || "cdc9bb0a7d0537bab7f68b94e632cdda";
+      const apiKey = process.env.NEXT_PUBLIC_TASKWALL_API_KEY || "";
       const taskwallUrl = `https://wall.taskwall.io/?app_id=${apiKey}&userid=${userId}`;
       window.open(taskwallUrl, '_blank', 'noopener,noreferrer');
       return;
@@ -1801,13 +1801,13 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       return `https://offers.cpx-research.com/index.php?app_id=${appId}&ext_user_id=${userId}&secure_hash=${cpxHash}&username=${encodedName}&email=${encodedEmail}&subid_1=&subid_2`;
     }
     if (activeWall === "Vortex") {
-      const placementId = "69dfafd0a982f180b5caa54c";
+      const placementId = process.env.NEXT_PUBLIC_VORTEX_PLACEMENT_ID || "";
       return `https://vortexwall.com/ow/${placementId}/${userId}`;
     }
     if (activeWall === "Notik") {
-      const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
-      const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "uuGH0N";
-      const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "WI24gd7OaJ";
+      const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "";
+      const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "";
+      const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "";
       // Try Notik's direct offerwall URL format (without /offerwall path)
       return `https://notik.me/coins?api_key=${apiKey}&pub_id=${pubId}&app_id=${appId}&user_id=${userId}`;
     }
@@ -1848,7 +1848,7 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
     }
     if (activeWall === "Klink") {
       const apiKey = process.env.NEXT_PUBLIC_KLINK_API_KEY || "";
-      const pubId = process.env.NEXT_PUBLIC_KLINK_PUBLISHER_ID || "489cbf22-91da-4cea-9b75-06488105d4e7";
+      const pubId = process.env.NEXT_PUBLIC_KLINK_PUBLISHER_ID || "";
       return `https://offerwall.klinkfinance.com/wall?pub_id=${pubId}&user_id=${userId}`;
     }
     return "";

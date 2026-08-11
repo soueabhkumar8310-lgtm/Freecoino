@@ -864,7 +864,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       } catch {}
       
       // Fetch from Gemiad and Vortex APIs via server, Notik directly from browser (bypass Cloudflare)
-      const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "22Ju1vBsE3L9Wo7ECjCrOYqvvT5jKrBS";
+      const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "";
       const [gemiadResponse, vortexResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
         fetch(`/api/gemiad-offers?user_id=${userId}&country=${country}`),
         fetch(`/api/vortex-offers?user_id=${userId}&country=${country}`),

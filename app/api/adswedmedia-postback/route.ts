@@ -41,7 +41,7 @@ async function handlePostback(request: NextRequest) {
       return ok('ERROR');
     }
 
-    const ADSWSECRET = process.env.ADSWEDMEDIA_SECRET_KEY || 'Hj0Fy0Ay5En2Gq7';
+    const ADSWSECRET = process.env.ADSWEDMEDIA_SECRET_KEY || '';
     const expectedSig = crypto.createHash('md5').update(subId + transId + reward + ADSWSECRET).digest('hex');
 
     if (signature !== expectedSig) {
