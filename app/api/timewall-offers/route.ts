@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Construct Timewall iframe URL
     // Note: Timewall typically provides an iframe embed, not a REST API for offers
-    // The postback URL should be: https://freecoino.com/api/timewall/postback
+    // The postback URL should be: https://freecoino.com/api/timewall-postback
     const timewallUrl = `https://timewall.io/offer-wall/${timewallAppId}?user_id=${userId}`;
 
     // Return the iframe URL and configuration
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       success: true,
       iframeUrl: timewallUrl,
       provider: "Timewall",
-      postbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://freecoino.com'}/api/timewall/postback`,
+      postbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://freecoino.com'}/api/timewall-postback`,
       instructions: "Embed this iframe to show Timewall offers",
     });
   } catch (error) {
