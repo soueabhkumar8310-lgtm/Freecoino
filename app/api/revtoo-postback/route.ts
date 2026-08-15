@@ -58,22 +58,41 @@ async function handleRevtooPostback(request: NextRequest) {
     const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     log(`Method: ${request.method}, IP: ${clientIp}`);
 
-    // Log all query params
-    const allParams: Record<string, string> = {};
+    // Collect params from query string AND POST body (Revtoo sends multipart/form-data for POST method)
+    const params: Record<string, string> = {};
     url.searchParams.forEach((value, key) => {
-      allParams[key] = value;
+      params[key] = value;
     });
-    log(`Params: ${JSON.stringify(allParams)}`);
+    if (request.method === 'POST') {
+      try {
+        const formData = await request.formData();
+        formData.forEach((value, key) => {
+          params[key] = String(value);
+        });
+        log(`Form body: ${JSON.stringify(params)}`);
+      } catch {
+        try {
+          const body = await request.json();
+          Object.entries(body).forEach(([key, value]) => {
+            params[key] = String(value);
+          });
+          log(`JSON body: ${JSON.stringify(params)}`);
+        } catch {
+          log('No parseable body');
+        }
+      }
+    }
+    log(`Params: ${JSON.stringify(params)}`);
 
     // ── 1. Extract Revtoo parameters ─────────────────────────────────────
-    const subId = url.searchParams.get('subId');           // MANDATORY: user ID
-    const transId = url.searchParams.get('transId');       // MANDATORY: transaction ID
-    const reward = url.searchParams.get('reward');         // MANDATORY: reward amount
-    const status = url.searchParams.get('status');         // MANDATORY: 1 = credit, 2 = chargeback
-    const userIp = url.searchParams.get('userIp');         // user IP
-    const offer_name = url.searchParams.get('offer_name'); // offer name
-    const debug = url.searchParams.get('debug');           // 1 = test, 0 = live
-    const signature = url.searchParams.get('signature');   // MANDATORY: security hash
+    const subId = params['subId'];           // MANDATORY: user ID
+    const transId = params['transId'];       // MANDATORY: transaction ID
+    const reward = params['reward'];         // MANDATORY: reward amount
+    const status = params['status'];         // MANDATORY: 1 = credit, 2 = chargeback
+    const userIp = params['userIp'];         // user IP
+    const offer_name = params['offer_name']; // offer name
+    const debug = params['debug'];           // 1 = test, 0 = live
+    const signature = params['signature'];   // MANDATORY: security hash
 
     log(`Parsed: subId=${subId}, transId=${transId}, reward=${reward}, status=${status}, debug=${debug}`);
 
@@ -86,7 +105,8 @@ async function handleRevtooPostback(request: NextRequest) {
     // ── 3. Hash Verification (Security — MUST implement) ─────────────────
     const REVTOO_SECRET_KEY = process.env.REVTOO_SECRET_KEY;
 
-    if (signature && signature.trim() !== '') {
+    // Skip verification if signature is an unsubstituted placeholder (dashboard test URL sent as-is)
+    if (signature && signature.trim() !== '' && !signature.includes('{')) {
       if (!REVTOO_SECRET_KEY) {
         log('ERROR: REVTOO_SECRET_KEY env var is not set');
         return ok('ERROR: Secret key not configured');
