@@ -151,13 +151,15 @@ export async function getIPInfo(ip: string, checkVPN: boolean = true): Promise<I
  * Extract real client IP from request headers
  */
 export function getRealIP(request: Request): string {
+  const cfIp = request.headers.get("cf-connecting-ip");
+  if (cfIp) return cfIp;
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) return realIp;
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     const firstIp = forwarded.split(",")[0]?.trim();
     if (firstIp) return firstIp;
   }
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) return realIp;
   return "127.0.0.1";
 }
 
