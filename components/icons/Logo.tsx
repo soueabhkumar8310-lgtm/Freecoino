@@ -35,7 +35,7 @@ const Logo = ({ href = "/" }: { href?: string }) => {
             lineHeight: 1,
           }}
         >
-          Reward
+          Free
         </Box>
         <Box
           component="span"
@@ -46,7 +46,7 @@ const Logo = ({ href = "/" }: { href?: string }) => {
             lineHeight: 1,
           }}
         >
-          oxy
+          coino
         </Box>
       </Box>
     </Link>
