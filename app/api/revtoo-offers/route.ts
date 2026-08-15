@@ -1,5 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getClientIp, getUserCountry } from '@/lib/get-user-country';
+
+// Extracts client IP from various headers
+function getClientIp(request: NextRequest): string {
+  const cfConnectingIp = request.headers.get('cf-connecting-ip');
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const realIp = request.headers.get('x-real-ip');
+
+  const clientIp = cfConnectingIp || forwardedFor?.split(',')[0]?.trim() || realIp || null;
+
+  // Validate IP format (basic check) - must be valid IPv4
+  if (clientIp && clientIp !== '127.0.0.1' && clientIp !== '::1' && /^[\d.]+$/.test(clientIp)) {
+    return clientIp;
+  }
+
+  // Return a default valid IP if we can't detect one
+  return '1.1.1.1';
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,10 +38,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get country code from headers, then IP geolocation
-    const countryCode = await getUserCountry(request, {
-      overrideCountry: searchParams.get('country') || searchParams.get('country_code'),
-    });
+    // Get country code from headers
+    const cfCountry = request.headers.get('cf-ipcountry');
+    const vercelCountry = request.headers.get('x-vercel-ip-country');
+    const countryCode = cfCountry || vercelCountry || 'US';
 
     // Get client IP
     const clientIp = getClientIp(request);

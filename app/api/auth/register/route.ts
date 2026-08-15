@@ -48,7 +48,7 @@ async function sendVerificationEmail(email: string, token: string) {
         <td align="center">
           ${logoSvg}
           <h1 style="color: #ffffff; margin: 16px 0 20px 0; font-size: 24px; font-weight: 700;">
-            <span style="color: #10B981;">Free</span>coino
+            <span style="color: #10B981;">Reward</span>oxy
           </h1>
         </td>
       </tr>
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
   if (!country && clientIp !== "127.0.0.1") {
     try {
       const countryRes = await fetch(
-        `https://${request.headers.get("host") || "Freecoino.app"}/api/get-country`,
+        `https://${request.headers.get("host") || "freecoino.com"}/api/get-country`,
         {
           headers: {
             "x-forwarded-for": clientIp,

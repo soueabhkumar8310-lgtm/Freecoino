@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getClientIp, getUserCountry } from '@/lib/get-user-country';
 
 // Parse user agent to extract browser and OS details
 function parseUserAgent(userAgent: string) {
@@ -44,6 +43,63 @@ function parseUserAgent(userAgent: string) {
   return { browserName, browserVersion, osVersion };
 }
 
+// Extracts client IP from various headers
+function getClientIp(request: NextRequest): string {
+  const cfConnectingIp = request.headers.get('cf-connecting-ip');
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const realIp = request.headers.get('x-real-ip');
+
+  const clientIp = cfConnectingIp || forwardedFor?.split(',')[0]?.trim() || realIp || null;
+
+  // Validate IP format (basic check) - must be valid IPv4
+  if (clientIp && clientIp !== '127.0.0.1' && clientIp !== '::1' && /^[\d.]+$/.test(clientIp)) {
+    return clientIp;
+  }
+
+  // Return a default valid IP if we can't detect one
+  // This is needed because Notik API requires valid IP format
+  return '1.1.1.1';
+}
+
+// Detect country code from IP using geolocation service
+async function getCountryCodeFromIp(clientIp: string): Promise<string | null> {
+  // Don't try to geolocate localhost or invalid IPs
+  if (clientIp === '1.1.1.1' || clientIp === '127.0.0.1' || clientIp === '::1' || !clientIp) {
+    return null;
+  }
+
+  try {
+    // Use multiple geolocation services for better accuracy
+    const service1Promise = fetch(`http://ip-api.com/json/${clientIp}?fields=countryCode`, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(3000) // 3 second timeout
+    }).then(r => r.ok ? r.json() : null).catch(() => null);
+
+    const service2Promise = fetch(`https://ipapi.co/${clientIp}/json/`, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(3000)
+    }).then(r => r.ok ? r.json() : null).catch(() => null);
+
+    // Race both services, return first successful result
+    const result1 = await service1Promise;
+    if (result1?.countryCode) {
+      return result1.countryCode;
+    }
+
+    const result2 = await service2Promise;
+    if (result2?.country_code) {
+      return result2.country_code;
+    }
+
+    if (result2?.country) {
+      return result2.country;
+    }
+  } catch (geoError) {
+  }
+
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -73,9 +129,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Get country code - try multiple methods
-    let countryCode = await getUserCountry(request, {
-      overrideCountry: override_country,
-    });
+    let countryCode = override_country;
+
+    // Method 1: Check Cloudflare or Vercel headers
+    if (!countryCode) {
+      countryCode = request.headers.get('cf-ipcountry') || request.headers.get('x-vercel-ip-country') || null;
+    }
+
+    // Method 2: Geolocate from IP
+    if (!countryCode) {
+      const clientIp = getClientIp(request);
+      countryCode = await getCountryCodeFromIp(clientIp);
+    }
+
+    // Default fallback
+    countryCode = countryCode || 'US';
 
 
     // Get user agent and parse device details

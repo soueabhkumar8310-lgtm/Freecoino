@@ -22,15 +22,3 @@ export function formatCoinsInt(coins: number | string | null | undefined): strin
   const num = typeof coins === 'string' ? parseFloat(coins) : (coins ?? 0);
   return Math.floor(num).toLocaleString('en-US');
 }
-
-/**
- * Format offerwall payout (already in USD) for display.
- * Payout of -1 means a variable/unknown reward (displayed as infinity).
- * @param payout - The payout in USD (number or string)
- * @returns Formatted string like "$0.02" or "∞"
- */
-export function formatPayout(payout: number | string | null | undefined): string {
-  const num = Number(payout ?? 0);
-  if (num === -1) return "∞";
-  return `$${num.toFixed(2)}`;
-}

@@ -348,8 +348,8 @@ export default function AdminFlaggedUsersClient() {
         onClose={() => setLogsDialogOpen(false)}
         maxWidth="md"
         fullWidth
-        slotProps={{
-          paper: { sx: { bgcolor: colors.background.primary, border: `1px solid ${colors.divider}`, borderRadius: 3 } }
+        PaperProps={{
+          sx: { bgcolor: colors.background.primary, border: `1px solid ${colors.divider}`, borderRadius: 3 }
         }}
       >
         <DialogTitle sx={{ color: "#fff", display: "flex", alignItems: "center", gap: 1 }}>

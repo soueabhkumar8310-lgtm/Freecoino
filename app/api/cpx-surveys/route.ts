@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const appId = "3528";
+    const appId = "32037";
     const secureHashKey = process.env.CPX_SECURE_HASH || "";
     
     if (!secureHashKey) {

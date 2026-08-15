@@ -5,9 +5,8 @@ import { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  alternates: {
-    canonical: "https://Freecoino.app/auth/signup",
-  },
+  title: "Sign Up — Create Your Free Account",
+  robots: { index: false, follow: true },
 };
 
 export default function SignupPage() {

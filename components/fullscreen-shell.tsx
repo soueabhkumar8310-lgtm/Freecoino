@@ -35,27 +35,27 @@ import {
   Menu as MenuIcon,
   X,
   Mail,
-  ShoppingBag,
+  Gamepad2,
   Target,
 } from "lucide-react";
-import { useAuth } from "@/lib/contexts/AuthContext";
+import { createClient } from "@/lib/supabase/client";
 import Icons from "@/components/icons";
 import Typography from "@/components/ui/Typography";
 import NotificationBell from "@/components/notification-bell";
 import BalanceDisplay from "@/components/balance-display";
 import BottomNavbar from "@/components/bottom-navbar";
-import CompletionToast from "@/components/completion-toast";
 import colors from "@/theme/colors";
 
 const NAV_ITEMS = [
   { label: "Earn", href: "/earn", Icon: Gift },
-  { label: "Offers", href: "/offers/all", Icon: ShoppingBag },
   { label: "My Offers", href: "/my-offers", Icon: Target },
+  { label: "Offers", href: "/offers/all", Icon: Gamepad2 },
   { label: "Cashout", href: "/cashout", Icon: Wallet },
   { label: "Rewards", href: "/daily-bonus", Icon: CalendarCheck },
 ];
 
 const DROPDOWN_ITEMS = [
+  { label: "My Offers", href: "/my-offers", Icon: Target },
   { label: "Profile", href: "/profile", Icon: User },
   { label: "Leaderboard", href: "/leaderboard", Icon: Trophy },
   { label: "Referrals", href: "/referrals", Icon: Users },
@@ -64,6 +64,7 @@ const DROPDOWN_ITEMS = [
 
 const ALL_NAV_ITEMS = [
   { label: "Earn", href: "/earn", Icon: Gift },
+  { label: "My Offers", href: "/my-offers", Icon: Target },
   { label: "Profile", href: "/profile", Icon: User },
   { label: "Daily Bonus", href: "/daily-bonus", Icon: CalendarCheck },
   { label: "Cashout", href: "/cashout", Icon: Wallet },
@@ -105,7 +106,7 @@ const footerInfoList: { title: string; links: { text: string; url: string; isEma
 ];
 
 const socialLinks = [
-  { icon: "telegram", url: "https://t.me/Freecoino", label: "Telegram" },
+  { icon: "telegram", url: "https://t.me/freecoino", label: "Telegram" },
 ];
 
 interface FullscreenShellProps {
@@ -127,10 +128,10 @@ export default function FullscreenShell({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const open = Boolean(anchorEl);
-  const { logout } = useAuth();
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
     window.location.href = "/";
   }
 
@@ -143,14 +144,15 @@ export default function FullscreenShell({
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "#0a0b0f" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: colors.background.default }}>
       {/* Top Navigation Bar */}
       <AppBar
         position="fixed"
         elevation={0}
         sx={{
-          bgcolor: "#12131c",
-          borderBottom: `1px solid rgba(255, 255, 255, 0.05)`,
+          bgcolor: "rgba(8,11,18,0.92)",
+          backdropFilter: "blur(20px)",
+          borderBottom: `1px solid ${colors.glass.border}`,
           zIndex: 1300,
         }}
       >
@@ -215,8 +217,8 @@ export default function FullscreenShell({
                     href={href}
                     startIcon={<Icon size={18} />}
                     sx={{
-                      color: isActive ? "#01D676" : colors.text.secondary,
-                      bgcolor: isActive ? "rgba(1, 214, 118, 0.1)" : "transparent",
+                      color: isActive ? "#10B981" : colors.text.secondary,
+                      bgcolor: isActive ? "rgba(16, 185, 129, 0.1)" : "transparent",
                       px: 2,
                       py: 1,
                       borderRadius: 2,
@@ -224,8 +226,8 @@ export default function FullscreenShell({
                       fontWeight: isActive ? 600 : 500,
                       fontSize: "0.9375rem",
                       "&:hover": {
-                        bgcolor: isActive ? "rgba(1, 214, 118, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                        color: isActive ? "#01D676" : colors.text.primary,
+                        bgcolor: isActive ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                        color: isActive ? "#10B981" : colors.text.primary,
                       },
                     }}
                   >
@@ -274,7 +276,7 @@ export default function FullscreenShell({
                 slotProps={{
                   paper: {
                     sx: {
-                      bgcolor: "#1a1b2e",
+                      bgcolor: colors.bgSecondary,
                       border: `1px solid rgba(255, 255, 255, 0.1)`,
                       borderRadius: 2,
                       mt: 1,
@@ -339,8 +341,8 @@ export default function FullscreenShell({
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
             width: 280,
-            bgcolor: "#12131c",
-            borderRight: `1px solid rgba(255, 255, 255, 0.05)`,
+            bgcolor: colors.background.drawer,
+            borderRight: `1px solid ${colors.glass.border}`,
           },
         }}
       >
@@ -394,20 +396,20 @@ export default function FullscreenShell({
                     selected={isActive}
                     sx={{
                       borderRadius: 2,
-                      color: isActive ? "#01D676" : colors.text.primary,
-                      bgcolor: isActive ? "rgba(1, 214, 118, 0.1)" : "transparent",
+                      color: isActive ? "#10B981" : colors.text.primary,
+                      bgcolor: isActive ? "rgba(16, 185, 129, 0.1)" : "transparent",
                       "&:hover": {
-                        bgcolor: isActive ? "rgba(1, 214, 118, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                        bgcolor: isActive ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 255, 255, 0.05)",
                       },
                       "&.Mui-selected": {
-                        bgcolor: "rgba(1, 214, 118, 0.1)",
+                        bgcolor: "rgba(16, 185, 129, 0.1)",
                         "&:hover": {
-                          bgcolor: "rgba(1, 214, 118, 0.15)",
+                          bgcolor: "rgba(16, 185, 129, 0.15)",
                         },
                       },
                     }}
                   >
-                    <ListItemIcon sx={{ minWidth: 40, color: isActive ? "#01D676" : colors.text.secondary }}>
+                    <ListItemIcon sx={{ minWidth: 40, color: isActive ? "#10B981" : colors.text.secondary }}>
                       <Icon size={20} />
                     </ListItemIcon>
                     <ListItemText primary={label} />
@@ -418,7 +420,7 @@ export default function FullscreenShell({
           </List>
 
           {/* Logout Button */}
-          <Box sx={{ p: 2, borderTop: `1px solid rgba(255, 255, 255, 0.05)` }}>
+          <Box sx={{ p: 2, borderTop: `1px solid ${colors.glass.border}` }}>
             <ListItemButton
               onClick={() => {
                 setMobileOpen(false);
@@ -444,19 +446,16 @@ export default function FullscreenShell({
       {/* Main Content - Fullscreen */}
       <Box
         component="main"
+        className="glow-bg"
         sx={{
           flexGrow: 1,
           pt: { xs: 7, sm: 8 },
-          pb: { xs: 10, md: 0 }, // Add padding bottom for mobile bottom navbar
-          bgcolor: "#0a0b0f",
+          pb: { xs: 10, md: 0 },
           minHeight: "100vh",
         }}
       >
         {children}
       </Box>
-
-      {/* Completion Toast Notification */}
-      <CompletionToast />
 
       {/* Bottom Navigation Bar - Mobile & Tablet Only */}
       <BottomNavbar />
@@ -465,9 +464,10 @@ export default function FullscreenShell({
       <Box
         component="footer"
         sx={{
-          bgcolor: "#12131c",
-          borderTop: `1px solid rgba(255, 255, 255, 0.05)`,
+          bgcolor: colors.background.drawer,
+          borderTop: `1px solid ${colors.glass.border}`,
           mt: 4,
+          pb: { xs: 10, md: 0 },
         }}
       >
         <Box
@@ -563,4 +563,3 @@ export default function FullscreenShell({
     </Box>
   );
 }
-

@@ -1,51 +1,128 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { randomBytes } from "crypto";
+import { getIPInfo, getRealIP } from "@/lib/fraud-check";
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/earn'
-  const error = searchParams.get('error')
-  const error_description = searchParams.get('error_description')
+export async function GET(request: NextRequest) {
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get("code");
+  const ref = searchParams.get("ref");
 
-  // If there's already an error from OAuth provider, redirect to login with error
-  if (error) {
-    console.error('OAuth provider error:', error, error_description)
-    return NextResponse.redirect(
-      `${origin}/auth/login?error=${error}&error_description=${error_description || 'Authentication failed'}`
-    )
-  }
+  // Check for terms accepted cookie from Google OAuth signup
+  const cookies = request.headers.get("cookie") || "";
+  const termsAccepted = cookies.includes("oauth_terms_accepted=true");
 
   if (code) {
-    try {
-      const supabase = await createClient()
-      
-      // Exchange code for session
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-      
-      if (exchangeError) {
-        console.error('Code exchange error:', exchangeError)
-        return NextResponse.redirect(
-          `${origin}/auth/login?error=auth_callback_error&error_description=${encodeURIComponent(exchangeError.message)}`
-        )
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      // If this is a new OAuth user, insert into public.users
+      if (user) {
+        const admin = createAdminClient();
+        const { data: existing } = await admin
+          .from("users")
+          .select("id")
+          .eq("id", user.id)
+          .single();
+
+        if (!existing) {
+          // VPN/Proxy/Tor check for new OAuth users (only if VPN detection is enabled)
+          const clientIp = getRealIP(request);
+
+          // Country from Cloudflare/Vercel headers first (free & reliable), fall back to IP APIs
+          const headerCountry = request.headers.get("cf-ipcountry") || request.headers.get("x-vercel-ip-country") || null;
+          
+          // Check if VPN detection is enabled in admin settings
+          const { data: vpnSetting } = await admin
+            .from("app_settings")
+            .select("setting_value")
+            .eq("setting_key", "vpn_detection_enabled")
+            .single();
+          
+          const vpnDetectionEnabled = vpnSetting?.setting_value === "true" || vpnSetting?.setting_value === true;
+          
+          // Only call VPN API if detection is enabled (saves API calls and improves performance)
+          const ipInfo = await getIPInfo(clientIp, vpnDetectionEnabled);
+
+          if (vpnDetectionEnabled && (ipInfo.isVPN || ipInfo.isProxy || ipInfo.isTor)) {
+            // Block: sign out and redirect with error
+            await supabase.auth.signOut();
+            try {
+              await admin.auth.admin.deleteUser(user.id);
+            } catch (e) {
+              console.error("Failed to cleanup auth user after VPN block:", e);
+            }
+            return NextResponse.redirect(
+              `${origin}/auth/signup?error=${encodeURIComponent("Please turn off your VPN or proxy to create an account on Freecoino.")}`
+            );
+          }
+
+          let referred_by_id: string | null = null;
+          if (ref) {
+            const { data: referrer } = await admin
+              .from("users")
+              .select("id")
+              .eq("referral_code", ref)
+              .single();
+            if (referrer) {
+              referred_by_id = referrer.id;
+            }
+          }
+
+          const { error: insertError } = await admin.from("users").insert({
+            id: user.id,
+            email: user.email,
+            referral_code: randomBytes(4).toString("hex"),
+            referred_by: referred_by_id,
+            email_verified: true,
+            accepted_terms: termsAccepted,
+            accepted_at: termsAccepted ? new Date().toISOString() : null,
+            country: headerCountry || ipInfo.country || null,
+            signup_country: headerCountry || ipInfo.country || null,
+            signup_ip: clientIp,
+          });
+
+          if (insertError?.code === "23505") {
+            // Duplicate email — already registered via another auth identity. Keep session, go to /earn.
+            return NextResponse.redirect(`${origin}/earn`);
+          }
+
+          // Create referral record if user was referred
+          if (referred_by_id) {
+            await admin.from("referrals").insert({
+              referrer_uid: referred_by_id,
+              referee_uid: user.id,
+              lifetime_coins_earned: 0,
+            });
+          }
+
+          // Add welcome notification for Google OAuth users
+          await admin.from("notifications").insert({
+            user_id: user.id,
+            title: "Welcome to Freecoino!",
+            message: "Your Google account is connected. Start earning by completing offers!",
+            read: false,
+          });
+        }
+
+        // Update login streak for returning OAuth users
+        await supabase.rpc("update_streak");
       }
 
-      if (data.session) {
-        console.log('✅ OAuth session created successfully')
-        
-        // Success! Redirect to destination
-        return NextResponse.redirect(`${origin}${next}`, {
-          status: 302, // Temporary redirect
-        })
+      // Create response and clear cookie if terms were accepted
+      const response = NextResponse.redirect(`${origin}/earn`);
+      if (termsAccepted) {
+        response.headers.append("Set-Cookie", "oauth_terms_accepted=; path=/; max-age=0");
       }
-    } catch (err: any) {
-      console.error('OAuth callback exception:', err)
-      return NextResponse.redirect(
-        `${origin}/auth/login?error=auth_callback_error&error_description=${encodeURIComponent(err.message || 'Unknown error')}`
-      )
+      return response;
     }
   }
 
-  // No code provided - redirect to login
-  return NextResponse.redirect(`${origin}/auth/login?error=auth_callback_error&error_description=No authorization code provided`)
+  return NextResponse.redirect(`${origin}/auth/login`);
 }

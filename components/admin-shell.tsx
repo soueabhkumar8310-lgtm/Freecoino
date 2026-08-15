@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   AppBar,
   Box,
@@ -26,10 +26,9 @@ import {
   X,
   ArrowLeft,
   Settings,
-  Star,
   ShieldAlert,
 } from "lucide-react";
-
+import { createClient } from "@/lib/supabase/client";
 import Icons from "@/components/icons";
 import Typography from "@/components/ui/Typography";
 import colors from "@/theme/colors";
@@ -38,10 +37,11 @@ const drawerWidth = 220;
 
 const ADMIN_NAV_ITEMS = [
   { label: "Dashboard", href: "/admin", Icon: LayoutDashboard },
-  { label: "Users", href: "/admin/users", Icon: Users },
+  { label: "Users (All)", href: "/admin/users", Icon: Users },
+  { label: "Users (Web)", href: "/admin/users?source=web", Icon: Users },
+  { label: "Users (App)", href: "/admin/users?source=app", Icon: Users },
   { label: "Flagged Users", href: "/admin/users/flagged", Icon: ShieldAlert },
   { label: "Withdrawals", href: "/admin/withdrawals", Icon: Wallet },
-  { label: "Reviews", href: "/admin/reviews", Icon: Star },
   { label: "Notifications", href: "/admin/notifications", Icon: Bell },
   { label: "Settings", href: "/admin/settings", Icon: Settings },
 ];
@@ -52,9 +52,20 @@ interface AdminShellProps {
 
 export default function AdminShell({ children }: AdminShellProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
+
+  function isSelected(href: string) {
+    if (href === "/admin") return pathname === "/admin";
+    if (href.includes("?")) return currentUrl === href;
+    return pathname === href || (pathname.startsWith(href) && !href.includes("?"));
+  }
+
   async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
     window.location.href = "/";
   }
 
@@ -65,7 +76,7 @@ export default function AdminShell({ children }: AdminShellProps) {
           <ListItemButton
             LinkComponent={Link}
             href={href}
-            selected={pathname === href}
+            selected={isSelected(href)}
             onClick={onClickItem}
           >
             <ListItemIcon>
@@ -85,9 +96,9 @@ export default function AdminShell({ children }: AdminShellProps) {
         href="/profile"
         sx={{
           "&:hover": {
-            bgcolor: "rgba(1, 214, 118, 0.1) !important",
-            color: "#01D676 !important",
-            "& svg": { color: "#01D676" },
+            bgcolor: "rgba(16, 185, 129, 0.1) !important",
+            color: "#10B981 !important",
+            "& svg": { color: "#10B981" },
           },
         }}
       >
@@ -226,7 +237,7 @@ export default function AdminShell({ children }: AdminShellProps) {
           display: "flex",
           flexDirection: "column",
           width: "100%",
-          overflow: "hidden",
+          minWidth: 0,
         }}
       >
         <Toolbar />

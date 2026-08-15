@@ -22,7 +22,7 @@ async function sendDeletionEmail(email: string, token: string) {
       <tr>
         <td align="center">
           <h1 style="color: #ffffff; margin: 16px 0 20px 0; font-size: 24px; font-weight: 700;">
-            <span style="color: #10B981;">Free</span>coino
+            <span style="color: #10B981;">Reward</span>oxy
           </h1>
         </td>
       </tr>

@@ -48,7 +48,7 @@ export default function CPXWidget({ userId, userName, userEmail, cpxHash }: {
 
       // Build API URL with all required parameters
       const apiUrl = new URL('https://live-api.cpx-research.com/api/get-surveys.php');
-      apiUrl.searchParams.append('app_id', '3528');
+      apiUrl.searchParams.append('app_id', '32037');
       apiUrl.searchParams.append('email', userEmail || '');
       apiUrl.searchParams.append('ext_user_id', userId);
       apiUrl.searchParams.append('subid_1', '');
@@ -340,7 +340,7 @@ export default function CPXWidget({ userId, userName, userEmail, cpxHash }: {
                       aspectRatio: "1",
                       borderRadius: { xs: 1, sm: 1.5 },
                       overflow: "hidden",
-                      bgcolor: "#1a1b2e",
+                      bgcolor: colors.bgSecondary,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",

@@ -1,77 +1,42 @@
-"use client";
-
-import { useAuth } from "@/lib/contexts/AuthContext";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import FullscreenShell from "@/components/fullscreen-shell";
 import AllOffersClient from "@/components/all-offers-client";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Box, CircularProgress } from "@mui/material";
-import Typography from "@/components/ui/Typography";
-import colors from "@/theme/colors";
+import { Metadata } from "next";
 
-export default function AllOffersPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
+export const dynamic = "force-dynamic";
 
-  // Timeout after 3 seconds if still loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isLoading) {
-        setLoadingTimeout(true);
-      }
-    }, 3000);
+export const metadata: Metadata = {
+  title: "All Offers - Freecoino",
+  robots: { index: false, follow: true },
+  alternates: {
+    canonical: "/offers/all",
+  },
+};
 
-    return () => clearTimeout(timer);
-  }, [isLoading]);
+export default async function AllOffersPage() {
+  const supabase = await createClient();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      console.log('🔄 No user found, redirecting to login...');
-      const timer = setTimeout(() => {
-        router.push("/auth/login");
-      }, 100);
-      return () => clearTimeout(timer);
-    } else if (!isLoading && user) {
-      console.log('✅ User authenticated:', user.email);
-    }
-  }, [user, isLoading, router]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Show loading screen while checking authentication
-  if (isLoading) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          bgcolor: colors.background.default,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
-          px: 2,
-        }}
-      >
-        <CircularProgress size={40} sx={{ color: colors.secondary }} />
-        <Typography sx={{ color: colors.text.secondary, fontSize: "0.875rem" }}>
-          {loadingTimeout ? "Taking longer than expected... Please wait." : "Loading offers..."}
-        </Typography>
-      </Box>
-    );
-  }
-
-  // If no user after loading, don't render anything (redirect will happen)
   if (!user) {
-    return null;
+    redirect("/auth/login");
   }
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("coins_balance, display_name, avatar_url")
+    .eq("id", user.id)
+    .single();
+
+  const coins = userData?.coins_balance ?? 0;
+  const fullName = userData?.display_name ?? "";
+  const avatarUrl = userData?.avatar_url ?? "";
 
   return (
-    <FullscreenShell
-      coins={0} // TODO: Get from database
-      userName={user.name}
-      userAvatar={user.avatar}
-      userId={user.id}
-    >
+    <FullscreenShell coins={coins} userName={fullName} userAvatar={avatarUrl} userId={user.id}>
       <AllOffersClient userId={user.id} />
     </FullscreenShell>
   );

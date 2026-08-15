@@ -10,9 +10,7 @@ import {
 } from "@mui/material";
 import { Bell } from "lucide-react";
 import Typography from "@/components/ui/Typography";
-import { useThemeMode } from "@/lib/contexts/ThemeContext";
-import { getColors } from "@/theme/colors";
-import { supabase } from "@/lib/supabase/client";
+import colors from "@/theme/colors";
 
 interface Notification {
   id: string;
@@ -24,28 +22,16 @@ interface Notification {
 }
 
 export default function NotificationBell() {
-  const { mode } = useThemeMode();
-  const colors = getColors(mode);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.id) {
-        setUserId(session.user.id);
-      }
-    });
-  }, []);
 
   const fetchNotifications = useCallback(async () => {
-    if (!userId) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/notifications?user_id=${userId}&t=${Date.now()}`, {
+      const res = await fetch(`/api/notifications?t=${Date.now()}`, {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
       });
@@ -59,14 +45,12 @@ export default function NotificationBell() {
     }
     setLoading(false);
     setFetched(true);
-  }, [userId]);
+  }, []);
 
   // Fetch on mount to get unread count
   useEffect(() => {
-    if (userId) {
-      fetchNotifications();
-    }
-  }, [fetchNotifications, userId]);
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   async function handleOpen(e: React.MouseEvent<HTMLElement>) {
     setAnchorEl(e.currentTarget);
@@ -148,7 +132,7 @@ export default function NotificationBell() {
 
         {loading && !fetched ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress size={24} sx={{ color: "#01D676" }} />
+            <CircularProgress size={24} sx={{ color: "#10B981" }} />
           </Box>
         ) : notifications.length === 0 ? (
           <Box sx={{ py: 4, textAlign: "center" }}>
@@ -165,7 +149,7 @@ export default function NotificationBell() {
                   px: 2,
                   py: 1.5,
                   borderBottom: `1px solid ${colors.divider}`,
-                  bgcolor: n.read ? "transparent" : "rgba(1, 214, 118,0.05)",
+                  bgcolor: n.read ? "transparent" : "rgba(16,185,129,0.05)",
                   "&:last-child": { borderBottom: "none" },
                 }}
               >

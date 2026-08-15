@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserCountry } from '@/lib/get-user-country';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,11 +15,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Taskwall API key not configured' }, { status: 500 });
     }
 
-    // Detect country from headers, then IP geolocation
-    const country = await getUserCountry(request, {
-      overrideCountry: searchParams.get('country') || searchParams.get('country_code'),
-      fallback: '',
-    });
+    // Detect country from headers
+    const country = request.headers.get('cf-ipcountry') || request.headers.get('x-vercel-ip-country') || '';
 
     const apiUrl = new URL('https://wall.taskwall.io/api/');
     apiUrl.searchParams.append('app_id', appId);

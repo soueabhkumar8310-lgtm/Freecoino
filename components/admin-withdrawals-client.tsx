@@ -322,15 +322,13 @@ export default function AdminWithdrawalsClient({ initialWithdrawals, initialTota
         onClose={() => setApproveDialog(null)}
         fullWidth
         maxWidth="xs"
-        slotProps={{
-          paper: {
-            sx: {
-              bgcolor: colors.background.default,
-              border: `1px solid ${colors.divider}`,
-              borderRadius: 4,
-              m: { xs: 2 },
-              width: { xs: "calc(100% - 32px)", sm: 400 },
-            },
+        PaperProps={{
+          sx: {
+            bgcolor: colors.background.default,
+            border: `1px solid ${colors.divider}`,
+            borderRadius: 4,
+            m: { xs: 2 },
+            width: { xs: "calc(100% - 32px)", sm: 400 },
           },
         }}
       >

@@ -1,19 +1,39 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Production build optimization
-  output: 'standalone',
-  
-  allowedDevOrigins: ['100.81.125.88'],
-  
+  async redirects() {
+    return [
+      // Force non-www to www (canonical domain)
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "freecoino.com" }],
+        destination: "https://www.freecoino.com/:path*",
+        permanent: true,
+      },
+      // Force http to https (handled by Vercel, but explicit for clarity)
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.freecoino.com" }],
+        missing: [{ type: "header", key: "x-forwarded-proto", value: "https" }],
+        destination: "https://www.freecoino.com/:path*",
+        permanent: true,
+      },
+      // Legacy /dashboard route → earn page
+      {
+        source: "/dashboard",
+        destination: "/earn",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
-        source: '/:path*',
+        source: "/(.*)",
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         ],
       },
     ];

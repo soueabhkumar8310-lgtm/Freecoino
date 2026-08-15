@@ -49,10 +49,10 @@ function formatDate(d: string) {
 
 function sourceLabel(source: string): string {
   const labels: Record<string, string> = {
-    klink: "Klink", notik: "Notik", cpx: "CPX", gemiad: "GemiAd",
-    theoremreach: "TheoremReach", revtoo: "RevToo", taskwall: "TaskWall",
-    vortex: "Vortex", adgem: "AdGem", mylead: "MyLead",
-    timewall: "TimeWall", adswedmedia: "AdsWedMedia",
+    klink: "Klink", notik: "Notik", cpx: "CPX",
+    revtoo: "RevToo", taskwall: "TaskWall",
+    vortex: "Vortex", mylead: "MyLead",
+    timewall: "TimeWall",
   };
   return labels[source] || source;
 }

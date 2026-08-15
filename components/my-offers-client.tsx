@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Box, Paper, CircularProgress, Dialog, DialogContent, IconButton } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { Target, TrendingUp, Clock, Gamepad2 } from "lucide-react";
+import { Target } from "lucide-react";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckIcon from "@mui/icons-material/Check";
 import { QRCodeSVG } from "qrcode.react";
@@ -102,9 +102,12 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
       cpx: '#3b82f6',
       'cpx research': '#3b82f6',
       notik: '#a855f7',
-      vortex: '#f97316',
-      gemiad: '#10b981',
-      theoremreach: '#69ec48ff'
+      revtoo: '#22c55e',
+      taskwall: '#f59e0b',
+      klink: '#f97316',
+      vortex: '#0ea5e9',
+      mylead: '#ec4899',
+      timewall: '#6366f1'
     };
     return providerColors[provider.toLowerCase()] || '#6b7280';
   };
@@ -137,8 +140,9 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
       <Box
         key={offer.id}
         sx={{
-          minWidth: { xs: 100, sm: 140 },
-          maxWidth: { xs: 100, sm: 140 },
+          minWidth: { xs: "auto", sm: 140 },
+          maxWidth: { xs: "none", sm: 140 },
+          width: { xs: "100%", sm: "auto" },
           flexShrink: 0,
           cursor: "pointer",
         }}
@@ -155,14 +159,14 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
             },
           }}
         >
-          <Box sx={{ position: "relative", mb: { xs: 1, sm: 1.5 } }}>
+          <Box sx={{ position: "relative", mb: { xs: 0.75, sm: 1.5 } }}>
             <Box
               sx={{
                 width: "100%",
                 aspectRatio: "1",
                 borderRadius: { xs: 1, sm: 1.5 },
                 overflow: "hidden",
-                bgcolor: "#1a1b2e",
+                bgcolor: colors.bgSecondary,
                 backgroundImage: offer.image_url ? `url(${offer.image_url})` : "none",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
@@ -174,7 +178,7 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
                 position: "absolute",
                 top: { xs: 4, sm: 8 },
                 right: { xs: 4, sm: 8 },
-                bgcolor: offer.status === 'completed' ? "rgba(1, 214, 118, 0.9)" : "rgba(30, 30, 46, 0.9)",
+                bgcolor: offer.status === 'completed' ? "rgba(16, 185, 129, 0.9)" : "rgba(30, 30, 46, 0.9)",
                 px: { xs: 0.5, sm: 1 },
                 py: { xs: 0.25, sm: 0.5 },
                 borderRadius: 10,
@@ -190,7 +194,7 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
             </Box>
           </Box>
 
-          <Box sx={{ height: 40, overflow: "hidden", mb: 0.5 }}>
+          <Box sx={{ height: { xs: 34, sm: 40 }, overflow: "hidden", mb: 0.5 }}>
             <Typography
               sx={{
                 fontSize: { xs: "0.75rem", sm: "0.875rem" },
@@ -220,7 +224,7 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
             {offer.provider}
           </Typography>
 
-          <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600, mb: 1 }}>
+          <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600, mb: { xs: 0.5, sm: 1 } }}>
             ${offer.payout}
           </Typography>
 
@@ -231,7 +235,7 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
                 <Typography sx={{ fontSize: "0.65rem", color: colors.text.secondary }}>
                   Progress
                 </Typography>
-                <Typography sx={{ fontSize: "0.65rem", fontWeight: 600, color: "#01D676" }}>
+                <Typography sx={{ fontSize: "0.65rem", fontWeight: 600, color: "#10B981" }}>
                   {offer.milestone_progress.completed_count}/{offer.milestone_progress.total_count}
                 </Typography>
               </Box>
@@ -239,7 +243,7 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
                 sx={{
                   width: "100%",
                   height: 4,
-                  bgcolor: "#1a1b2e",
+                  bgcolor: colors.bgSecondary,
                   borderRadius: 2,
                   overflow: "hidden",
                 }}
@@ -248,7 +252,7 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
                   sx={{
                     width: `${progressPercent}%`,
                     height: "100%",
-                    bgcolor: "#01D676",
+                    bgcolor: "#10B981",
                     transition: "width 0.3s ease",
                   }}
                 />
@@ -359,133 +363,103 @@ export default function MyOffersClient({ userId }: MyOffersClientProps) {
   return (
     <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, sm: 3, md: 4 }, py: 4, pb: { xs: 12, lg: 4 } }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
-          <Box>
-            <Typography variant="h5" isBold sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Target size={26} color={colors.primary} />
-              My Offers
-            </Typography>
-            <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
-              Track your offer progress and earnings
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              borderRadius: 3,
-              border: `1px solid ${colors.divider}`,
-              bgcolor: colors.background.secondary,
-              px: 2,
-              py: 1,
-            }}
-          >
-            <TrendingUp size={15} color={colors.primary} />
-            <Box>
-              <Typography sx={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", color: colors.text.secondary }}>
-                Total Offers
-              </Typography>
-              <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "#fff" }}>
-                {data?.total || 0}
-              </Typography>
-            </Box>
-          </Box>
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
+          <Target size={26} color={colors.primary} />
+          <Typography variant="h5" isBold>My Offers</Typography>
         </Box>
-      </Box>
+        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+          Track your offer progress and earnings
+        </Typography>
 
-      {/* Tabs */}
-      <Box sx={{ mb: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
-        <Box
-          onClick={() => setActiveTab(0)}
-          sx={{
-            px: 3,
-            py: 1.5,
-            borderRadius: 3,
-            background: activeTab === 0 
-              ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-              : "rgba(255, 255, 255, 0.05)",
-            color: activeTab === 0 ? "#fff" : colors.text.secondary,
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            cursor: "pointer",
-            transition: "all 0.2s",
-            border: activeTab === 0 ? "none" : "1px solid rgba(255, 255, 255, 0.1)",
-            "&:hover": {
-              background: activeTab === 0 
-                ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                : "rgba(255, 255, 255, 0.08)",
-            },
-          }}
-        >
-          Started ({data?.started.length || 0})
-        </Box>
-        <Box
-          onClick={() => setActiveTab(1)}
-          sx={{
-            px: 3,
-            py: 1.5,
-            borderRadius: 3,
-            background: activeTab === 1 
-              ? "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-              : "rgba(255, 255, 255, 0.05)",
-            color: activeTab === 1 ? "#fff" : colors.text.secondary,
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            cursor: "pointer",
-            transition: "all 0.2s",
-            border: activeTab === 1 ? "none" : "1px solid rgba(255, 255, 255, 0.1)",
-            "&:hover": {
-              background: activeTab === 1 
-                ? "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-                : "rgba(255, 255, 255, 0.08)",
-            },
-          }}
-        >
-          In Progress ({data?.in_progress.length || 0})
-        </Box>
-        <Box
-          onClick={() => setActiveTab(2)}
-          sx={{
-            px: 3,
-            py: 1.5,
-            borderRadius: 3,
-            background: activeTab === 2 
-              ? "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-              : "rgba(255, 255, 255, 0.05)",
-            color: activeTab === 2 ? "#fff" : colors.text.secondary,
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            cursor: "pointer",
-            transition: "all 0.2s",
-            border: activeTab === 2 ? "none" : "1px solid rgba(255, 255, 255, 0.1)",
-            "&:hover": {
-              background: activeTab === 2 
-                ? "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-                : "rgba(255, 255, 255, 0.08)",
-            },
-          }}
-        >
-          Completed ({data?.completed.length || 0})
+        {/* Stats Row */}
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1 }}>
+          <Paper elevation={0} sx={{ bgcolor: colors.background.secondary, borderRadius: 2, p: 1.5, textAlign: "center" }}>
+            <Typography sx={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", color: colors.text.secondary, mb: 0.5 }}>
+              Total
+            </Typography>
+            <Typography sx={{ fontSize: "1.25rem", fontWeight: 800, color: "#fff", lineHeight: 1 }}>
+              {data?.total || 0}
+            </Typography>
+          </Paper>
+          <Paper
+            elevation={0}
+            onClick={() => setActiveTab(0)}
+            sx={{ bgcolor: activeTab === 0 ? "rgba(102, 126, 234, 0.15)" : colors.background.secondary, borderRadius: 2, p: 1.5, textAlign: "center", cursor: "pointer", border: activeTab === 0 ? "1px solid rgba(102, 126, 234, 0.4)" : "none", transition: "all 0.2s" }}
+          >
+            <Typography sx={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", color: colors.text.secondary, mb: 0.5 }}>
+              Started
+            </Typography>
+            <Typography sx={{ fontSize: "1.1rem", fontWeight: 800, color: activeTab === 0 ? "#667eea" : "#fff", lineHeight: 1 }}>
+              {data?.started.length || 0}
+            </Typography>
+          </Paper>
+          <Paper
+            elevation={0}
+            onClick={() => setActiveTab(1)}
+            sx={{ bgcolor: activeTab === 1 ? "rgba(240, 147, 251, 0.15)" : colors.background.secondary, borderRadius: 2, p: 1.5, textAlign: "center", cursor: "pointer", border: activeTab === 1 ? "1px solid rgba(240, 147, 251, 0.4)" : "none", transition: "all 0.2s" }}
+          >
+            <Typography sx={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", color: colors.text.secondary, mb: 0.5 }}>
+              Progress
+            </Typography>
+            <Typography sx={{ fontSize: "1.1rem", fontWeight: 800, color: activeTab === 1 ? "#f093fb" : "#fff", lineHeight: 1 }}>
+              {data?.in_progress.length || 0}
+            </Typography>
+          </Paper>
+          <Paper
+            elevation={0}
+            onClick={() => setActiveTab(2)}
+            sx={{ bgcolor: activeTab === 2 ? "rgba(79, 172, 254, 0.15)" : colors.background.secondary, borderRadius: 2, p: 1.5, textAlign: "center", cursor: "pointer", border: activeTab === 2 ? "1px solid rgba(79, 172, 254, 0.4)" : "none", transition: "all 0.2s" }}
+          >
+            <Typography sx={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", color: colors.text.secondary, mb: 0.5 }}>
+              Done
+            </Typography>
+            <Typography sx={{ fontSize: "1.1rem", fontWeight: 800, color: activeTab === 2 ? "#4facfe" : "#fff", lineHeight: 1 }}>
+              {data?.completed.length || 0}
+            </Typography>
+          </Paper>
         </Box>
       </Box>
 
       {/* Offers Grid */}
       {activeTab === 0 && (
-        <Box sx={{ display: "flex", gap: { xs: 1, sm: 1.5 }, overflowX: "auto", pb: 2, "&::-webkit-scrollbar": { display: "none" }, scrollbarWidth: "none" }}>
+        <Box sx={{
+          display: { xs: "grid", sm: "flex" },
+          gridTemplateColumns: { xs: "repeat(3, 1fr)" },
+          gap: { xs: 1, sm: 1.5 },
+          overflowX: { xs: "visible", sm: "auto" },
+          pb: 2,
+          "&::-webkit-scrollbar": { display: "none" },
+          scrollbarWidth: "none",
+        }}>
           {data?.started.length === 0 ? renderEmptyState("No started offers") : data?.started.map(renderOfferCard)}
         </Box>
       )}
 
       {activeTab === 1 && (
-        <Box sx={{ display: "flex", gap: { xs: 1, sm: 1.5 }, overflowX: "auto", pb: 2, "&::-webkit-scrollbar": { display: "none" }, scrollbarWidth: "none" }}>
+        <Box sx={{
+          display: { xs: "grid", sm: "flex" },
+          gridTemplateColumns: { xs: "repeat(3, 1fr)" },
+          gap: { xs: 1, sm: 1.5 },
+          overflowX: { xs: "visible", sm: "auto" },
+          pb: 2,
+          "&::-webkit-scrollbar": { display: "none" },
+          scrollbarWidth: "none",
+        }}>
           {data?.in_progress.length === 0 ? renderEmptyState("No offers in progress") : data?.in_progress.map(renderOfferCard)}
         </Box>
       )}
 
       {activeTab === 2 && (
-        <Box sx={{ display: "flex", gap: { xs: 1, sm: 1.5 }, overflowX: "auto", pb: 2, "&::-webkit-scrollbar": { display: "none" }, scrollbarWidth: "none" }}>
+        <Box sx={{
+          display: { xs: "grid", sm: "flex" },
+          gridTemplateColumns: { xs: "repeat(3, 1fr)" },
+          gap: { xs: 1, sm: 1.5 },
+          overflowX: { xs: "visible", sm: "auto" },
+          pb: 2,
+          "&::-webkit-scrollbar": { display: "none" },
+          scrollbarWidth: "none",
+        }}>
           {data?.completed.length === 0 ? renderEmptyState("No completed offers") : data?.completed.map(renderOfferCard)}
         </Box>
       )}
@@ -525,47 +499,9 @@ function OfferDetailsModal({
 
   const hasEvents = offer.events && offer.events.length > 0;
 
-  const getTrackedUrl = (clickUrl: string): string => {
-    if (!clickUrl || !userId) return clickUrl;
-    const separator = clickUrl.includes("?") ? "&" : "?";
-    switch (offer.provider) {
-      case "Notik":
-      case "Vortex":
-      case "Gemiad":
-        return `${clickUrl}${separator}user_id=${userId}`;
-      default:
-        return clickUrl;
-    }
-  };
-
-  const trackOfferClick = async () => {
-    try {
-      await fetch("/api/track-offer-click", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          offerId: offer.offer_id,
-          offerName: offer.name,
-          provider: offer.provider,
-          payout: typeof offer.payout === "string" ? parseInt(offer.payout) : offer.payout,
-          clickUrl: offer.click_url,
-          events: offer.events || [],
-        }),
-      });
-    } catch (err) {
-      console.error("Failed to track offer click:", err);
-    }
-  };
-
   const handlePlayClick = () => {
-    if (!offer.click_url || offer.click_url === "#") return;
-
-    trackOfferClick();
-    const trackedUrl = getTrackedUrl(offer.click_url);
-
     if (isMobile) {
-      window.open(trackedUrl, "_blank");
+      window.open(offer.click_url, "_blank");
     } else {
       setQrDialogOpen(true);
     }
@@ -573,15 +509,13 @@ function OfferDetailsModal({
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(getTrackedUrl(offer.click_url));
+      await navigator.clipboard.writeText(offer.click_url);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
     }
   };
-
-  const trackedClickUrl = getTrackedUrl(offer.click_url);
 
   return (
     <>
@@ -592,10 +526,9 @@ function OfferDetailsModal({
       maxWidth="md"
       fullScreen={isMobile}
       scroll="body"
-      slotProps={{
-        paper: {
-          sx: {
-            bgcolor: "#1a1b2e",
+      PaperProps={{
+        sx: {
+          bgcolor: colors.bgSecondary,
           borderRadius: 3,
           maxWidth: "650px",
           maxHeight: "90vh",
@@ -606,7 +539,8 @@ function OfferDetailsModal({
           margin: "auto",
           marginTop: "60px",
         },
-        },
+      }}
+      slotProps={{
         backdrop: { 
           sx: { 
             bgcolor: "rgba(0,0,0,0.85)", 
@@ -662,8 +596,8 @@ function OfferDetailsModal({
               sx={{
                 display: "inline-flex",
                 alignItems: "center",
-                bgcolor: "rgba(1, 214, 118, 0.1)",
-                color: "#01D676",
+                bgcolor: "rgba(16, 185, 129, 0.1)",
+                color: "#10B981",
                 px: 1.5,
                 py: 0.5,
                 borderRadius: 1,
@@ -710,15 +644,15 @@ function OfferDetailsModal({
                   sx={{ 
                     fontSize: { xs: "1.75rem", sm: "2rem" },
                     fontWeight: 700,
-                    color: "#01D676",
+                    color: "#10B981",
                   }}
                 >
                   ${offer.payout}
                 </Typography>
                 <Box
                   sx={{
-                    bgcolor: "rgba(1, 214, 118, 0.1)",
-                    color: "#01D676",
+                    bgcolor: "rgba(16, 185, 129, 0.1)",
+                    color: "#10B981",
                     px: 1.5,
                     py: 0.25,
                     borderRadius: 1,
@@ -736,7 +670,7 @@ function OfferDetailsModal({
               onClick={handlePlayClick}
               sx={{
                 width: "100%",
-                bgcolor: "#01D676",
+                bgcolor: "#10B981",
                 color: "#000",
                 py: 1.5,
                 px: 2,
@@ -751,7 +685,7 @@ function OfferDetailsModal({
                 gap: 1,
                 transition: "all 0.2s ease-in-out",
                 "&:hover": {
-                  bgcolor: "#00c068",
+                  bgcolor: "#059669",
                   transform: "translateY(-2px)",
                 },
               }}
@@ -780,7 +714,7 @@ function OfferDetailsModal({
               borderBottom: "1px solid rgba(255,255,255,0.1)",
             }}
           >
-            <svg viewBox="0 0 18 15" style={{ width: 16, height: 14, color: "#01D676" }}>
+            <svg viewBox="0 0 18 15" style={{ width: 16, height: 14, color: "#10B981" }}>
               <path d="M15.8546 0.664551H2.10464C1.77312 0.664551 1.45518 0.796247 1.22076 1.03067C0.986341 1.26509 0.854645 1.58303 0.854645 1.91455V13.1646C0.854645 13.4961 0.986341 13.814 1.22076 14.0484C1.45518 14.2829 1.77312 14.4146 2.10464 14.4146H15.8546C16.1862 14.4146 16.5041 14.2829 16.7385 14.0484C16.9729 13.814 17.1046 13.4961 17.1046 13.1646V1.91455C17.1046 1.58303 16.9729 1.26509 16.7385 1.03067C16.5041 0.796247 16.1862 0.664551 15.8546 0.664551ZM14.6046 12.5396H3.35464C3.18888 12.5396 3.02991 12.4737 2.9127 12.3565C2.79549 12.2393 2.72964 12.0803 2.72964 11.9146V3.16455C2.72964 2.99879 2.79549 2.83982 2.9127 2.72261C3.02991 2.6054 3.18888 2.53955 3.35464 2.53955C3.52041 2.53955 3.67938 2.6054 3.79659 2.72261C3.9138 2.83982 3.97964 2.99879 3.97964 3.16455V9.15596L6.66246 6.47236C6.7205 6.41425 6.78943 6.36815 6.86531 6.3367C6.94118 6.30525 7.02251 6.28906 7.10464 6.28906C7.18678 6.28906 7.26811 6.30525 7.34398 6.3367C7.41986 6.36815 7.48879 6.41425 7.54683 6.47236L8.97964 7.90596L12.4711 4.41455H10.2296C10.0639 4.41455 9.90491 4.3487 9.7877 4.23149C9.67049 4.11428 9.60464 3.95531 9.60464 3.78955C9.60464 3.62379 9.67049 3.46482 9.7877 3.34761C9.90491 3.2304 10.0639 3.16455 10.2296 3.16455H13.9796C14.1454 3.16455 14.3044 3.2304 14.4216 3.34761C14.5388 3.46482 14.6046 3.62379 14.6046 3.78955V7.53955C14.6046 7.70531 14.5388 7.86428 14.4216 7.98149C14.3044 8.0987 14.1454 8.16455 13.9796 8.16455C13.8139 8.16455 13.6549 8.0987 13.5377 7.98149C13.4205 7.86428 13.3546 7.70531 13.3546 7.53955V5.29814L9.42183 9.23174C9.36379 9.28985 9.29486 9.33595 9.21898 9.3674C9.14311 9.39885 9.06178 9.41504 8.97964 9.41504C8.89751 9.41504 8.81618 9.39885 8.74031 9.3674C8.66443 9.33595 8.5955 9.28985 8.53746 9.23174L7.10464 7.79814L3.97964 10.9231V11.2896H14.6046C14.7704 11.2896 14.9294 11.3554 15.0466 11.4726C15.1638 11.5898 15.2296 11.7488 15.2296 11.9146C15.2296 12.0803 15.1638 12.2393 15.0466 12.3565C14.9294 12.4737 14.7704 12.5396 14.6046 12.5396Z" fill="currentColor"/>
             </svg>
             <Typography sx={{ fontSize: "0.875rem", fontWeight: 700, color: "#fff" }}>
@@ -788,96 +722,71 @@ function OfferDetailsModal({
             </Typography>
           </Box>
 
-          <Box sx={{ position: "relative", ml: 0.5 }}>
-            {offer.events.map((event, index) => {
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {offer.events.map((event) => {
               const isCompleted = milestoneProgress.includes(event.id);
-              const isLast = index === offer.events!.length - 1;
               
               return (
-                <Box key={event.id} sx={{ position: "relative", pl: 4, pb: isLast ? 0 : 0 }}>
-                  {/* Vertical connecting line */}
-                  {!isLast && (
+                <Box
+                  key={event.id}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    p: 1.5,
+                    bgcolor: isCompleted ? "rgba(16, 185, 129, 0.05)" : "#222339",
+                    borderRadius: 2,
+                    transition: "all 0.2s",
+                    "&:hover": {
+                      borderColor: isCompleted ? "rgba(16, 185, 129, 0.4)" : "rgba(16, 185, 129, 0.3)",
+                      bgcolor: isCompleted ? "rgba(16, 185, 129, 0.08)" : "#252640",
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1 }}>
                     <Box
                       sx={{
-                        position: "absolute",
-                        left: 9,
-                        top: 16,
-                        width: 2,
-                        height: "calc(100% + 4px)",
-                        bgcolor: isCompleted && milestoneProgress.includes(offer.events![index + 1].id)
-                          ? "#01D676"
-                          : "#3d3f54",
-                        opacity: 0.5,
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        bgcolor: isCompleted ? "#10B981" : "#3d3f54",
                       }}
                     />
-                  )}
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      p: 1.5,
-                      bgcolor: isCompleted ? "rgba(1, 214, 118, 0.05)" : "#222339",
-                      borderRadius: 2,
-                      border: `1px solid ${isCompleted ? "rgba(1, 214, 118, 0.25)" : "rgba(255,255,255,0.05)"}`,
-                      transition: "all 0.2s",
-                      mb: 1,
-                      "&:hover": {
-                        borderColor: isCompleted ? "rgba(1, 214, 118, 0.4)" : "rgba(1, 214, 118, 0.3)",
-                        bgcolor: isCompleted ? "rgba(1, 214, 118, 0.08)" : "#252640",
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1 }}>
-                      {/* Step circle with line through it - positioned to align with the vertical line */}
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          left: 0,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          width: 20,
-                          height: 20,
-                          borderRadius: "50%",
-                          border: `2px solid ${isCompleted ? "#01D676" : "#3d3f54"}`,
-                          bgcolor: isCompleted ? "#01D676" : "#1a1b2e",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          zIndex: 1,
-                        }}
-                      >
-                        {isCompleted ? (
-                          <CheckIcon sx={{ fontSize: 12, color: "#000" }} />
-                        ) : (
-                          <Typography sx={{ fontSize: "0.6rem", color: "#3d3f54", fontWeight: 700 }}>
-                            {index + 1}
-                          </Typography>
-                        )}
-                      </Box>
-
-                      <Typography sx={{ 
+                    <Typography sx={{ 
+                      fontSize: "0.8125rem", 
+                      color: isCompleted ? "#10B981" : "#fff", 
+                      fontWeight: 500,
+                      textDecoration: isCompleted ? "line-through" : "none",
+                      opacity: isCompleted ? 0.8 : 1
+                    }}>
+                      {event.name}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Typography 
+                      sx={{ 
                         fontSize: "0.8125rem", 
-                        color: isCompleted ? "#01D676" : "#fff", 
-                        fontWeight: isCompleted ? 600 : 500,
-                        textDecoration: isCompleted ? "line-through" : "none",
-                        opacity: isCompleted ? 0.85 : 1,
-                        ml: 1.5,
-                      }}>
-                        {event.name}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, ml: 1 }}>
-                      <Typography 
-                        sx={{ 
-                          fontSize: "0.8125rem", 
-                          color: isCompleted ? "#01D676" : "rgba(255,255,255,0.5)",
-                          fontWeight: 700,
-                        }}
-                      >
-                        +{event.payout} coins
-                      </Typography>
+                        color: "#10B981",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ${event.payout}
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        border: `1.5px solid ${isCompleted ? "#10B981" : "#3d3f54"}`,
+                        bgcolor: isCompleted ? "#10B981" : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {isCompleted && (
+                        <CheckIcon sx={{ fontSize: 14, color: "#000" }} />
+                      )}
                     </Box>
                   </Box>
                 </Box>
@@ -894,14 +803,14 @@ function OfferDetailsModal({
       onClose={() => setQrDialogOpen(false)}
       maxWidth="sm"
       fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            bgcolor: "#1a1b2e",
+      PaperProps={{
+        sx: {
+          bgcolor: colors.bgSecondary,
           borderRadius: 3,
           boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
         },
-        },
+      }}
+      slotProps={{
         backdrop: { 
           sx: { 
             bgcolor: "rgba(0,0,0,0.85)", 
@@ -928,7 +837,7 @@ function OfferDetailsModal({
       </IconButton>
 
       <Box sx={{ p: 4, textAlign: "center" }}>
-        <Smartphone size={48} color="#01D676" style={{ marginBottom: 16 }} />
+        <Smartphone size={48} color="#10B981" style={{ marginBottom: 16 }} />
         
         <Typography 
           sx={{ 
@@ -964,7 +873,7 @@ function OfferDetailsModal({
           }}
         >
           <QRCodeSVG 
-            value={trackedClickUrl} 
+            value={offer.click_url} 
             size={200}
             level="H"
             includeMargin={true}
@@ -986,10 +895,9 @@ function OfferDetailsModal({
             bgcolor: "#222339",
             p: 2,
             borderRadius: 2,
-            border: "1px solid rgba(255,255,255,0.05)",
             wordBreak: "break-all",
             fontSize: "0.75rem",
-            color: "#01D676",
+            color: "#10B981",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -998,13 +906,13 @@ function OfferDetailsModal({
             transition: "all 0.2s",
             "&:hover": {
               bgcolor: "#252640",
-              borderColor: "rgba(1, 214, 118, 0.2)",
+              borderColor: "rgba(16, 185, 129, 0.2)",
             },
           }}
           onClick={handleCopyLink}
         >
           <Box sx={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {trackedClickUrl}
+            {offer.click_url}
           </Box>
           <Box
             sx={{
@@ -1012,7 +920,7 @@ function OfferDetailsModal({
               alignItems: "center",
               gap: 0.5,
               flexShrink: 0,
-              color: copySuccess ? "#01D676" : colors.text.secondary,
+              color: copySuccess ? "#10B981" : colors.text.secondary,
             }}
           >
             {copySuccess ? (

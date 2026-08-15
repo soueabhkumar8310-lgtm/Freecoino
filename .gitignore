@@ -36,13 +36,36 @@ yarn-error.log*
 # vercel
 .vercel
 
-# kilo/kiro config (contains secrets)
-.kilo/
-.kiro/
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
-.env*
+
+# Cloudflare Wrangler
+.wrangler/
+wrangler.toml.bak
+
+# Firebase
+firebase-debug.log
+.firebase/
+*-firebase-adminsdk-*.json
+
+# OS
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Temp
+tmp/
+temp/
+
+# Kiro settings (contains secrets)
+.kiro/settings/

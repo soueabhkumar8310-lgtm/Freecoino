@@ -1,112 +1,39 @@
 "use client";
 
 import { Box } from "@mui/material";
-import { keyframes } from "@mui/system";
-
-const shimmer = keyframes`
-  0% {
-    backgroundPosition: -1000px 0;
-  }
-  100% {
-    backgroundPosition: 1000px 0;
-  }
-`;
+import colors from "@/theme/colors";
 
 export function SurveySkeleton() {
   return (
-    <Box
-      sx={{
-        cursor: "pointer",
-        minWidth: { xs: 90, sm: 100, md: 140 },
-        maxWidth: { xs: 90, sm: 100, md: 140 },
-      }}
-    >
-      <Box
-        sx={{
-          bgcolor: "#12131c",
-          border: "1px solid rgba(255, 255, 255, 0.05)",
-          p: { xs: 1, md: 1.25 },
-          borderRadius: { xs: 2, md: 2.5 },
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          gap: { xs: 0.75, md: 1 },
-        }}
-      >
-        {/* Image Skeleton */}
-        <Box
-          sx={{
+    <Box sx={{ minWidth: { xs: 100, sm: 140 }, maxWidth: { xs: 100, sm: 140 } }}>
+      <Box sx={{ bgcolor: colors.bgSecondary, p: { xs: 0.75, sm: 1.5 }, borderRadius: { xs: 1.5, sm: 2.5 } }}>
+        <Box sx={{
+          width: "100%",
+          aspectRatio: "1",
+          borderRadius: { xs: 1, sm: 1.5 },
+          bgcolor: "#0F1219",
+          mb: { xs: 1, sm: 1.5 },
+          position: "relative",
+          overflow: "hidden",
+          animation: "pulse 2s ease-in-out infinite",
+          "@keyframes pulse": { "0%,100%": { opacity: 0.6 }, "50%": { opacity: 1 } },
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: "-100%",
             width: "100%",
-            aspectRatio: "1",
-            borderRadius: { xs: 1, md: 1.5 },
-            backgroundColor: "#1a1b2e",
-            backgroundImage: "linear-gradient(90deg, #1a1b2e 25%, #222339 50%, #1a1b2e 75%)",
-            backgroundSize: "1000px 100%",
-            animation: `${shimmer} 2s infinite`,
-            mb: { xs: 0.5, md: 0.75 },
-          }}
-        />
-
-        {/* Title Skeleton - 2 lines */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.5,
-            mb: { xs: 0.5, md: 0.75 },
-            flex: 1,
-          }}
-        >
-          <Box
-            sx={{
-              height: 10,
-              borderRadius: 1,
-              backgroundColor: "#1a1b2e",
-              backgroundImage: "linear-gradient(90deg, #1a1b2e 25%, #222339 50%, #1a1b2e 75%)",
-              backgroundSize: "1000px 100%",
-              animation: `${shimmer} 2s infinite`,
-            }}
-          />
-          <Box
-            sx={{
-              height: 10,
-              borderRadius: 1,
-              width: "80%",
-              backgroundColor: "#1a1b2e",
-              backgroundImage: "linear-gradient(90deg, #1a1b2e 25%, #222339 50%, #1a1b2e 75%)",
-              backgroundSize: "1000px 100%",
-              animation: `${shimmer} 2s infinite`,
-            }}
-          />
-        </Box>
-
-        {/* LOI Skeleton */}
-        <Box
-          sx={{
-            height: 10,
-            width: "60%",
-            borderRadius: 1,
-            backgroundColor: "#1a1b2e",
-            backgroundImage: "linear-gradient(90deg, #1a1b2e 25%, #222339 50%, #1a1b2e 75%)",
-            backgroundSize: "1000px 100%",
-            animation: `${shimmer} 2s infinite`,
-            mb: { xs: 0.5, md: 0.75 },
-          }}
-        />
-
-        {/* Reward Skeleton */}
-        <Box
-          sx={{
-            height: 12,
-            width: "70%",
-            borderRadius: 1,
-            backgroundColor: "#1a1b2e",
-            backgroundImage: "linear-gradient(90deg, #1a1b2e 25%, #222339 50%, #1a1b2e 75%)",
-            backgroundSize: "1000px 100%",
-            animation: `${shimmer} 2s infinite`,
-            mt: "auto",
-          }}
-        />
+            height: "100%",
+            background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.04), transparent)",
+            animation: "shimmer 1.4s ease-in-out infinite",
+          },
+          "@keyframes shimmer": {
+            "0%": { left: "-100%" },
+            "100%": { left: "100%" },
+          },
+        }} />
+        <Box sx={{ height: { xs: 10, sm: 11 }, bgcolor: "#0F1219", borderRadius: 1, width: "80%", mb: { xs: 0.5, sm: 1 }, animation: "pulse 2s ease-in-out infinite 0.1s" }} />
+        <Box sx={{ height: { xs: 12, sm: 14 }, bgcolor: "#0F1219", borderRadius: 1, width: "45%", animation: "pulse 2s ease-in-out infinite 0.2s" }} />
       </Box>
     </Box>
   );

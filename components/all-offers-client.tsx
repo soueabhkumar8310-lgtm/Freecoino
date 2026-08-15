@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Box, CircularProgress, Dialog, IconButton, Skeleton } from "@mui/material";
+import { Box, Dialog, IconButton } from "@mui/material";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import { Monitor, Smartphone, Gamepad2 } from "lucide-react";
@@ -10,7 +10,6 @@ import CheckIcon from "@mui/icons-material/Check";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Typography from "@/components/ui/Typography";
 import colors from "@/theme/colors";
-import { formatPayout } from "@/lib/format-coins";
 import { QRCodeSVG } from "qrcode.react";
 
 type DeviceOS = "android" | "ios" | "windows";
@@ -39,12 +38,12 @@ function OfferDetailsModal({
   offer, 
   open, 
   onClose,
-  userId 
+  userId
 }: { 
   offer: NotikOffer | null; 
   open: boolean; 
   onClose: () => void;
-  userId?: string;
+  userId: string;
 }) {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
@@ -55,64 +54,42 @@ function OfferDetailsModal({
 
   const hasEvents = offer.events && offer.events.length > 0;
 
-  const getTrackedUrl = (clickUrl: string): string => {
-    if (!clickUrl || !userId) return clickUrl;
-    const separator = clickUrl.includes("?") ? "&" : "?";
-    switch (offer.provider) {
-      case "Notik":
-      case "Vortex":
-      case "Gemiad":
-      case "Klink":
-        return `${clickUrl}${separator}user_id=${userId}`;
-      default:
-        return clickUrl;
-    }
-  };
-
-  const trackOfferClick = async () => {
-    try {
-      await fetch("/api/track-offer-click", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          offerId: offer.offer_id,
-          offerName: offer.name,
-          provider: offer.provider,
-          payout: typeof offer.payout === "string" ? parseInt(offer.payout) : offer.payout,
-          clickUrl: offer.click_url,
-          events: offer.events || [],
-        }),
-      });
-    } catch (err) {
-      console.error("Failed to track offer click:", err);
-    }
-  };
-
   const handlePlayClick = () => {
-    if (!offer.click_url || offer.click_url === "#") return;
-
-    trackOfferClick();
-    const trackedUrl = getTrackedUrl(offer.click_url);
+    // Track offer click
+    fetch('/api/track-offer-click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        offer_id: offer.offer_id,
+        offer_name: offer.name,
+        provider: offer.provider || 'unknown',
+        click_url: offer.click_url,
+        image_url: offer.image_url,
+        payout: offer.payout,
+        tracking_type: (offer as any).trackingType || '',
+        events: offer.events || []
+      })
+    }).catch(() => {});
 
     if (isMobile) {
-      window.open(trackedUrl, "_blank");
+      // On mobile, open the link directly
+      window.open(offer.click_url, "_blank");
     } else {
+      // On desktop, show QR code dialog
       setQrDialogOpen(true);
     }
   };
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(getTrackedUrl(offer.click_url));
+      await navigator.clipboard.writeText(offer.click_url);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
     }
   };
-
-  const trackedClickUrl = getTrackedUrl(offer.click_url);
 
   return (
     <>
@@ -123,10 +100,9 @@ function OfferDetailsModal({
       maxWidth="md"
       fullScreen={isMobile}
       scroll="body"
-      slotProps={{
-        paper: {
-          sx: {
-            bgcolor: "#1a1b2e",
+      PaperProps={{
+        sx: {
+          bgcolor: colors.bgCard,
           borderRadius: 3,
           maxWidth: "650px",
           maxHeight: "90vh",
@@ -137,7 +113,8 @@ function OfferDetailsModal({
           margin: "auto",
           marginTop: "60px",
         },
-        },
+      }}
+      slotProps={{
         backdrop: { 
           sx: { 
             bgcolor: "rgba(0,0,0,0.85)", 
@@ -205,8 +182,8 @@ function OfferDetailsModal({
             </Typography>
             <Box
               sx={{
-                bgcolor: "rgba(1, 214, 118, 0.1)",
-                color: "#01D676",
+                bgcolor: "rgba(16, 185, 129, 0.1)",
+                color: "#10B981",
                 px: 1.5,
                 py: 0.5,
                 borderRadius: 1,
@@ -232,10 +209,10 @@ function OfferDetailsModal({
                 Available on:
               </Typography>
               <Box sx={{ display: "flex", gap: 0.75 }}>
-                {(Array.isArray(offer.device) ? offer.device : [offer.device]).map((platform, platformIndex) => {
-                  const platformLower = (platform || '').toString().toLowerCase();
+                {offer.device.map((platform, platformIndex) => {
+                  const platformLower = platform.toLowerCase();
                   let icon = null;
-                  let label = platform || 'All';
+                  let label = platform;
 
                   if (platformLower === 'android') {
                     icon = (
@@ -265,12 +242,11 @@ function OfferDetailsModal({
                         gap: 0.5,
                         px: 1,
                         py: 0.5,
-                        bgcolor: "#222339",
+                        bgcolor: colors.bgSecondary,
                         borderRadius: 1,
-                        border: "1px solid rgba(255,255,255,0.05)",
                         color: colors.text.secondary,
                       }}
-                      title={label}
+                      title={platform}
                     >
                       {icon}
                       <Typography sx={{ fontSize: "0.7rem", fontWeight: 500 }}>
@@ -308,16 +284,33 @@ function OfferDetailsModal({
               flexShrink: 0,
             }}
           >
-            <Box
-              component="img"
-              src={offer.image_url}
-              alt={offer.name}
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
+            {offer.image_url ? (
+              <Box
+                component="img"
+                src={offer.image_url}
+                alt={offer.name}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: "rgba(255,255,255,0.05)",
+                  color: "#6b7280",
+                  fontSize: "0.75rem",
+                }}
+              >
+                No Image
+              </Box>
+            )}
           </Box>
 
           {/* Payout Info */}
@@ -328,15 +321,15 @@ function OfferDetailsModal({
                   sx={{ 
                     fontSize: { xs: "1.75rem", sm: "2rem" },
                     fontWeight: 700,
-                    color: "#01D676",
+                    color: "#10B981",
                   }}
                 >
-                  ${formatPayout(offer.payout)}
+                  {offer.payout === -1 ? "∞" : `$${offer.payout}`}
                 </Typography>
                 <Box
                   sx={{
-                    bgcolor: "rgba(1, 214, 118, 0.1)",
-                    color: "#01D676",
+                    bgcolor: "rgba(16, 185, 129, 0.1)",
+                    color: "#10B981",
                     px: 1.5,
                     py: 0.25,
                     borderRadius: 1,
@@ -351,7 +344,7 @@ function OfferDetailsModal({
 
             {/* Popularity Score */}
             <Box sx={{ mb: 2 }}>
-              <Typography sx={{ fontSize: "0.75rem", color: "#a9a9ca", mb: 0.5 }}>
+              <Typography sx={{ fontSize: "0.75rem", color: "#A9ABB4", mb: 0.5 }}>
                 Popularity Score
               </Typography>
               <Box sx={{ display: "flex", gap: 0.5 }}>
@@ -373,7 +366,7 @@ function OfferDetailsModal({
               onClick={handlePlayClick}
               sx={{
                 width: "100%",
-                bgcolor: "#01D676",
+                bgcolor: "#10B981",
                 color: "#000",
                 py: 1.5,
                 px: 2,
@@ -388,7 +381,7 @@ function OfferDetailsModal({
                 gap: 1,
                 transition: "all 0.2s ease-in-out",
                 "&:hover": {
-                  bgcolor: "#00c068",
+                  bgcolor: "#059669",
                   transform: "translateY(-2px)",
                 },
               }}
@@ -399,7 +392,7 @@ function OfferDetailsModal({
                   fill="currentColor"
                 />
               </svg>
-              Play and Earn ${formatPayout(offer.payout)}
+              Play and Earn {offer.payout === -1 ? "∞" : `$${offer.payout}`}
             </Box>
           </Box>
         </Box>
@@ -410,10 +403,9 @@ function OfferDetailsModal({
         <Box sx={{ px: { xs: 2, sm: 2.5 }, pb: 2, flexShrink: 0 }}>
           <Box 
             sx={{ 
-              bgcolor: "#222339",
+              bgcolor: colors.bgSecondary,
               p: 2,
               borderRadius: 2,
-              border: "1px solid rgba(255,255,255,0.05)",
             }}
           >
             {offer.description1 && (
@@ -433,7 +425,7 @@ function OfferDetailsModal({
                 sx={{ 
                   fontSize: "0.75rem", 
                   lineHeight: 1.5,
-                  color: "#a9a9ca",
+                  color: "#A9ABB4",
                   mb: offer.description3 ? 1 : 0,
                 }}
               >
@@ -445,7 +437,7 @@ function OfferDetailsModal({
                 sx={{ 
                   fontSize: "0.75rem", 
                   lineHeight: 1.5,
-                  color: "#a9a9ca",
+                  color: "#A9ABB4",
                 }}
               >
                 {offer.description3}
@@ -469,7 +461,7 @@ function OfferDetailsModal({
               borderBottom: "1px solid rgba(255,255,255,0.1)",
             }}
           >
-            <svg viewBox="0 0 18 15" style={{ width: 16, height: 14, color: "#01D676" }}>
+            <svg viewBox="0 0 18 15" style={{ width: 16, height: 14, color: "#10B981" }}>
               <path d="M15.8546 0.664551H2.10464C1.77312 0.664551 1.45518 0.796247 1.22076 1.03067C0.986341 1.26509 0.854645 1.58303 0.854645 1.91455V13.1646C0.854645 13.4961 0.986341 13.814 1.22076 14.0484C1.45518 14.2829 1.77312 14.4146 2.10464 14.4146H15.8546C16.1862 14.4146 16.5041 14.2829 16.7385 14.0484C16.9729 13.814 17.1046 13.4961 17.1046 13.1646V1.91455C17.1046 1.58303 16.9729 1.26509 16.7385 1.03067C16.5041 0.796247 16.1862 0.664551 15.8546 0.664551ZM14.6046 12.5396H3.35464C3.18888 12.5396 3.02991 12.4737 2.9127 12.3565C2.79549 12.2393 2.72964 12.0803 2.72964 11.9146V3.16455C2.72964 2.99879 2.79549 2.83982 2.9127 2.72261C3.02991 2.6054 3.18888 2.53955 3.35464 2.53955C3.52041 2.53955 3.67938 2.6054 3.79659 2.72261C3.9138 2.83982 3.97964 2.99879 3.97964 3.16455V9.15596L6.66246 6.47236C6.7205 6.41425 6.78943 6.36815 6.86531 6.3367C6.94118 6.30525 7.02251 6.28906 7.10464 6.28906C7.18678 6.28906 7.26811 6.30525 7.34398 6.3367C7.41986 6.36815 7.48879 6.41425 7.54683 6.47236L8.97964 7.90596L12.4711 4.41455H10.2296C10.0639 4.41455 9.90491 4.3487 9.7877 4.23149C9.67049 4.11428 9.60464 3.95531 9.60464 3.78955C9.60464 3.62379 9.67049 3.46482 9.7877 3.34761C9.90491 3.2304 10.0639 3.16455 10.2296 3.16455H13.9796C14.1454 3.16455 14.3044 3.2304 14.4216 3.34761C14.5388 3.46482 14.6046 3.62379 14.6046 3.78955V7.53955C14.6046 7.70531 14.5388 7.86428 14.4216 7.98149C14.3044 8.0987 14.1454 8.16455 13.9796 8.16455C13.8139 8.16455 13.6549 8.0987 13.5377 7.98149C13.4205 7.86428 13.3546 7.70531 13.3546 7.53955V5.29814L9.42183 9.23174C9.36379 9.28985 9.29486 9.33595 9.21898 9.3674C9.14311 9.39885 9.06178 9.41504 8.97964 9.41504C8.89751 9.41504 8.81618 9.39885 8.74031 9.3674C8.66443 9.33595 8.5955 9.28985 8.53746 9.23174L7.10464 7.79814L3.97964 10.9231V11.2896H14.6046C14.7704 11.2896 14.9294 11.3554 15.0466 11.4726C15.1638 11.5898 15.2296 11.7488 15.2296 11.9146C15.2296 12.0803 15.1638 12.2393 15.0466 12.3565C14.9294 12.4737 14.7704 12.5396 14.6046 12.5396Z" fill="currentColor"/>
             </svg>
             <Typography sx={{ fontSize: "0.875rem", fontWeight: 700, color: "#fff" }}>
@@ -481,19 +473,18 @@ function OfferDetailsModal({
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {offer.events?.map((event, index) => (
               <Box
-                key={event.id}
+                key={event.id || index}
                 sx={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   p: 1.5,
-                  bgcolor: "#222339",
+                  bgcolor: colors.bgSecondary,
                   borderRadius: 2,
-                  border: "1px solid rgba(255,255,255,0.05)",
                   transition: "all 0.2s",
                   "&:hover": {
-                    borderColor: "rgba(1, 214, 118, 0.3)",
-                    bgcolor: "#252640",
+                    borderColor: "rgba(16, 185, 129, 0.3)",
+                    bgcolor: colors.bgSecondary,
                   },
                 }}
               >
@@ -503,7 +494,7 @@ function OfferDetailsModal({
                       width: 6,
                       height: 6,
                       borderRadius: "50%",
-                      bgcolor: "#3d3f54",
+                      bgcolor: "rgba(16, 185, 129, 0.08)",
                     }}
                   />
                   <Typography sx={{ fontSize: "0.8125rem", color: "#fff", fontWeight: 500 }}>
@@ -514,18 +505,18 @@ function OfferDetailsModal({
                   <Typography 
                     sx={{ 
                       fontSize: "0.8125rem", 
-                      color: "#01D676",
+                      color: "#10B981",
                       fontWeight: 700,
                     }}
                   >
-                    ${formatPayout(event.payout)}
+                    ${event.payout}
                   </Typography>
                   <Box
                     sx={{
                       width: 20,
                       height: 20,
                       borderRadius: "50%",
-                      border: "1.5px solid #3d3f54",
+                      border: "1.5px solid rgba(16, 185, 129, 0.08)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -546,14 +537,14 @@ function OfferDetailsModal({
       onClose={() => setQrDialogOpen(false)}
       maxWidth="sm"
       fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            bgcolor: "#1a1b2e",
+      PaperProps={{
+        sx: {
+          bgcolor: "#0F1219",
           borderRadius: 3,
           boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
         },
-        },
+      }}
+      slotProps={{
         backdrop: { 
           sx: { 
             bgcolor: "rgba(0,0,0,0.85)", 
@@ -580,7 +571,7 @@ function OfferDetailsModal({
       </IconButton>
 
       <Box sx={{ p: 4, textAlign: "center" }}>
-        <Smartphone size={48} color="#01D676" style={{ marginBottom: 16 }} />
+        <Smartphone size={48} color="#10B981" style={{ marginBottom: 16 }} />
         
         <Typography 
           sx={{ 
@@ -616,7 +607,7 @@ function OfferDetailsModal({
           }}
         >
           <QRCodeSVG 
-            value={trackedClickUrl} 
+            value={offer.click_url} 
             size={200}
             level="H"
             includeMargin={true}
@@ -635,13 +626,12 @@ function OfferDetailsModal({
 
         <Box
           sx={{
-            bgcolor: "#222339",
+            bgcolor: colors.bgSecondary,
             p: 2,
             borderRadius: 2,
-            border: "1px solid rgba(255,255,255,0.05)",
             wordBreak: "break-all",
             fontSize: "0.75rem",
-            color: "#01D676",
+            color: "#10B981",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -649,14 +639,14 @@ function OfferDetailsModal({
             cursor: "pointer",
             transition: "all 0.2s",
             "&:hover": {
-              bgcolor: "#252640",
-              borderColor: "rgba(1, 214, 118, 0.2)",
+              bgcolor: colors.bgSecondary,
+              borderColor: "rgba(16, 185, 129, 0.2)",
             },
           }}
           onClick={handleCopyLink}
         >
           <Box sx={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {trackedClickUrl}
+            {offer.click_url}
           </Box>
           <Box
             sx={{
@@ -664,7 +654,7 @@ function OfferDetailsModal({
               alignItems: "center",
               gap: 0.5,
               flexShrink: 0,
-              color: copySuccess ? "#01D676" : colors.text.secondary,
+              color: copySuccess ? "#10B981" : colors.text.secondary,
             }}
           >
             {copySuccess ? (
@@ -690,83 +680,6 @@ function OfferDetailsModal({
   );
 }
 
-// Platform Selector Component
-function PlatformSelector({ 
-  selectedPlatforms, 
-  onToggle 
-}: { 
-  selectedPlatforms: DeviceOS[], 
-  onToggle: (platform: DeviceOS) => void 
-}) {
-  // Real Android and iOS SVG icons
-  const AndroidIcon = () => (
-    <svg viewBox="0 0 24 24" style={{ width: 16, height: 16 }} fill="currentColor">
-      <path d="M17.6,9.48l1.84-3.18c0.16-0.31,0.04-0.69-0.26-0.85c-0.29-0.15-0.65-0.06-0.83,0.22l-1.88,3.24 c-2.86-1.21-6.08-1.21-8.94,0L5.65,5.67c-0.19-0.29-0.58-0.38-0.87-0.2C4.5,5.65,4.41,6.01,4.56,6.3L6.4,9.48 C3.3,11.25,1.28,14.44,1,18h22C22.72,14.44,20.7,11.25,17.6,9.48z M7,15.25c-0.69,0-1.25-0.56-1.25-1.25 c0-0.69,0.56-1.25,1.25-1.25S8.25,13.31,8.25,14C8.25,14.69,7.69,15.25,7,15.25z M17,15.25c-0.69,0-1.25-0.56-1.25-1.25 c0-0.69,0.56-1.25,1.25-1.25s1.25,0.56,1.25,1.25C18.25,14.69,17.69,15.25,17,15.25z"/>
-    </svg>
-  );
-
-  const AppleIcon = () => (
-    <svg viewBox="0 0 24 24" style={{ width: 16, height: 16 }} fill="currentColor">
-      <path d="M17.05,20.28c-0.98,0.95-2.05,0.8-3.08,0.35c-1.09-0.46-2.09-0.48-3.24,0c-1.44,0.62-2.2,0.44-3.06-0.35 C2.79,15.25,3.51,7.59,9.05,7.31c1.35,0.07,2.29,0.74,3.08,0.8c1.18-0.24,2.31-0.93,3.57-0.84c1.51,0.12,2.65,0.72,3.4,1.8 c-3.12,1.87-2.38,5.98,0.48,7.13c-0.57,1.5-1.31,2.99-2.54,4.09L17.05,20.28z M12.03,7.25c-0.15-2.23,1.66-4.07,3.74-4.25 c0.29,2.58-2.34,4.5-3.74,4.25z"/>
-    </svg>
-  );
-
-  const platforms: { id: DeviceOS; label: string; icon: any }[] = [
-    { id: "android", label: "Android", icon: AndroidIcon },
-    { id: "ios", label: "iOS", icon: AppleIcon },
-    { id: "windows", label: "Desktop", icon: Monitor },
-  ];
-
-  return (
-    <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 }, mb: { xs: 2, sm: 3 }, flexWrap: "wrap" }}>
-        <Typography variant="h5" isBold sx={{ fontSize: { xs: "1.5rem", sm: "2rem" } }}>
-          All Offers
-        </Typography>
-        <Typography sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, color: colors.text.secondary, mr: { xs: 0, sm: 0.5 } }}>
-          on
-        </Typography>
-        {platforms.map((platform) => {
-          const Icon = platform.icon;
-          const isSelected = selectedPlatforms.includes(platform.id);
-          
-          return (
-            <Box
-              key={platform.id}
-              onClick={() => onToggle(platform.id)}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: { xs: 0.5, sm: 0.75 },
-                px: { xs: 1.25, sm: 1.5 },
-                py: { xs: 0.625, sm: 0.75 },
-                borderRadius: { xs: 1.5, sm: 2 },
-                bgcolor: isSelected ? "rgba(1, 214, 118, 0.1)" : "#12131c",
-                border: `1px solid ${isSelected ? "rgba(1, 214, 118, 0.3)" : "rgba(255, 255, 255, 0.05)"}`,
-                cursor: "pointer",
-                transition: "all 0.2s",
-                "&:hover": {
-                  borderColor: isSelected ? "rgba(1, 214, 118, 0.5)" : "rgba(255, 255, 255, 0.1)",
-                  bgcolor: isSelected ? "rgba(1, 214, 118, 0.15)" : "#1a1b2e",
-                },
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", color: isSelected ? "#01D676" : colors.text.secondary }}>
-                <Icon />
-              </Box>
-              <Typography sx={{ fontSize: { xs: "0.8125rem", sm: "0.875rem" }, fontWeight: 500, color: isSelected ? "#01D676" : colors.text.primary }}>
-                {platform.label}
-              </Typography>
-              {isSelected && (
-                <CheckIcon sx={{ fontSize: { xs: 14, sm: 16 }, color: "#01D676" }} />
-              )}
-            </Box>
-          );
-        })}
-      </Box>
-    </Box>
-  );
-}
 
 export default function AllOffersClient({ userId }: { userId: string }) {
   const [displayedOffers, setDisplayedOffers] = useState<NotikOffer[]>([]);
@@ -853,89 +766,30 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       setHasMore(true);
       
       const primaryOS = selectedPlatforms.length > 0 ? selectedPlatforms[0] : 'android';
-
-      let country = 'IN';
-      try {
-        const geoRes = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
-        if (geoRes.ok) {
-          const geoData = await geoRes.json();
-          if (geoData.country_code) country = geoData.country_code;
-        }
-      } catch {}
       
-      // Fetch from Gemiad and Vortex APIs via server, Notik directly from browser (bypass Cloudflare)
-      const notikApiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "";
-      const [gemiadResponse, vortexResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
-        fetch(`/api/gemiad-offers?user_id=${userId}&country=${country}`),
-        fetch(`/api/vortex-offers?user_id=${userId}&country=${country}`),
-        fetch(`/api/klink-offers?user_id=${userId}&country=${country}`),
-        fetch(`/api/revtoo-offers?user_id=${userId}&country=${country}`),
-        fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}&country=${country}`),
+      // Fetch from Notik, Klink, Revtoo, and Taskwall APIs in parallel (Priority order)
+      const [notikResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
+        fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}`),
+        fetch(`/api/klink-offers?user_id=${userId}`),
+        fetch(`/api/revtoo-offers?user_id=${userId}`),
+        fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}`)
       ]);
       
-      let gemiadOffers: any[] = [];
       let notikOffers: any[] = [];
-      let vortexOffers: any[] = [];
       let klinkOffers: any[] = [];
       let revtooOffers: any[] = [];
       let taskwallOffers: any[] = [];
       
-      // Process Gemiad offers (Priority 1)
-      if (gemiadResponse.ok) {
-        const gemiadData = await gemiadResponse.json();
-        if (gemiadData.success && gemiadData.offers && Array.isArray(gemiadData.offers)) {
-          gemiadOffers = gemiadData.offers;
-          console.log(`All Offers - Gemiad: ${gemiadOffers.length}`);
+      // Process Notik offers (Priority 1)
+      if (notikResponse.ok) {
+        const notikData = await notikResponse.json();
+        if (notikData.success && notikData.offers && Array.isArray(notikData.offers)) {
+          notikOffers = notikData.offers;
+          console.log(`All Offers - Notik: ${notikOffers.length}`);
         }
       }
       
-      // Process Notik offers (Priority 2) - direct browser fetch to bypass Cloudflare
-      try {
-        const notikDirectResponse = await fetch(
-          `https://notik.me/api/offers?api_key=${notikApiKey}&user_id=${userId}&device=${primaryOS}`,
-          { credentials: "include", mode: "cors" }
-        );
-        if (notikDirectResponse.ok) {
-          const notikData = await notikDirectResponse.json();
-          const rawOffers = notikData.offers || notikData.data || [];
-          if (Array.isArray(rawOffers)) {
-            notikOffers = rawOffers.map((offer: any) => ({
-              offer_id: offer.id || offer.offerId || offer.offer_id,
-              name: offer.name || offer.title || offer.offer_name,
-              description1: offer.description || offer.instructions || "",
-              image_url: offer.image || offer.icon || "https://via.placeholder.com/150",
-              payout: Math.round((parseFloat(offer.payout || offer.reward || offer.amount || 0) / 1000) * 100) / 100,
-              click_url: offer.link || offer.tracking_link || offer.click_url,
-              provider: "Notik",
-              trackingType: offer.conversion_type || offer.type || "CPA",
-            })).filter((o: any) => o.name && o.payout > 0);
-            console.log(`All Offers - Notik (direct): ${notikOffers.length}`);
-          }
-        }
-      } catch (e) {
-        console.log("Notik direct fetch failed, trying server route...", e);
-        try {
-          const notikFallback = await fetch(`/api/notik-offers?user_id=${userId}&device_os=${primaryOS}`);
-          if (notikFallback.ok) {
-            const fbData = await notikFallback.json();
-            if (fbData.success && fbData.offers?.length) {
-              notikOffers = fbData.offers;
-              console.log(`All Offers - Notik (fallback): ${notikOffers.length}`);
-            }
-          }
-        } catch {}
-      }
-      
-      // Process Vortex offers (Priority 3)
-      if (vortexResponse.ok) {
-        const vortexData = await vortexResponse.json();
-        if (vortexData.success && vortexData.offers && Array.isArray(vortexData.offers)) {
-          vortexOffers = vortexData.offers;
-          console.log(`All Offers - Vortex: ${vortexOffers.length}`);
-        }
-      }
-      
-      // Process Klink offers (Priority 4)
+      // Process Klink offers (Priority 2)
       if (klinkResponse.ok) {
         const klinkData = await klinkResponse.json();
         if (klinkData.success && klinkData.offers && Array.isArray(klinkData.offers)) {
@@ -944,7 +798,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
         }
       }
       
-      // Process Revtoo offers (Priority 5)
+      // Process Revtoo offers (Priority 3)
       if (revtooResponse.ok) {
         const revtooData = await revtooResponse.json();
         if (revtooData.success && revtooData.offers && Array.isArray(revtooData.offers)) {
@@ -953,7 +807,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
         }
       }
       
-      // Process Taskwall offers (Priority 6)
+      // Process Taskwall offers (Priority 4)
       if (taskwallResponse.ok) {
         const taskwallData = await taskwallResponse.json();
         if (taskwallData.success && taskwallData.offers && Array.isArray(taskwallData.offers)) {
@@ -962,70 +816,44 @@ export default function AllOffersClient({ userId }: { userId: string }) {
         }
       }
       
-      // Combine offers with priority: Gemiad > Notik > Vortex > Klink > Revtoo > Taskwall
-      // Mix them in a round-robin fashion for better distribution
-      const allOffersData: any[] = [];
-      const maxLength = Math.max(gemiadOffers.length, notikOffers.length, vortexOffers.length, klinkOffers.length, revtooOffers.length, taskwallOffers.length);
+      // Pin Taskwall lootably offer to the top
+      const pinnedOffers = taskwallOffers.filter(o => o.name?.toLowerCase().includes('lootably'));
+      const nonPinnedTaskwall = taskwallOffers.filter(o => !o.name?.toLowerCase().includes('lootably'));
       
-      for (let i = 0; i < maxLength; i++) {
-        if (i < gemiadOffers.length) allOffersData.push(gemiadOffers[i]);
-        if (i < notikOffers.length) allOffersData.push(notikOffers[i]);
-        if (i < vortexOffers.length) allOffersData.push(vortexOffers[i]);
-        if (i < klinkOffers.length) allOffersData.push(klinkOffers[i]);
-        if (i < revtooOffers.length) allOffersData.push(revtooOffers[i]);
-        if (i < taskwallOffers.length) allOffersData.push(taskwallOffers[i]);
+      // Klink offers come after pinned offers
+      // Round-robin the rest: Notik > Revtoo > Taskwall
+      const restOffers: any[] = [];
+      const maxRestLength = Math.max(notikOffers.length, revtooOffers.length, nonPinnedTaskwall.length);
+      
+      for (let i = 0; i < maxRestLength; i++) {
+        if (i < notikOffers.length) restOffers.push(notikOffers[i]);
+        if (i < revtooOffers.length) restOffers.push(revtooOffers[i]);
+        if (i < nonPinnedTaskwall.length) restOffers.push(nonPinnedTaskwall[i]);
       }
+      
+      const allOffersData = [...pinnedOffers, ...klinkOffers, ...restOffers].filter(o => {
+        if (o.payout === -1) return true;
+        const p = typeof o.payout === 'number' ? o.payout : parseFloat(String(o.payout || '0'));
+        if (p > 0) return true;
+        if (o.offer_id === '1677') return true;
+        if (o.offer_id === '56443') return true;
+        return false;
+      });
       
       console.log(`All Offers - Total combined: ${allOffersData.length}`);
       
-      // Remove duplicates based on offer_id and name (same offer from multiple providers)
-      const uniqueOffersMap = new Map<string, any>();
-      allOffersData.forEach(offer => {
-        const key = `${offer.offer_id}-${offer.name}`;
-        // Keep the first occurrence (highest priority provider)
-        if (!uniqueOffersMap.has(key)) {
-          uniqueOffersMap.set(key, offer);
-        }
-      });
-      
-      const uniqueOffers = Array.from(uniqueOffersMap.values());
-      console.log(`All Offers - After deduplication: ${uniqueOffers.length} (removed ${allOffersData.length - uniqueOffers.length} duplicates)`);
-      
-      // Personalize offer order based on user_id (simple hash-based shuffle)
-      // This ensures each user sees a different order but consistent on refresh
-      const hashCode = (str: string) => {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-          const char = str.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash = hash & hash; // Convert to 32bit integer
-        }
-        return Math.abs(hash);
-      };
-      
-      const userSeed = hashCode(userId);
-      const personalizedOffers = [...uniqueOffers].sort((a, b) => {
-        const aKey = `${a.offer_id}-${a.name}`;
-        const bKey = `${b.offer_id}-${b.name}`;
-        const aHash = hashCode(aKey + userSeed);
-        const bHash = hashCode(bKey + userSeed);
-        return aHash - bHash;
-      });
-      
-      console.log(`All Offers - Personalized for user: ${userId.substring(0, 8)}...`);
-      
-      if (personalizedOffers.length > 0) {
+      if (allOffersData.length > 0) {
         // Store all offers
-        setAllOffers(personalizedOffers);
+        setAllOffers(allOffersData);
         
         // Display first 20 offers immediately
-        const initialBatch = personalizedOffers.slice(0, 20);
+        const initialBatch = allOffersData.slice(0, 20);
         setDisplayedOffers(initialBatch);
         currentIndex.current = initialBatch.length;
         setLoading(false);
         
         // Check if there are more offers
-        if (initialBatch.length >= personalizedOffers.length) {
+        if (initialBatch.length >= allOffersData.length) {
           setHasMore(false);
         }
       } else {
@@ -1038,35 +866,19 @@ export default function AllOffersClient({ userId }: { userId: string }) {
   }
 
   return (
-    <Box sx={{ bgcolor: "#0a0b0f", minHeight: "100vh", width: "100%", pb: 4 }}>
-      {/* Platform Selector */}
-      <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, pt: { xs: 2, sm: 3 }, pb: 2 }}>
-        <PlatformSelector selectedPlatforms={selectedPlatforms} onToggle={handlePlatformToggle} />
-      </Box>
-
+    <Box sx={{ minHeight: "100vh", width: "100%", pb: 4 }}>
       {/* All Offers Grid */}
       <Box sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
         {loading && displayedOffers.length === 0 ? (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "repeat(3, 1fr)",
-                sm: "repeat(4, 1fr)",
-                md: "repeat(6, 1fr)",
-                lg: "repeat(7, 1fr)",
-                xl: "repeat(8, 1fr)",
-              },
-              gap: { xs: 0.75, sm: 1, md: 1 },
-              columnGap: { xs: 0.5, sm: 0.75, md: 0.75 },
-              px: { xs: 2, sm: 3, md: 4 },
-            }}
-          >
-            {Array.from({ length: 16 }).map((_, i) => (
-              <Box key={i}>
-                <Skeleton variant="rounded" sx={{ width: "100%", aspectRatio: "3/4", borderRadius: 2, mb: 0.75 }} />
-                <Skeleton variant="text" sx={{ width: "60%", height: 14 }} />
-                <Skeleton variant="text" sx={{ width: "40%", height: 12 }} />
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(3, 1fr)", sm: "repeat(4, 1fr)", md: "repeat(6, 1fr)", lg: "repeat(7, 1fr)", xl: "repeat(8, 1fr)" }, gap: { xs: 0.5, sm: 0.75, md: 0.75 }, columnGap: 0 }}>
+            {Array.from({ length: 24 }).map((_, i) => (
+              <Box key={i} sx={{ p: { xs: 0.5, sm: 1 } }}>
+                  <Box sx={{ bgcolor: "rgba(35, 38, 69, 0.75)", borderRadius: { xs: "10px", sm: "16px" }, p: { xs: 1, sm: 2 } }}>
+                    <Box sx={{ width: "100%", aspectRatio: "1", borderRadius: { xs: "7px", sm: "10px" }, mb: { xs: 0.75, sm: 1.5 }, animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * 0.05}s`, "@keyframes pulse": { "0%,100%": { opacity: 0.5 }, "50%": { opacity: 1 } }, position: "relative", overflow: "hidden", "&::after": { content: '""', position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.03) 50%, transparent 100%)", animation: "shimmer 1.5s ease-in-out infinite", animationDelay: `${i * 0.05}s` } }} />
+                  <Box sx={{ height: { xs: 14, sm: 20 }, bgcolor: "#0F1219", borderRadius: "4px", width: "85%", mb: { xs: 0.2, sm: 0.5 }, animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * 0.05 + 0.1}s` }} />
+                  <Box sx={{ height: { xs: 8, sm: 10 }, bgcolor: "#0F1219", borderRadius: "4px", width: "35%", mb: 0.2, animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * 0.05 + 0.2}s` }} />
+                  <Box sx={{ height: { xs: 12, sm: 16 }, bgcolor: "#0F1219", borderRadius: "4px", width: "45%", animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * 0.05 + 0.3}s` }} />
+                </Box>
               </Box>
             ))}
           </Box>
@@ -1083,106 +895,95 @@ export default function AllOffersClient({ userId }: { userId: string }) {
                 display: "grid",
                 gridTemplateColumns: {
                   xs: "repeat(3, 1fr)",
-                  sm: "repeat(4, 1fr)",
+                  sm: "repeat(5, 1fr)",
                   md: "repeat(6, 1fr)",
-                  lg: "repeat(7, 1fr)",
-                  xl: "repeat(8, 1fr)",
+                  lg: "repeat(9, 1fr)",
+                  xl: "repeat(10, 1fr)",
                 },
-                gap: { xs: 0.75, sm: 1, md: 1 },
-                columnGap: { xs: 0.5, sm: 0.75, md: 0.75 },
+                gap: { xs: 1, sm: 1, md: 1.5 },
+                columnGap: { xs: 0.75, sm: 0.75, md: 1 },
               }}
             >
               {displayedOffers.map((offer, index) => (
                 <Box
                   key={`${offer.offer_id}-${index}`}
-                  sx={{
-                    minWidth: { xs: 100, sm: 140 },
-                    maxWidth: { xs: 100, sm: 140 },
-                    flexShrink: 0,
-                    cursor: "pointer",
-                  }}
+              sx={{
+                cursor: "pointer",
+                minWidth: { xs: 100, sm: 140 },
+                maxWidth: { xs: 100, sm: 140 },
+              }}
                   onClick={() => {
                     setSelectedOffer(offer);
                     setModalOpen(true);
                   }}
                 >
                   <Box
-                    sx={{
-                      bgcolor: "#222339",
-                      p: { xs: 0.75, sm: 1.5 },
-                      borderRadius: { xs: 1.5, sm: 2.5 },
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        bgcolor: "#2a2b45",
-                      },
-                    }}
+                sx={{
+                  bgcolor: "rgba(35, 38, 69, 0.75)",
+                  border: "none",
+                  borderRadius: { xs: "10px", sm: "16px" },
+                  p: { xs: 1, sm: 2 },
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  transition: "all 0.3s",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 12px 24px rgba(16,185,129,0.15)",
+                  },
+                }}
                   >
-                    <Box sx={{ position: "relative", mb: { xs: 1, sm: 1.5 } }}>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          aspectRatio: "1",
-                          borderRadius: { xs: 1, sm: 1.5 },
-                          overflow: "hidden",
-                          bgcolor: "#1a1b2e",
-                          backgroundImage: offer.image_url ? `url(${offer.image_url})` : "none",
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }}
-                      />
-                      {offer.categories && (
-                        <Box
-                          sx={{
-                            position: "absolute",
-                            top: { xs: 4, sm: 8 },
-                            right: { xs: 4, sm: 8 },
-                            bgcolor: "rgba(30, 30, 46, 0.6)",
-                            px: { xs: 0.5, sm: 1 },
-                            py: { xs: 0.25, sm: 0.5 },
-                            borderRadius: 10,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                          }}
-                        >
-                          <Gamepad2 size={8} color="#fff" />
-                        </Box>
-                      )}
-                    </Box>
-
-                    <Box sx={{ height: 40, overflow: "hidden", mb: 0.5 }}>
-                      <Typography
-                        sx={{
-                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                          fontWeight: 500,
-                          lineHeight: 1.3,
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {offer.name}
-                      </Typography>
-                    </Box>
-
-                    <Typography
+                    <Box
                       sx={{
-                        fontSize: { xs: "0.6rem", sm: "0.6875rem" },
-                        color: colors.text.secondary,
-                        opacity: 0.6,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        fontWeight: 600,
-                        mb: { xs: 0.5, sm: 1 },
+                        width: "100%",
+                        aspectRatio: "1",
+                        borderRadius: { xs: "7px", sm: "10px" },
+                        mb: { xs: 0.75, sm: 1.5 },
+                        backgroundImage: offer.image_url ? `url(${offer.image_url})` : "none",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        bgcolor: "#0F1219",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      {offer.provider || 'Game'}
+                      {!offer.image_url && <Gamepad2 size={32} color="#10B981" opacity={0.5} />}
+                    </Box>
+                    <Typography
+                      variant="h6"
+                      isBold
+                      sx={{
+                        fontSize: { xs: "0.75rem", sm: "0.95rem" },
+                        mb: { xs: 0.2, sm: 0.5 },
+                        lineHeight: 1.25,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {offer.name}
                     </Typography>
-
-                    <Typography sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, fontWeight: 600 }}>
-                      ${formatPayout(offer.payout)}
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", mt: "auto" }}>
+                      <Box>
+                        <Typography sx={{ fontSize: { xs: "0.5rem", sm: "0.65rem" }, color: colors.text.secondary, mb: 0.2 }}>
+                          UP TO
+                        </Typography>
+                        <Typography isBold sx={{ fontSize: { xs: "0.85rem", sm: "1.05rem" }, color: colors.text.primary }}>
+                          {offer.payout === -1 ? "\u221E" : typeof offer.payout === 'number' ? `$${offer.payout.toFixed(2)}` : offer.payout ? `$${offer.payout}` : "$0.00"}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              ))}
+              {loadingMore && Array.from({ length: 20 }).map((_, i) => (
+                <Box key={`skel-${i}`} sx={{ minWidth: { xs: 100, sm: 140 }, maxWidth: { xs: 100, sm: 140 } }}>
+                  <Box sx={{ bgcolor: "rgba(35, 38, 69, 0.75)", borderRadius: { xs: "10px", sm: "16px" }, p: { xs: 1, sm: 2 } }}>
+                    <Box sx={{ width: "100%", aspectRatio: "1", borderRadius: { xs: "7px", sm: "10px" }, mb: { xs: 0.75, sm: 1.5 }, position: "relative", overflow: "hidden", animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * 0.05}s`, "@keyframes pulse": { "0%,100%": { opacity: 0.5 }, "50%": { opacity: 1 } }, "&::after": { content: '""', position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.03) 50%, transparent 100%)", animation: "shimmer 1.5s ease-in-out infinite", animationDelay: `${i * 0.05}s` } }} />
+                    <Box sx={{ height: { xs: 14, sm: 20 }, bgcolor: "#0F1219", borderRadius: "4px", width: "85%", mb: { xs: 0.2, sm: 0.5 }, animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * 0.05 + 0.1}s` }} />
+                    <Box sx={{ height: { xs: 8, sm: 10 }, bgcolor: "#0F1219", borderRadius: "4px", width: "35%", mb: 0.2, animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * 0.05 + 0.2}s` }} />
+                    <Box sx={{ height: { xs: 12, sm: 16 }, bgcolor: "#0F1219", borderRadius: "4px", width: "45%", animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * 0.05 + 0.3}s` }} />
                   </Box>
                 </Box>
               ))}
@@ -1198,11 +999,7 @@ export default function AllOffersClient({ userId }: { userId: string }) {
                   justifyContent: "center",
                   minHeight: 100
                 }}
-              >
-                {loadingMore && (
-                  <CircularProgress size={32} sx={{ color: "#01D676" }} />
-                )}
-              </Box>
+              />
             )}
 
             {/* End of offers message */}

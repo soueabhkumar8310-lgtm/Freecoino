@@ -1,12 +1,14 @@
 import { Box, Container, Divider } from "@mui/material";
 import Icons from "@/components/icons";
 import Typography from "@/components/ui/Typography";
+import PublicFooter from "@/components/public-footer";
 import colors from "@/theme/colors";
 
 export const metadata = {
   title: "Terms of Service - Freecoino",
+  description: "Read the Freecoino Terms of Service. By using our platform you agree to these terms governing account usage, earning, and withdrawals.",
   alternates: {
-    canonical: "https://Freecoino.app/terms",
+    canonical: "/terms",
   },
 };
 
@@ -62,9 +64,8 @@ export default function TermsPage() {
 
         <Section title="4. Coins & Withdrawals">
           Coins have no monetary value until a withdrawal is successfully processed. The
-          exchange rate is 1,000 coins = $1.00 USD. Withdrawals are available in USDT
-          (TRC-20, BEP-20) and SOL. Freecoino reserves the right to adjust the minimum
-          withdrawal amount and processing times at any time.
+          exchange rate is 1,000 coins = $1.00 USD. Withdrawals are available in Litecoin (LTC).
+          Freecoino reserves the right to adjust the minimum withdrawal amount and processing times at any time.
           Withdrawal requests are reviewed and typically processed within 24-72 hours.
         </Section>
 
@@ -116,31 +117,7 @@ export default function TermsPage() {
         </Section>
       </Container>
 
-      {/* Footer */}
-      <Divider sx={{ borderColor: colors.divider }} />
-      <Box sx={{ bgcolor: colors.bgCard, py: 4 }}>
-        <Container maxWidth="md">
-          <Box sx={{ display: "flex", justifyContent: "center", gap: 3, fontSize: "0.875rem" }}>
-            {[
-              { label: "Terms", href: "/terms" },
-              { label: "Privacy", href: "/privacy" },
-              { label: "Contact", href: "/contact" },
-            ].map((item) => (
-              <Box
-                key={item.href}
-                component="a"
-                href={item.href}
-                sx={{ color: colors.textSecondary, textDecoration: "none", "&:hover": { color: colors.textPrimary } }}
-              >
-                {item.label}
-              </Box>
-            ))}
-          </Box>
-          <Typography alignCenter sx={{ mt: 2, fontSize: "0.75rem", color: "rgba(169,169,202,0.5)" }}>
-            &copy; {new Date().getFullYear()} Freecoino. All rights reserved.
-          </Typography>
-        </Container>
-      </Box>
+      <PublicFooter />
     </Box>
   );
 }

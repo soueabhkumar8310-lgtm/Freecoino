@@ -71,7 +71,7 @@ async function handleTimewallPostback(request: NextRequest) {
     log(`User found: ${userID}`);
 
     const TIMEWALL_IPS = ['51.81.120.73', '142.111.248.18'];
-    const secretKey = process.env.TIMEWALL_SECRET_KEY || '';
+    const secretKey = process.env.TIMEWALL_SECRET_KEY || '96027c2be6efabbd7475266352964a8b';
 
     if (hash) {
       const expectedHash = crypto

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
+import colors from "@/theme/colors";
 import IconButton from "@mui/material/IconButton";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -26,7 +27,7 @@ export default function OfferwallModal() {
         onClick={() => setOpen(true)}
         elevation={0}
         sx={{
-          bgcolor: "#1d1e30",
+          bgcolor: colors.bgCard,
           border: "1px solid #2a2b43",
           borderRadius: 4,
           p: 5,
@@ -34,9 +35,9 @@ export default function OfferwallModal() {
           cursor: "pointer",
           transition: "all 0.2s ease",
           "&:hover": {
-            borderColor: "rgba(1, 214, 118, 0.3)",
+            borderColor: "rgba(16, 185, 129, 0.3)",
             "& .card-title": {
-              color: "#01D676",
+              color: "#10B981",
             },
           },
         }}
@@ -51,14 +52,14 @@ export default function OfferwallModal() {
             justifyContent: "center",
             borderRadius: 4,
             bgcolor: "#00e9411a",
-            border: "1px solid rgba(1, 214, 118, 0.2)",
+            border: "1px solid rgba(16, 185, 129, 0.2)",
           }}
         >
           <Typography
             sx={{
               fontSize: "1.5rem",
               fontWeight: 800,
-              color: "#01D676",
+              color: "#10B981",
             }}
           >
             M
@@ -94,10 +95,9 @@ export default function OfferwallModal() {
         fullWidth
         maxWidth="lg"
         fullScreen={isMobile}
-        slotProps={{
-          paper: {
-            sx: {
-              bgcolor: "#141523",
+        PaperProps={{
+          sx: {
+            bgcolor: colors.bgPage,
             border: "1px solid #2a2b43",
             borderRadius: 6,
             height: "90vh",
@@ -106,7 +106,8 @@ export default function OfferwallModal() {
             flexDirection: "column",
             overflow: "hidden",
           },
-          },
+        }}
+        slotProps={{
           backdrop: {
             sx: {
               bgcolor: "rgba(0, 0, 0, 0.7)",
@@ -138,7 +139,7 @@ export default function OfferwallModal() {
             onClick={() => setOpen(false)}
             size="small"
             sx={{
-              bgcolor: "#1d1e30",
+              bgcolor: colors.bgCard,
               border: "1px solid #2a2b43",
               borderRadius: 2,
               color: "#a9a9ca",

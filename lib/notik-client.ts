@@ -51,9 +51,9 @@ export async function fetchNotikOffers(
     }
     
     // Build Notik filtered API URL with all required parameters
-    const NOTIK_API_KEY = process.env.NEXT_PUBLIC_NOTIK_API_KEY || '';
-    const NOTIK_PUB_ID = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || '';
-    const NOTIK_APP_ID = process.env.NEXT_PUBLIC_NOTIK_APP_ID || '';
+    const NOTIK_API_KEY = process.env.NEXT_PUBLIC_NOTIK_API_KEY || 'PYMTzu6owFJ8roFouth5bEYxoJRmg7q9';
+    const NOTIK_PUB_ID = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || 'mIJkTN';
+    const NOTIK_APP_ID = process.env.NEXT_PUBLIC_NOTIK_APP_ID || 'dOTR7kmvMw';
     
     const apiUrl = new URL('https://notik.me/api/v2/get-offers/filtered');
     apiUrl.searchParams.append('api_key', NOTIK_API_KEY);

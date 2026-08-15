@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import {
   Box, Button, Paper, TextField, CircularProgress, Avatar, Grid,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -99,11 +99,12 @@ export default function ProfileContent({
   const [streak, setStreak] = useState(streakCount);
   const [dashboardTotalEarned, setDashboardTotalEarned] = useState(totalEarned);
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const supabaseRef = useRef(supabase);
+  const supabaseRef = useRef(createClient());
 
   // Initial Fetch
   useEffect(() => {
     async function fetchInitialData() {
+      const supabase = createClient();
       const withTarget = 4;
 
       const { data: withRes } = await supabase
@@ -178,6 +179,7 @@ export default function ProfileContent({
   // Load More Withdrawals
   async function loadMoreWithdrawals() {
     setLoadingWithdrawals(true);
+    const supabase = createClient();
     const from = withdrawalsPage * 5;
     const to = from + 4;
     const { data } = await supabase.from("withdrawals").select("id, coins, amount_usd, status, tx_hash, requested_at")
@@ -198,6 +200,7 @@ export default function ProfileContent({
     setSaving(true);
     setError(null);
     setSaved(false);
+    const supabase = createClient();
     const { error: updateError } = await supabase
       .from("users")
       .update({ display_name: name.trim() || null, crypto_address: address.trim() || null })
@@ -226,7 +229,7 @@ export default function ProfileContent({
       icon: <Coins size={22} color={colors.primary} />,
       label: "Coin Balance",
       value: coins.toLocaleString(),
-      sub: `≈ $${usdValue} USDT`,
+      sub: `≈ $${usdValue} LTC`,
       accent: true,
       glow: true,
     },
@@ -275,7 +278,7 @@ export default function ProfileContent({
       href: "/cashout",
       icon: <Wallet size={26} color={colors.primary} />,
       title: "Cash Out",
-      description: "Withdraw earnings as USDT",
+      description: "Withdraw earnings as LTC",
       primary: false,
     },
   ];
@@ -300,7 +303,7 @@ export default function ProfileContent({
         </Box>
 
         <Box component="form" onSubmit={handleSave} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <Paper sx={{ borderRadius: 4, border: `1px solid ${colors.divider}`, bgcolor: colors.background.primary, p: 3 }}>
+          <Paper sx={{ borderRadius: 4, bgcolor: colors.background.primary, p: 3 }}>
             <Typography variant="subtitle1" isBold sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
               <User size={20} color={colors.primary} /> Account Info
             </Typography>
@@ -384,7 +387,7 @@ export default function ProfileContent({
             </Box>
           </Paper>
 
-          <Paper sx={{ borderRadius: 4, border: `1px solid ${colors.divider}`, bgcolor: colors.background.primary, p: 3 }}>
+          <Paper sx={{ borderRadius: 4, bgcolor: colors.background.primary, p: 3 }}>
             <Typography variant="subtitle1" isBold sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
               <Wallet size={20} color={colors.primary} /> Withdrawal Settings
             </Typography>
@@ -434,7 +437,7 @@ export default function ProfileContent({
           "&:hover": {
             background: colors.background.glassHover,
             borderColor: colors.glass.borderHover,
-            boxShadow: `0 8px 32px rgba(99, 102, 241, 0.1)`,
+            boxShadow: `0 8px 32px rgba(16, 185, 129, 0.1)`,
           },
         }}
       >
@@ -448,7 +451,7 @@ export default function ProfileContent({
             width: 200,
             height: 200,
             borderRadius: "50%",
-            background: "rgba(99, 102, 241, 0.08)",
+            background: "rgba(16, 185, 129, 0.08)",
             filter: "blur(60px)",
           }}
         />
@@ -467,7 +470,7 @@ export default function ProfileContent({
               fontSize: "1.1rem",
               color: "#fff",
               flexShrink: 0,
-              boxShadow: "0 4px 16px rgba(99, 102, 241, 0.3)",
+              boxShadow: "0 4px 16px rgba(16, 185, 129, 0.3)",
             }}
           >
             {initials}
@@ -508,7 +511,7 @@ export default function ProfileContent({
                 p: { xs: 2, sm: 2.5 },
                 height: "100%",
                 transition: "all 0.3s ease",
-                "&:hover": { borderColor: colors.glass.borderHover, background: colors.background.glassHover, boxShadow: `0 8px 24px rgba(99, 102, 241, 0.1)` },
+                "&:hover": { borderColor: colors.glass.borderHover, background: colors.background.glassHover, boxShadow: `0 8px 24px rgba(16, 185, 129, 0.1)` },
               }}
             >
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
@@ -520,7 +523,7 @@ export default function ProfileContent({
                     width: 42,
                     height: 42,
                     borderRadius: 2,
-                    background: s.glow ? `rgba(99, 102, 241, 0.12)` : colors.background.secondary,
+                    background: s.glow ? `rgba(16, 185, 129, 0.12)` : colors.background.secondary,
                     border: `1px solid ${s.glow ? colors.glass.borderHover : colors.glass.border}`,
                     flexShrink: 0,
                   }}
@@ -574,7 +577,7 @@ export default function ProfileContent({
           transition: "all 0.3s ease",
           position: "relative",
           overflow: "hidden",
-          "&:hover": { borderColor: colors.primary, background: colors.background.glassHover, boxShadow: `0 8px 32px rgba(99, 102, 241, 0.15)` },
+          "&:hover": { borderColor: colors.primary, background: colors.background.glassHover, boxShadow: `0 8px 32px rgba(16, 185, 129, 0.15)` },
         }}
       >
         <Box
@@ -585,7 +588,7 @@ export default function ProfileContent({
             width: 52,
             height: 52,
             borderRadius: 2,
-            background: `rgba(99, 102, 241, 0.15)`,
+            background: `rgba(16, 185, 129, 0.15)`,
             border: `1px solid ${colors.glass.borderHover}`,
             flexShrink: 0,
             animation: "pulse-glow 2.5s ease-in-out infinite",
@@ -647,7 +650,7 @@ export default function ProfileContent({
                 "&:hover": {
                   borderColor: colors.primary,
                   background: colors.background.glassHover,
-                  boxShadow: `0 8px 24px rgba(99, 102, 241, 0.12)`,
+                  boxShadow: `0 8px 24px rgba(16, 185, 129, 0.12)`,
                   transform: "translateY(-2px)",
                 },
               }}
@@ -660,7 +663,7 @@ export default function ProfileContent({
                   width: 48,
                   height: 48,
                   borderRadius: 2,
-                  background: a.primary ? `rgba(99, 102, 241, 0.15)` : colors.background.secondary,
+                  background: a.primary ? `rgba(16, 185, 129, 0.15)` : colors.background.secondary,
                   border: `1px solid ${a.primary ? colors.glass.borderHover : colors.glass.border}`,
                   flexShrink: 0,
                 }}
@@ -700,7 +703,7 @@ export default function ProfileContent({
       {/* top cards */}
       <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" }, mb: 3 }}>
         {/* avatar + info card */}
-        <Paper sx={{ flex: 1, borderRadius: 4, border: `1px solid ${colors.divider}`, bgcolor: colors.background.secondary, p: 3, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <Paper sx={{ flex: 1, borderRadius: 4, bgcolor: colors.background.secondary, p: 3, display: "flex", flexDirection: "column", alignItems: "center" }}>
           <Avatar sx={{ bgcolor: colors.secondary, width: 100, height: 100, fontSize: "2.5rem", fontWeight: 700 }}>
             {initials}
           </Avatar>
@@ -710,10 +713,10 @@ export default function ProfileContent({
         </Paper>
 
         {/* stats card */}
-        <Paper sx={{ flex: 1, borderRadius: 4, border: `1px solid ${colors.divider}`, bgcolor: colors.background.secondary, p: 3 }}>
+        <Paper sx={{ flex: 1, borderRadius: 4, bgcolor: colors.background.secondary, p: 3 }}>
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, height: "100%" }}>
             {profileStats.map((s) => (
-              <Box key={s.label} sx={{ display: "flex", flexDirection: "column", gap: 0.5, p: 1.5, borderRadius: 3, bgcolor: colors.background.default, border: `1px solid ${colors.divider}` }}>
+              <Box key={s.label} sx={{ display: "flex", flexDirection: "column", gap: 0.5, p: 1.5, borderRadius: 3, bgcolor: colors.background.default }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                   {s.icon}
                 </Box>
@@ -738,7 +741,7 @@ export default function ProfileContent({
         ) : (
           <>
             {withdrawals.length === 0 ? (
-              <Paper sx={{ borderRadius: 3, border: `1px solid ${colors.divider}`, bgcolor: colors.background.primary, p: 6, textAlign: "center" }}>
+              <Paper sx={{ borderRadius: 3, bgcolor: colors.background.primary, p: 6, textAlign: "center" }}>
                 <Typography sx={{ fontSize: "0.875rem", color: colors.text.secondary }}>No withdrawals yet</Typography>
               </Paper>
             ) : (
@@ -748,7 +751,7 @@ export default function ProfileContent({
                   {withdrawals.map((w) => {
                     const sc = STATUS_COLORS[w.status] ?? STATUS_COLORS.pending;
                     return (
-                      <Box key={w.id} sx={{ borderRadius: 3, border: `1px solid ${colors.divider}`, bgcolor: colors.background.primary, px: 2, py: 1.5 }}>
+                      <Box key={w.id} sx={{ borderRadius: 3, bgcolor: colors.background.primary, px: 2, py: 1.5 }}>
                         <Box sx={{ mb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <Typography sx={{ fontSize: "0.75rem", color: colors.text.secondary }}>
                             {new Date(w.requested_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
@@ -768,7 +771,7 @@ export default function ProfileContent({
                   })}
                 </Box>
                 {/* Desktop table */}
-                <TableContainer component={Paper} sx={{ display: { xs: "none", sm: "block" }, borderRadius: 3, border: `1px solid ${colors.divider}`, bgcolor: "transparent", mb: 2 }}>
+                <TableContainer component={Paper} sx={{ display: { xs: "none", sm: "block" }, borderRadius: 3, bgcolor: "transparent", mb: 2 }}>
                   <Table>
                     <TableHead>
                       <TableRow>

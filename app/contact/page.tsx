@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import PublicFooter from "@/components/public-footer";
 import {
   Box,
   Container,
@@ -17,15 +18,15 @@ import Icons from "@/components/icons";
 import Typography from "@/components/ui/Typography";
 
 const colors = {
-  bgPage: "#141523",
-  bgCard: "#1d1e30",
-  green: "#01D676",
-  greenDark: "#475569",
+  bgPage: "#0D0E12",
+  bgCard: "#232645",
+  green: "#10B981",
+  greenDark: "#059669",
   textPrimary: "#ffffff",
   textSecondary: "#a9a9ca",
   divider: "#2a2b43",
-  greenTint: "rgba(1, 214, 118, 0.1)",
-  gradient: "linear-gradient(180deg, #01D676 0, #475569 100%)",
+  greenTint: "rgba(16,185,129,0.1)",
+  gradient: "linear-gradient(180deg, #10B981 0, #059669 100%)",
 };
 
 export default function ContactPage() {
@@ -58,7 +59,7 @@ export default function ContactPage() {
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: colors.bgPage, color: colors.textPrimary }}>
+    <Box className="glow-bg" sx={{ minHeight: "100vh", bgcolor: colors.bgPage, color: colors.textPrimary }}>
       {/* Nav */}
       <Box
         component="nav"
@@ -97,7 +98,6 @@ export default function ContactPage() {
             sx={{
               flex: 1,
               bgcolor: colors.bgCard,
-              border: `1px solid ${colors.divider}`,
               borderRadius: 3,
               p: 3,
               textAlign: "center",
@@ -114,7 +114,6 @@ export default function ContactPage() {
                 height: 48,
                 borderRadius: 3,
                 bgcolor: colors.greenTint,
-                border: "1px solid rgba(1, 214, 118,0.2)",
               }}
             >
               <Mail size={22} color={colors.green} />
@@ -134,7 +133,6 @@ export default function ContactPage() {
             sx={{
               flex: 1,
               bgcolor: colors.bgCard,
-              border: `1px solid ${colors.divider}`,
               borderRadius: 3,
               p: 3,
               textAlign: "center",
@@ -151,7 +149,6 @@ export default function ContactPage() {
                 height: 48,
                 borderRadius: 3,
                 bgcolor: colors.greenTint,
-                border: "1px solid rgba(1, 214, 118,0.2)",
               }}
             >
               <HelpCircle size={22} color={colors.green} />
@@ -172,7 +169,6 @@ export default function ContactPage() {
           elevation={0}
           sx={{
             bgcolor: colors.bgCard,
-            border: `1px solid ${colors.divider}`,
             borderRadius: 3,
             p: { xs: 3, sm: 4 },
           }}
@@ -270,31 +266,7 @@ export default function ContactPage() {
         </Typography>
       </Container>
 
-      {/* Footer */}
-      <Divider sx={{ borderColor: colors.divider }} />
-      <Box sx={{ bgcolor: colors.bgCard, py: 4 }}>
-        <Container maxWidth="md">
-          <Box sx={{ display: "flex", justifyContent: "center", gap: 3, fontSize: "0.875rem" }}>
-            {[
-              { label: "Terms", href: "/terms" },
-              { label: "Privacy", href: "/privacy" },
-              { label: "Contact", href: "/contact" },
-            ].map((item) => (
-              <Box
-                key={item.href}
-                component={Link}
-                href={item.href}
-                sx={{ color: colors.textSecondary, textDecoration: "none", "&:hover": { color: colors.textPrimary } }}
-              >
-                {item.label}
-              </Box>
-            ))}
-          </Box>
-          <Typography alignCenter sx={{ mt: 2, fontSize: "0.75rem", color: "rgba(169,169,202,0.5)" }}>
-            &copy; {new Date().getFullYear()} Freecoino. All rights reserved.
-          </Typography>
-        </Container>
-      </Box>
+      <PublicFooter />
     </Box>
   );
 }
