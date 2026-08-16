@@ -4,52 +4,41 @@ import { useEffect, useRef } from "react";
 import { Box } from "@mui/material";
 
 interface MoneytagBannerProps {
-  zoneId: string;
   width?: number;
   height?: number;
   variant?: "horizontal" | "vertical" | "square";
 }
 
 export default function MoneytagBanner({ 
-  zoneId, 
   width = 728, 
   height = 90,
   variant = "horizontal" 
 }: MoneytagBannerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scriptLoadedRef = useRef(false);
 
   useEffect(() => {
+    if (scriptLoadedRef.current) return;
+    scriptLoadedRef.current = true;
+
     // Create script element for Monetag banner
     const script = document.createElement("script");
-    script.type = "text/javascript";
-    script.innerHTML = `
-      atOptions = {
-        'key' : '${zoneId}',
-        'format' : 'iframe',
-        'height' : ${height},
-        'width' : ${width},
-        'params' : {}
-      };
-    `;
-
-    // Create invoke script
-    const invokeScript = document.createElement("script");
-    invokeScript.type = "text/javascript";
-    invokeScript.src = `//www.highperformanceformat.com/${zoneId}/invoke.js`;
+    script.async = true;
+    script.setAttribute("data-cfasync", "false");
+    script.src = "//pl24555143.cpmrevenuegate.com/0b/d0/46/0bd0463eef00bedd3d89bd64deb8ce59.js";
 
     // Append to container
     if (containerRef.current) {
       containerRef.current.appendChild(script);
-      containerRef.current.appendChild(invokeScript);
     }
 
     // Cleanup
     return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
+      if (containerRef.current && script.parentNode) {
+        script.parentNode.removeChild(script);
       }
     };
-  }, [zoneId, width, height]);
+  }, []);
 
   // Determine container styles based on variant
   const getContainerStyles = () => {
@@ -58,20 +47,20 @@ export default function MoneytagBanner({
         return {
           width: "100%",
           maxWidth: `${width}px`,
-          height: `${height}px`,
+          minHeight: `${height}px`,
           mx: "auto",
           my: 2,
         };
       case "vertical":
         return {
           width: `${width}px`,
-          height: `${height}px`,
+          minHeight: `${height}px`,
           my: 2,
         };
       case "square":
         return {
           width: `${width}px`,
-          height: `${height}px`,
+          minHeight: `${height}px`,
           mx: "auto",
           my: 2,
         };
@@ -79,7 +68,7 @@ export default function MoneytagBanner({
         return {
           width: "100%",
           maxWidth: `${width}px`,
-          height: `${height}px`,
+          minHeight: `${height}px`,
           mx: "auto",
           my: 2,
         };

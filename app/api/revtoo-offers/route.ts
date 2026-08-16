@@ -179,7 +179,9 @@ export async function GET(request: NextRequest) {
           description2: offer.description2 || '',
           description3: offer.description3 || '',
           image_url: imageUrl,
-          payout: (typeof payoutValue === 'string' ? parseFloat(payoutValue) || 0 : (payoutValue || 0)) / 1000,
+          // Revtoo returns payout in coins, convert to USD (coins / 1000)
+          // BUT if variable reward (*), keep as -1
+          payout: payoutValue === -1 ? -1 : ((typeof payoutValue === 'string' ? parseFloat(payoutValue) || 0 : (payoutValue || 0)) / 1000),
           click_url: offer.url || offer.click_url || `https://revtoo.com/offerwall/${REVTOO_API_KEY}/${user_id}`,
           categories: offer.categories || offer.category || [],
           provider: 'Revtoo',

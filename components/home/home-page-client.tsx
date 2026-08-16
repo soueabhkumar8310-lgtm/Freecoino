@@ -942,7 +942,6 @@ export default function HomePageClient({ faqs }: { faqs: FaqItem[] }) {
       <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, py: 2 }}>
         <Container maxWidth="md">
           <MoneytagBanner 
-            zoneId="11194144" 
             width={728} 
             height={90} 
             variant="horizontal" 
@@ -1106,7 +1105,6 @@ export default function HomePageClient({ faqs }: { faqs: FaqItem[] }) {
       <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, py: 2 }}>
         <Container maxWidth="md">
           <MoneytagBanner 
-            zoneId="11194146" 
             width={728} 
             height={90} 
             variant="horizontal" 

@@ -1389,7 +1389,6 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       {/* Banner Ad 1 - After Gaming Offers */}
       <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 } }}>
         <MoneytagBanner 
-          zoneId="11194140" 
           width={728} 
           height={90} 
           variant="horizontal" 
@@ -1404,7 +1403,6 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
       {/* Banner Ad 2 - After Surveys */}
       <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 } }}>
         <MoneytagBanner 
-          zoneId="11194142" 
           width={728} 
           height={90} 
           variant="horizontal" 
