@@ -49,12 +49,13 @@ function OfferDetailsModal({
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [activeUrl, setActiveUrl] = useState("");
 
   if (!offer) return null;
 
   const hasEvents = offer.events && offer.events.length > 0;
 
-  const handlePlayClick = () => {
+  const handlePlayClick = async () => {
     // Track offer click
     fetch('/api/track-offer-click', {
       method: 'POST',
@@ -72,11 +73,23 @@ function OfferDetailsModal({
       })
     }).catch(() => {});
 
+    let url = offer.click_url;
+    if (offer.provider === 'Klink') {
+      try {
+        const res = await fetch(`/api/klink-redirect?offer_id=${encodeURIComponent(offer.offer_id)}&user_id=${encodeURIComponent(userId)}`);
+        const data = await res.json();
+        if (data.success && data.redirectUrl) url = data.redirectUrl;
+      } catch (err) {
+        console.error("Failed to resolve Klink redirect:", err);
+      }
+    }
+
     if (isMobile) {
       // On mobile, open the link directly
-      window.open(offer.click_url, "_blank");
+      window.open(url, "_blank");
     } else {
       // On desktop, show QR code dialog
+      setActiveUrl(url);
       setQrDialogOpen(true);
     }
   };
@@ -607,7 +620,7 @@ function OfferDetailsModal({
           }}
         >
           <QRCodeSVG 
-            value={offer.click_url} 
+            value={activeUrl} 
             size={200}
             level="H"
             includeMargin={true}
@@ -646,7 +659,7 @@ function OfferDetailsModal({
           onClick={handleCopyLink}
         >
           <Box sx={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {offer.click_url}
+            {activeUrl}
           </Box>
           <Box
             sx={{
