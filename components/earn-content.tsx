@@ -1305,13 +1305,14 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
   const myLeadBaseUrl = process.env.NEXT_PUBLIC_MYLEAD_WALL_URL ?? "";
 
   const handleOpenWall = (wall: WallType) => {
-    // Notik doesn't support iframe embedding, open in new window
-    if (wall === "Notik") {
+    // Notik and TimeWall don't support iframe embedding, open in new window
+    if (wall === "Notik" || wall === "TimeWall") {
       const apiKey = process.env.NEXT_PUBLIC_NOTIK_API_KEY || "";
       const pubId = process.env.NEXT_PUBLIC_NOTIK_PUBLISHER_ID || "";
       const appId = process.env.NEXT_PUBLIC_NOTIK_APP_ID || "";
       const notikUrl = `https://notik.me/coins?api_key=${apiKey}&pub_id=${pubId}&app_id=${appId}&user_id=${userId}`;
-      window.open(notikUrl, '_blank', 'noopener,noreferrer');
+      const timewallUrl = `https://timewall.io/users/login?oid=${process.env.NEXT_PUBLIC_TIMEWALL_PLACEMENT_ID || ""}&uid=${userId}`;
+      window.open(wall === "Notik" ? notikUrl : timewallUrl, '_blank', 'noopener,noreferrer');
       return;
     }
 
