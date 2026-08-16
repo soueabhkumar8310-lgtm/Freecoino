@@ -109,6 +109,12 @@ export default function RootLayout({
           async
           defer
         ></script>
+        {/* Monetag Popunder Ads */}
+        <script
+          async
+          src="https://omg10.com/4/11194138"
+          type="text/javascript"
+        ></script>
       </head>
       <body>
         <AppRouterCacheProvider options={{ enableCssLayer: true }}>
