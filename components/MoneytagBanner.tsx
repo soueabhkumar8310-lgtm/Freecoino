@@ -18,27 +18,47 @@ export default function MoneytagBanner({
   const scriptLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (scriptLoadedRef.current) return;
+    if (scriptLoadedRef.current || !containerRef.current) return;
     scriptLoadedRef.current = true;
 
-    // Create script element for Monetag banner
-    const script = document.createElement("script");
-    script.async = true;
-    script.setAttribute("data-cfasync", "false");
-    script.src = "//pl24555143.cpmrevenuegate.com/0b/d0/46/0bd0463eef00bedd3d89bd64deb8ce59.js";
+    // Create banner ad container div
+    const adDiv = document.createElement("div");
+    adDiv.id = `monetag-banner-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Create Monetag banner script
+    const atOptions = document.createElement("script");
+    atOptions.type = "text/javascript";
+    atOptions.innerHTML = `
+      atOptions = {
+        'key' : 'f8d82d6c6eae9e8a4f5e3c8d4b2a1e9f',
+        'format' : 'iframe',
+        'height' : ${height},
+        'width' : ${width},
+        'params' : {}
+      };
+    `;
+    
+    // Create invoke script
+    const invokeScript = document.createElement("script");
+    invokeScript.type = "text/javascript";
+    invokeScript.src = "//www.topcreativeformat.com/f8d82d6c6eae9e8a4f5e3c8d4b2a1e9f/invoke.js";
+    invokeScript.async = true;
 
-    // Append to container
+    // Append elements
     if (containerRef.current) {
-      containerRef.current.appendChild(script);
+      containerRef.current.appendChild(adDiv);
+      containerRef.current.appendChild(atOptions);
+      containerRef.current.appendChild(invokeScript);
     }
 
     // Cleanup
     return () => {
-      if (containerRef.current && script.parentNode) {
-        script.parentNode.removeChild(script);
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
       }
+      scriptLoadedRef.current = false;
     };
-  }, []);
+  }, [width, height]);
 
   // Determine container styles based on variant
   const getContainerStyles = () => {
