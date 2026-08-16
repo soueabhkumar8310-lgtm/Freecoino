@@ -39,7 +39,7 @@ async function sendVerificationEmail(email: string, token: string) {
         <td align="center">
           ${logoSvg}
           <h1 style="color: #ffffff; margin: 16px 0 20px 0; font-size: 24px; font-weight: 700;">
-            <span style="color: #10B981;">Reward</span>oxy
+            <span style="color: #10B981;">Free</span>coino
           </h1>
         </td>
       </tr>
