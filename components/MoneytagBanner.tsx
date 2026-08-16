@@ -15,48 +15,47 @@ export default function MoneytagBanner({
   variant = "horizontal" 
 }: MoneytagBannerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const scriptLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (scriptLoadedRef.current || !containerRef.current) return;
-    scriptLoadedRef.current = true;
+    if (!containerRef.current) return;
 
-    // Create banner ad container div
-    const adDiv = document.createElement("div");
-    adDiv.id = `monetag-banner-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Create Monetag banner script
-    const atOptions = document.createElement("script");
-    atOptions.type = "text/javascript";
-    atOptions.innerHTML = `
-      atOptions = {
-        'key' : 'f8d82d6c6eae9e8a4f5e3c8d4b2a1e9f',
-        'format' : 'iframe',
-        'height' : ${height},
-        'width' : ${width},
-        'params' : {}
-      };
+    // Create placeholder ad container with instructions
+    const adContainer = document.createElement("div");
+    adContainer.style.cssText = `
+      width: 100%;
+      max-width: ${width}px;
+      height: ${height}px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      color: white;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      text-align: center;
+      padding: 20px;
+      margin: 0 auto;
     `;
     
-    // Create invoke script
-    const invokeScript = document.createElement("script");
-    invokeScript.type = "text/javascript";
-    invokeScript.src = "//www.topcreativeformat.com/f8d82d6c6eae9e8a4f5e3c8d4b2a1e9f/invoke.js";
-    invokeScript.async = true;
+    adContainer.innerHTML = `
+      <div>
+        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">
+          📢 Ad Space Available
+        </div>
+        <div style="font-size: 12px; opacity: 0.9;">
+          ${width} × ${height} Banner Ad
+        </div>
+      </div>
+    `;
 
-    // Append elements
-    if (containerRef.current) {
-      containerRef.current.appendChild(adDiv);
-      containerRef.current.appendChild(atOptions);
-      containerRef.current.appendChild(invokeScript);
-    }
+    containerRef.current.appendChild(adContainer);
 
     // Cleanup
     return () => {
       if (containerRef.current) {
         containerRef.current.innerHTML = "";
       }
-      scriptLoadedRef.current = false;
     };
   }, [width, height]);
 
@@ -106,10 +105,6 @@ export default function MoneytagBanner({
         bgcolor: "transparent",
         overflow: "hidden",
         borderRadius: 1,
-        "& iframe": {
-          border: "none",
-          maxWidth: "100%",
-        },
       }}
     />
   );
