@@ -1,14 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-const KLINK_IPS = [
-  '34.118.33.53',
-  '138.68.125.171',
-  '64.226.93.56',
-  '74.220.53.15',
-  '74.220.53.234',
-  '74.220.53.235',
-];
+function getWhitelistedIPs(): string[] {
+  const env = process.env.KLINK_POSTBACK_IPS;
+  if (env) return env.split(',').map((ip) => ip.trim()).filter(Boolean);
+  return [
+    '34.118.33.53',
+    '138.68.125.171',
+    '64.226.93.56',
+    '74.220.53.15',
+    '74.220.53.234',
+    '74.220.53.235',
+  ];
+}
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,7 +47,7 @@ async function handleKlinkPostback(request: NextRequest) {
     log(`URL: ${request.url}`);
 
     // ── 1. IP Whitelisting ───────────────────────────────────────────────
-    if (!KLINK_IPS.includes(clientIp)) {
+    if (!getWhitelistedIPs().includes(clientIp)) {
       log(`IP not whitelisted: ${clientIp}`);
       return ok('Unauthorized');
     }
@@ -89,13 +93,8 @@ async function handleKlinkPostback(request: NextRequest) {
     log(`Parsed: conversionId=${conversionId}, userId=${userId}, eventType=${eventType}, payout=${payoutStr}, status=${status}`);
 
     // ── 4. Validate required parameters ──────────────────────────────────
-    if (!conversionId || !userId || !eventType) {
-      log(`Missing required params: conversionId=${conversionId}, userId=${userId}, eventType=${eventType}`);
-      return ok('Unauthorized');
-    }
-
-    if (eventType !== 'conversion' && eventType !== 'chargeback') {
-      log(`Unknown eventType: ${eventType}`);
+    if (!conversionId || !userId) {
+      log(`Missing required params: conversionId=${conversionId}, userId=${userId}`);
       return ok('Unauthorized');
     }
 
@@ -103,7 +102,9 @@ async function handleKlinkPostback(request: NextRequest) {
     const payoutRaw = parseFloat(payoutStr || '0');
     const payoutAbs = Math.abs(payoutRaw);
     const coinsToCredit = Math.round(payoutAbs * 0.7 * 1000);
-    const isConversion = eventType === 'conversion';
+    // Klink sends event types like "level_1", "visit", "Install", not "conversion".
+    // A chargeback is signalled by reversedConversionId or status.
+    const isConversion = !reversedConversionId && status !== 'reversed' && status !== 'chargeback' && eventType !== 'chargeback';
 
     log(`Payout: $${payoutRaw}, Coins: ${coinsToCredit}, Type: ${eventType}`);
 
