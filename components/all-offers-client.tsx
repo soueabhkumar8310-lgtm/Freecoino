@@ -820,18 +820,18 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       const pinnedOffers = taskwallOffers.filter(o => o.name?.toLowerCase().includes('lootably'));
       const nonPinnedTaskwall = taskwallOffers.filter(o => !o.name?.toLowerCase().includes('lootably'));
       
-      // Klink offers come after pinned offers
-      // Round-robin the rest: Notik > Revtoo > Taskwall
+      // Round-robin ALL providers: Notik > Klink > Revtoo > Taskwall
       const restOffers: any[] = [];
-      const maxRestLength = Math.max(notikOffers.length, revtooOffers.length, nonPinnedTaskwall.length);
+      const maxRestLength = Math.max(notikOffers.length, klinkOffers.length, revtooOffers.length, nonPinnedTaskwall.length);
       
       for (let i = 0; i < maxRestLength; i++) {
         if (i < notikOffers.length) restOffers.push(notikOffers[i]);
+        if (i < klinkOffers.length) restOffers.push(klinkOffers[i]);
         if (i < revtooOffers.length) restOffers.push(revtooOffers[i]);
         if (i < nonPinnedTaskwall.length) restOffers.push(nonPinnedTaskwall[i]);
       }
       
-      const allOffersData = [...pinnedOffers, ...klinkOffers, ...restOffers].filter(o => {
+      const allOffersData = [...pinnedOffers, ...restOffers].filter(o => {
         if (o.payout === -1) return true;
         const p = typeof o.payout === 'number' ? o.payout : parseFloat(String(o.payout || '0'));
         if (p > 0) return true;
@@ -946,9 +946,30 @@ export default function AllOffersClient({ userId }: { userId: string }) {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        position: "relative",
                       }}
                     >
                       {!offer.image_url && <Gamepad2 size={32} color="#10B981" opacity={0.5} />}
+                      {offer.provider && (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: { xs: 3, sm: 6 },
+                            left: { xs: 3, sm: 6 },
+                            bgcolor: "rgba(0,0,0,0.75)",
+                            color: "#10B981",
+                            fontSize: { xs: "0.5rem", sm: "0.65rem" },
+                            fontWeight: 700,
+                            px: { xs: 0.5, sm: 1 },
+                            py: { xs: 0.25, sm: 0.5 },
+                            borderRadius: { xs: "4px", sm: "6px" },
+                            backdropFilter: "blur(4px)",
+                            pointerEvents: "none",
+                          }}
+                        >
+                          {offer.provider}
+                        </Box>
+                      )}
                     </Box>
                     <Typography
                       variant="h6"
