@@ -13,6 +13,7 @@ import Typography from "@/components/ui/Typography";
 import colors from "@/theme/colors";
 import CheckIcon from "@mui/icons-material/Check";
 import { QRCodeSVG } from "qrcode.react";
+import MoneytagBanner from "@/components/MoneytagBanner";
 
 type EarnContentProps = {
   userId: string;
@@ -1385,9 +1386,29 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
         <GamingOffersSection userId={userId} deviceOS={selectedPlatforms} />
       </Box>
 
+      {/* Banner Ad 1 - After Gaming Offers */}
+      <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 } }}>
+        <MoneytagBanner 
+          zoneId="11194140" 
+          width={728} 
+          height={90} 
+          variant="horizontal" 
+        />
+      </Box>
+
       {/* CPX Surveys */}
       <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 } }}>
         <CPXSurveysSection userId={userId} />
+      </Box>
+
+      {/* Banner Ad 2 - After Surveys */}
+      <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 } }}>
+        <MoneytagBanner 
+          zoneId="11194142" 
+          width={728} 
+          height={90} 
+          variant="horizontal" 
+        />
       </Box>
 
       {/* Offer Walls section */}

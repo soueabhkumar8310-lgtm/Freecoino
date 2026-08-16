@@ -56,6 +56,7 @@ import PublicFooter from "@/components/public-footer";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import Turnstile from "@/components/turnstile";
+import MoneytagBanner from "@/components/MoneytagBanner";
 
 const ProviderCarousel = dynamic(() => import("@/components/provider-carousel"), {
   loading: () => <Box sx={{ height: 100 }} />,
@@ -937,6 +938,18 @@ export default function HomePageClient({ faqs }: { faqs: FaqItem[] }) {
         </Container>
       </Box>
 
+      {/* Banner Ad - After How It Works */}
+      <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, py: 2 }}>
+        <Container maxWidth="md">
+          <MoneytagBanner 
+            zoneId="11194144" 
+            width={728} 
+            height={90} 
+            variant="horizontal" 
+          />
+        </Container>
+      </Box>
+
       {/* ===================== BEST WAYS TO EARN ===================== */}
       <Divider sx={{ borderColor: colors.divider }} />
       <Box
@@ -1089,7 +1102,17 @@ export default function HomePageClient({ faqs }: { faqs: FaqItem[] }) {
         </Container>
       </Box>
 
-     
+      {/* Banner Ad - Before FAQ */}
+      <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, py: 2 }}>
+        <Container maxWidth="md">
+          <MoneytagBanner 
+            zoneId="11194146" 
+            width={728} 
+            height={90} 
+            variant="horizontal" 
+          />
+        </Container>
+      </Box>
 
       {/* ===================== FAQ ===================== */}
       <Divider sx={{ borderColor: colors.divider }} />
