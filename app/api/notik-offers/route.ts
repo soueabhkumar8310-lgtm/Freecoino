@@ -108,6 +108,7 @@ export async function GET(request: NextRequest) {
     const device_type = searchParams.get('device_type') || 'mobile';
     const device_os = searchParams.get('device_os') || 'android';
     const override_country = searchParams.get('country_code'); // Allow override for testing
+    const override_ip = searchParams.get('ip'); // Real client IP from browser (client-side geo detection)
 
 
     if (!user_id) {
@@ -149,7 +150,8 @@ export async function GET(request: NextRequest) {
     // Get user agent and parse device details
     const userAgent = request.headers.get('user-agent') || 'Mozilla/5.0 (Unknown)';
     const { browserName, browserVersion, osVersion } = parseUserAgent(userAgent);
-    const clientIp = getClientIp(request);
+    // Use the real client IP passed from the browser; fall back to header detection
+    const clientIp = override_ip || getClientIp(request);
 
     // Determine device_name based on device_os
     let deviceName = 'other';

@@ -21,7 +21,7 @@ type EarnContentProps = {
   userEmail: string;
 };
 
-type WallType = "MyLead" | "CPX Research" | "Vortex" | "Notik" | "Taskwall" | "Revtoo" | "Klink" | "Revtoo Surveys" | "TimeWall";
+type WallType = "MyLead" | "CPX Research" | "Vortex" | "Notik" | "Taskwall" | "Revtoo" | "Klink" | "Revtoo Surveys" | "TimeWall" | "GemiAd";
 type DeviceOS = "android" | "ios" | "windows";
 
 interface NotikOffer {
@@ -628,10 +628,26 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
     try {
       setLoading(true);
       const primaryOS = deviceOS.length > 0 ? deviceOS[0] : 'android';
-      
+
+      // Detect real country client-side (falls back to server detection if fails)
+      let countryCode = localStorage.getItem('fc_country') || '';
+      let clientIp = localStorage.getItem('fc_ip') || '';
+      if (!countryCode || !clientIp) {
+        try {
+          const geoRes = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(3000) });
+          const geo = await geoRes.json();
+          if (geo && geo.success !== false && geo.country_code) {
+            countryCode = geo.country_code;
+            clientIp = geo.ip || clientIp;
+            localStorage.setItem('fc_country', countryCode);
+            if (clientIp) localStorage.setItem('fc_ip', clientIp);
+          }
+        } catch { /* ignore geo failure */ }
+      }
+
       // Fetch from Notik, Klink, Revtoo, and Taskwall APIs in parallel
       const [notikResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
-        fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}`),
+        fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}${countryCode ? `&country_code=${countryCode}` : ''}${clientIp ? `&ip=${clientIp}` : ''}`),
         fetch(`/api/klink-offers?user_id=${userId}`),
         fetch(`/api/revtoo-offers?user_id=${userId}`),
         fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}`)
@@ -695,13 +711,14 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       // Pin Taskwall lootably offer to the top
       const pinnedOffers = taskwallOffers.filter((o: NotikOffer) => o.name?.toLowerCase().includes('lootably'));
       const nonPinnedTaskwall = taskwallOffers.filter((o: NotikOffer) => !o.name?.toLowerCase().includes('lootably'));
-      
-      // Round-robin merge the rest: Notik > Revtoo > Taskwall
+
+      // Round-robin merge ALL providers: Notik > Klink > Revtoo > Taskwall
       const mergedRest: NotikOffer[] = [];
-      const maxRestLength = Math.max(notikOffers.length, revtooOffers.length, nonPinnedTaskwall.length);
-      
+      const maxRestLength = Math.max(notikOffers.length, klinkOffers.length, revtooOffers.length, nonPinnedTaskwall.length);
+
       for (let i = 0; i < maxRestLength; i++) {
         if (i < notikOffers.length) mergedRest.push(notikOffers[i]);
+        if (i < klinkOffers.length) mergedRest.push(klinkOffers[i]);
         if (i < revtooOffers.length) mergedRest.push(revtooOffers[i]);
         if (i < nonPinnedTaskwall.length) mergedRest.push(nonPinnedTaskwall[i]);
       }
@@ -752,8 +769,8 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
       
       console.log(`Sorted gaming offers: ${sortedOffers.length}`);
       
-      // Final order: pinned offers > Klink offers > sorted rest
-      const finalOffers = [...pinnedOffers, ...klinkOffers, ...sortedOffers].filter(o => {
+      // Final order: pinned offer > mixed sorted offers (all providers round-robin)
+      const finalOffers = [...pinnedOffers, ...sortedOffers].filter(o => {
         if (o.payout === -1) return true;
         const p = typeof o.payout === 'number' ? o.payout : parseFloat(String(o.payout || '0'));
         if (p > 0) return true;
@@ -983,9 +1000,30 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  position: "relative",
                 }}
               >
                 {!offer.image_url && <Gamepad2 size={32} color="#10B981" opacity={0.5} />}
+                {offer.provider && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: { xs: 3, sm: 6 },
+                      left: { xs: 3, sm: 6 },
+                      bgcolor: "rgba(0,0,0,0.75)",
+                      color: "#10B981",
+                      fontSize: { xs: "0.5rem", sm: "0.65rem" },
+                      fontWeight: 700,
+                      px: { xs: 0.5, sm: 1 },
+                      py: { xs: 0.25, sm: 0.5 },
+                      borderRadius: { xs: "4px", sm: "6px" },
+                      backdropFilter: "blur(4px)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {offer.provider}
+                  </Box>
+                )}
               </Box>
               <Typography
                 variant="h6"
@@ -1373,6 +1411,10 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
     if (activeWall === "TimeWall") {
       const placementId = process.env.NEXT_PUBLIC_TIMEWALL_PLACEMENT_ID || "";
       return `https://timewall.io/users/login?oid=${placementId}&uid=${userId}`;
+    }
+    if (activeWall === "GemiAd") {
+      const placementId = process.env.NEXT_PUBLIC_GEMIAD_PLACEMENT_ID || "";
+      return `https://gemiwall.com/${placementId}/${userId}`;
     }
     return "";
   };
@@ -2181,6 +2223,108 @@ export default function EarnContent({ userId, userName, userEmail }: EarnContent
             <Rating
               className="wall-rating"
               defaultValue={3}
+              precision={0.5}
+              readOnly
+              emptyIcon={<StarIcon style={{ opacity: 0.5 }} fontSize="inherit" />}
+              size="small"
+              sx={{ "& .MuiRating-iconFilled": { color: "#fbbf24" }, transition: "filter 0.2s ease" }}
+            />
+          </Paper>
+
+          {/* GemiAd card */}
+          <Paper
+            onClick={() => handleOpenWall("GemiAd")}
+            elevation={0}
+            sx={{
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderRadius: 2,
+              p: { xs: 1.5, sm: 2 },
+              cursor: "pointer",
+              background: "linear-gradient(180deg, rgba(59, 130, 246, 0.4) 0%, rgba(16, 185, 129, 0.15) 100%)",
+              transition: "all 0.2s ease",
+              minWidth: { xs: "auto", sm: 160 },
+              maxWidth: { xs: "none", sm: 160 },
+              width: { xs: "100%", sm: "auto" },
+              flexShrink: 0,
+              overflow: "hidden",
+              "&:hover": {
+                background: "linear-gradient(180deg, rgba(59, 130, 246, 0.55) 0%, rgba(16, 185, 129, 0.25) 100%)",
+                "& .wall-logo": {
+                  filter: "blur(8px)",
+                },
+                "& .wall-rating": {
+                  filter: "blur(8px)",
+                },
+                "& .hover-play-button": {
+                  opacity: 1,
+                },
+              },
+            }}
+          >
+            {/* Hover Play Button */}
+            <Box
+              className="hover-play-button"
+              sx={{
+                position: "absolute",
+                inset: 0,
+                opacity: 0,
+                zIndex: 1000,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "opacity 0.2s ease",
+              }}
+            >
+              <Box
+                sx={{
+                  backgroundColor: "#1A1B2E",
+                  borderRadius: 10,
+                  padding: 2,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: 40,
+                  height: 40,
+                }}
+              >
+                <Box
+                  component="img"
+                  src="https://freecash.com/public/img/play-offer.svg"
+                  alt="play-button"
+                  sx={{ objectFit: "contain", objectPosition: "center" }}
+                />
+              </Box>
+            </Box>
+
+            {/* Logo */}
+            <Box
+              component="img"
+              src="/gemiad.png"
+              alt="GemiAd"
+              className="wall-logo"
+              sx={{
+                width: { xs: 70, sm: 100 },
+                height: { xs: 70, sm: 100 },
+                borderRadius: 1,
+                objectFit: "contain",
+                mb: { xs: 1, sm: 2 },
+                transition: "filter 0.2s ease",
+              }}
+            />
+
+            {/* Name */}
+            <Typography variant="subtitle2" isBold sx={{ color: "#fff", mb: { xs: 0.5, sm: 1 }, textAlign: "center" }}>
+              GemiAd
+            </Typography>
+
+            {/* Star Rating */}
+            <Rating
+              className="wall-rating"
+              defaultValue={4}
               precision={0.5}
               readOnly
               emptyIcon={<StarIcon style={{ opacity: 0.5 }} fontSize="inherit" />}

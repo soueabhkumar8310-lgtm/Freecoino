@@ -779,10 +779,26 @@ export default function AllOffersClient({ userId }: { userId: string }) {
       setHasMore(true);
       
       const primaryOS = selectedPlatforms.length > 0 ? selectedPlatforms[0] : 'android';
-      
+
+      // Detect real country client-side (falls back to server detection if fails)
+      let countryCode = localStorage.getItem('fc_country') || '';
+      let clientIp = localStorage.getItem('fc_ip') || '';
+      if (!countryCode || !clientIp) {
+        try {
+          const geoRes = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(3000) });
+          const geo = await geoRes.json();
+          if (geo && geo.success !== false && geo.country_code) {
+            countryCode = geo.country_code;
+            clientIp = geo.ip || clientIp;
+            localStorage.setItem('fc_country', countryCode);
+            if (clientIp) localStorage.setItem('fc_ip', clientIp);
+          }
+        } catch { /* ignore geo failure */ }
+      }
+
       // Fetch from Notik, Klink, Revtoo, and Taskwall APIs in parallel (Priority order)
       const [notikResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
-        fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}`),
+        fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}${countryCode ? `&country_code=${countryCode}` : ''}${clientIp ? `&ip=${clientIp}` : ''}`),
         fetch(`/api/klink-offers?user_id=${userId}`),
         fetch(`/api/revtoo-offers?user_id=${userId}`),
         fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}`)

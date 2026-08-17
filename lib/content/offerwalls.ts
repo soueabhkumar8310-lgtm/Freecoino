@@ -400,6 +400,44 @@ export const OFFERWALLS: Offerwall[] = [
     relatedVertical: "/play-and-earn",
     relatedSlugs: ["vortex", "taskwall", "mylead"],
   },
+  {
+    slug: "gemiad",
+    name: "GemiAd",
+    type: "mixed",
+    logo: "/gemiad.png",
+    tagline: "Premium offerwall with top-tier campaigns worldwide.",
+    description: [
+      "GemiAd is an offerwall monetization platform serving 190+ countries with a focus on premium rewarded campaigns. On Freecoino, GemiWall offers a steady stream of app installs, signups, and survey tasks.",
+      "GemiAd rewards credit automatically via server-to-server postback when a task is confirmed, typically within minutes of completion.",
+    ],
+    payoutRange: "$0.05 – $5.00 per offer (5–500 coins)",
+    tips: [
+      "Complete your profile to unlock higher-paying targeted offers.",
+      "Check the wall regularly — new campaigns appear throughout the day.",
+      "Complete offers fully before closing the app to avoid reversal.",
+    ],
+    pros: [
+      "Global availability across 190+ countries",
+      "Fast postback crediting",
+      "Premium top-tier campaigns",
+    ],
+    cons: [
+      "Newer wall with growing inventory",
+      "High-value offers depend on country and profile",
+    ],
+    faqs: [
+      {
+        q: "Why didn't my GemiAd offer credit?",
+        a: "Most GemiAd conversions credit within minutes via postback. If it has been over 24 hours, contact support with the transaction ID from your postback logs.",
+      },
+      {
+        q: "How do I access GemiAd on Freecoino?",
+        a: "Go to the Earn page and click the GemiAd card to open the offerwall.",
+      },
+    ],
+    relatedVertical: "/offers",
+    relatedSlugs: ["revtoo", "klink", "vortex"],
+  },
 ];
 
 export function getOfferwallBySlug(slug: string): Offerwall | undefined {

@@ -13,6 +13,7 @@ const LOGOS = [
   { src: "/revtoo.svg", alt: "Revtoo", slug: "revtoo" },
   { src: "/klink-icon.png", alt: "Klink", slug: "klink" },
   { src: "/timewall.webp", alt: "TimeWall", slug: "timewall" },
+  { src: "/gemiad.png", alt: "GemiAd", slug: "gemiad" },
 ];
 
 export default function ProviderCarousel() {
