@@ -25,7 +25,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/admin/', '/private/'],
       },
     ],
-    sitemap: 'https://freecoino.com/sitemap.xml',
-    host: 'https://freecoino.com',
+    sitemap: 'https://www.freecoino.com/sitemap.xml',
+    host: 'https://www.freecoino.com',
   }
 }

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
  
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://freecoino.com'
+  const baseUrl = 'https://www.freecoino.com'
   const currentDate = new Date()
   
   return [
