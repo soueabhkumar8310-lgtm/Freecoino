@@ -645,18 +645,20 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
         } catch { /* ignore geo failure */ }
       }
 
-      // Fetch from Notik, Klink, Revtoo, and Taskwall APIs in parallel
-      const [notikResponse, klinkResponse, revtooResponse, taskwallResponse] = await Promise.all([
+      // Fetch from Notik, Klink, Revtoo, Taskwall, and GemiAd APIs in parallel
+      const [notikResponse, klinkResponse, revtooResponse, taskwallResponse, gemiadResponse] = await Promise.all([
         fetch(`/api/notik-offers?user_id=${userId}&device_type=mobile&device_os=${primaryOS}${countryCode ? `&country_code=${countryCode}` : ''}${clientIp ? `&ip=${clientIp}` : ''}`),
         fetch(`/api/klink-offers?user_id=${userId}`),
         fetch(`/api/revtoo-offers?user_id=${userId}`),
-        fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}`)
+        fetch(`/api/taskwall-offers?user_id=${userId}&os=${primaryOS}`),
+        fetch(`/api/gemiad-offers?user_id=${userId}${countryCode ? `&country_code=${countryCode}` : ''}`)
       ]);
       
       let notikOffers: NotikOffer[] = [];
       let klinkOffers: NotikOffer[] = [];
       let revtooOffers: NotikOffer[] = [];
       let taskwallOffers: NotikOffer[] = [];
+      let gemiadOffers: NotikOffer[] = [];
       
       // Process Notik offers (Priority 1)
       if (notikResponse.ok) {
@@ -707,20 +709,30 @@ function GamingOffersSection({ userId, deviceOS }: { userId: string; deviceOS: D
           console.log(`Taskwall offers loaded: ${taskwallOffers.length}`);
         }
       }
+
+      // Process GemiAd offers (Priority 5)
+      if (gemiadResponse.ok) {
+        const gemiadData = await gemiadResponse.json();
+        if (gemiadData.success && gemiadData.offers && Array.isArray(gemiadData.offers)) {
+          gemiadOffers = gemiadData.offers;
+          console.log(`GemiAd offers loaded: ${gemiadOffers.length}`);
+        }
+      }
       
       // Pin Taskwall lootably offer to the top
       const pinnedOffers = taskwallOffers.filter((o: NotikOffer) => o.name?.toLowerCase().includes('lootably'));
       const nonPinnedTaskwall = taskwallOffers.filter((o: NotikOffer) => !o.name?.toLowerCase().includes('lootably'));
 
-      // Round-robin merge ALL providers: Notik > Klink > Revtoo > Taskwall
+      // Round-robin merge ALL providers: Notik > Klink > Revtoo > Taskwall > GemiAd
       const mergedRest: NotikOffer[] = [];
-      const maxRestLength = Math.max(notikOffers.length, klinkOffers.length, revtooOffers.length, nonPinnedTaskwall.length);
+      const maxRestLength = Math.max(notikOffers.length, klinkOffers.length, revtooOffers.length, nonPinnedTaskwall.length, gemiadOffers.length);
 
       for (let i = 0; i < maxRestLength; i++) {
         if (i < notikOffers.length) mergedRest.push(notikOffers[i]);
         if (i < klinkOffers.length) mergedRest.push(klinkOffers[i]);
         if (i < revtooOffers.length) mergedRest.push(revtooOffers[i]);
         if (i < nonPinnedTaskwall.length) mergedRest.push(nonPinnedTaskwall[i]);
+        if (i < gemiadOffers.length) mergedRest.push(gemiadOffers[i]);
       }
       
       console.log(`Total merged rest offers: ${mergedRest.length}`);
