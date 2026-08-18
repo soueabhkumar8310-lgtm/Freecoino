@@ -33,13 +33,9 @@ async function handleGemiAdPostback(request: NextRequest) {
 
   try {
     const clientIp = getRealIP(request);
-    log(`Method: ${request.method}, IP: ${clientIp}`);
+    const ipAllowed = WHITELISTED_IPS.includes(clientIp);
+    log(`Method: ${request.method}, IP: ${clientIp}, ipAllowed: ${ipAllowed}`);
     log(`URL: ${request.url}`);
-
-    if (!WHITELISTED_IPS.includes(clientIp)) {
-      log(`IP not whitelisted: ${clientIp}`);
-      return ok('Unauthorized');
-    }
 
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId') || '';
@@ -57,15 +53,17 @@ async function handleGemiAdPostback(request: NextRequest) {
 
     log(`Parsed: userId=${userId}, offerId=${offerId}, txId=${txId}, status=${status}, payout=${payout}, reward=${reward}`);
 
-    if (!userId || !offerId || !txId || !hash) {
+    if (!userId || !offerId || !txId) {
       log('Missing required params');
       return ok('Unauthorized');
     }
 
     const secretKey = process.env.GEMIAD_SECRET_KEY || '';
     const generatedHash = crypto.createHash('sha256').update(userId + offerId + txId + secretKey).digest('hex');
-    if (hash !== generatedHash) {
-      log('Invalid hash - possible unauthorized postback');
+    // Accept when: IP is whitelisted (GemiAd's postback server) OR hash matches.
+    // GemiAd currently does not send the hash macro, so IP whitelist is the primary gate.
+    if (!ipAllowed && (!hash || hash !== generatedHash)) {
+      log(`Rejected: IP not whitelisted (${clientIp}) and hash invalid/missing`);
       return ok('Unauthorized');
     }
 
