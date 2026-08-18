@@ -1,26 +1,14 @@
-import { MetadataRoute } from 'next';
-
+import { MetadataRoute } from 'next'
+ 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: [
-          '/api/',
-          '/admin/',
-          '/auth/',
-          '/profile/',
-          '/history/',
-          '/cashout/',
-          '/daily-bonus/',
-          '/banned/',
-          '/my-offers/',
-          '/offers/all',
-          '/referrals',
-        ],
+        disallow: ['/api/', '/admin/', '/_next/', '/private/'],
       },
     ],
-    sitemap: 'https://www.freecoino.com/sitemap.xml',
-  };
+    sitemap: 'https://freecoino.com/sitemap.xml',
+  }
 }

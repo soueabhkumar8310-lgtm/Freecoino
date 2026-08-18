@@ -15,6 +15,26 @@ export const metadata: Metadata = {
   },
   description:
     "Earn real rewards by completing surveys, tasks, and offers. Join Freecoino and start earning today. Cash out as crypto instantly.",
+  keywords: [
+    "earn money online",
+    "get paid surveys",
+    "cash rewards",
+    "crypto rewards",
+    "litecoin faucet",
+    "free crypto",
+    "earn bitcoin",
+    "online tasks",
+    "paid surveys",
+    "make money online",
+    "freecoino",
+    "reward site",
+  ],
+  authors: [{ name: "Freecoino" }],
+  creator: "Freecoino",
+  publisher: "Freecoino",
+  verification: {
+    google: "google-site-verification",
+  },
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
